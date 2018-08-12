@@ -103,6 +103,7 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null
+    app.quit();
   })
   require('./menu/mainmenu')
 }

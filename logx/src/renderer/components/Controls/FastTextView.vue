@@ -731,8 +731,9 @@ export default {
                 //console.log('skip key');
                 return;
             }
-            //console.error("event.keyCode: " + event.keyCode);
+            console.error("event.keyCode: " + event.keyCode);
             if (event.keyCode == 40) {
+                //arrow up
                 model.direction = 1;
                 var up = model.lowerPosition + 1;
                 if (up > model.lines.length) {
@@ -740,12 +741,41 @@ export default {
                 }
                 model.jumpToPosition(up, 0);
             } else if (event.keyCode == 38) {
+                //arrow down
                 model.direction = -1;
                 var down = model.upperPosition - 1;
                 if (down < 0) {
                     down = 0;
                 }
                 model.jumpToPosition(0, down);
+            } else if (event.keyCode == 36) {
+                //Home
+                model.direction = 1;
+                var pos = model.factory.m.startVisibleIndex;
+                model.jumpToPosition(pos, 0);
+            } else if (event.keyCode == 35) {
+                //End
+                model.direction = 1;
+                var pos = model.factory.m.endVisibleIndex;
+                model.jumpToPosition(pos, 0);
+            }
+            else if (event.keyCode == 33) {
+                //page up
+                model.direction = 1;
+                var up = model.lowerPosition - model.displayrowscount;
+                if (up <= model.factory.m.startVisibleIndex) {
+                    up = model.factory.m.startVisibleIndex;
+                }
+                model.jumpToPosition(up, 0);
+            }
+            else if (event.keyCode == 34) {
+                //page down
+                model.direction = 1;
+                var down = model.lowerPosition + model.displayrowscount;;
+                if (down >= model.factory.m.endVisibleIndex) {
+                    down = model.factory.m.endVisibleIndex;
+                }
+                model.jumpToPosition(down, 0);
             }
 
         });
