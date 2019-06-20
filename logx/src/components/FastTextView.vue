@@ -1,17 +1,26 @@
 <template>
 <div>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="/resources/demos/style.css">
     <v-progress-linear v-bind:id="'logx-progress' + factory.myInitId" :indeterminate="true" style="height:2px"></v-progress-linear>
+
     <div v-bind:id="'fast-text-view-' + factory.myInitId" class="fast-text-view-class">
 
         <div align=left id='logs-container' class='logrow'>
             <div class='rownumber'>[0]</div>no data default
+
         </div>
     </div>
+    <div id="slider-vertical" style="height:90%;  position: fixed;  top: 70px;right: 5px;"></div>
+
 </div>
 </template>
 
 <script>
 var $ = global.jQuery = require('jquery');
+var jQuery = require('jquery')
+require('jquery-ui-dist/jquery-ui')
+
 var myID = 0;
 
 import {
@@ -388,6 +397,10 @@ export default {
         jumpToPosition: function (newLowerPosition, newUpperPosition) {
             ////console.log("jumpToPosition-> newLowerPosition: " + newLowerPosition + " newUpperPosition: " + newUpperPosition);
 
+           
+
+            
+            
             let model = this;
             //let max = this.factory.getModel().length - model.displayrowscount;
             ////console.log(this.factory.getModel().length);
@@ -412,9 +425,24 @@ export default {
 
             model.lowerPosition = newLowerPosition;
             model.upperPosition = newUpperPosition;
-            ////console.log('newPosition');
-            ////console.log(newPosition);
+            console.log("lowerPosition: " + model.lowerPosition);
+            console.log("upperPosition: " + model.upperPosition);
             //EventBus.$emit('newPosition', newPosition);
+
+            var sliderPostion = 0;
+            var len = this.factory.getModel().length
+            console.log("this.direction: " + this.direction);
+            if(this.direction > 0)
+            {
+                sliderPostion = model.lowerPosition;
+            }
+            else
+            {
+                sliderPostion = model.upperPosition;
+            }
+            var silderValue = Math.floor( (  (len -  sliderPostion) / len) *100)
+            console.log("silderValue: " + silderValue);
+            jQuery("#slider-vertical").slider("value",  silderValue);
 
             model.refreshView();
             //model.$forceUpdate()
@@ -725,11 +753,40 @@ export default {
         //     //console.log('focusout');
         //     hasFocus = false;
         // });
+        $(function () {
+                //console.log(model.ident + " : !!!!!!!!!!!!!!!!!!!! ex--filters watch: " + val);
+                setTimeout(() => {
+                
+                    jQuery("#slider-vertical").slider({
+                        orientation: "vertical",
+                        range: "min",
+                        min: 0,
+                        max: 100,
+                        value: 100,
+                        slide: function (event, ui) {
+                            //max: model.lines.length,
+                            // var lineNum = parseInt(ui.value);
+                            // console.log("adding silder: " +lineNum )
+                            // model.jumpToPosition(lineNum, 0);
+                            //$( "#amount" ).val( ui.value );
+                            var lineNumPrecentage = parseInt(ui.value)/100;
+                            var lineNum = model.lines.length - Math.floor(model.lines.length*lineNumPrecentage)
+                            //console.log("adding silder: " +lineNum )
+                            model.jumpToPosition(lineNum, 0);
+                            
+                        }
+                    });
+                    console.log("adding silder")
+                }, 300);
+                //$( "#amount" ).val( $( "#slider-vertical" ).slider( "value" ) );
+            });
+
         $(window).keydown(function (event) {
             if (!hasFocus) {
                 ////console.log('skip key');
                 return;
             }
+            
             //console.error("event.keyCode: " + event.keyCode);
             if (event.keyCode == 40) {
                 //arrow up
@@ -1057,7 +1114,6 @@ function init(factory) {
         });
     };
 }
-
 </script>
 
 <style>
@@ -1073,6 +1129,7 @@ function init(factory) {
     overflow-y: hidden;
     font-size: 14px;
 }
+
 .unselectable {
     -moz-user-select: -moz-none;
     -khtml-user-select: none;
@@ -1080,6 +1137,7 @@ function init(factory) {
     -o-user-select: none;
     user-select: none;
 }
+
 .rownumber {
     color: gray;
     margin-right: 5px;
