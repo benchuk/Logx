@@ -356,13 +356,13 @@ function jqueryInit() {
     }
 
     function mouseup(e) {
-        c//onsole.log("mouseup");
+        //console.log("mouseup");
         $("body,html").off("mousemove", mousemove);
         $("body,html,#resizer").off("mouseup", mouseup);
     }
 
     function mousedown(e) {
-        c//onsole.log("mousedown!!!!!!!!!!!!!");
+        //console.log("mousedown!!!!!!!!!!!!!");
         $("body,html,#resizer").mouseup(mouseup);
         startPoint = e.pageY;
         orgHeight = $("#theFooter").height();
@@ -666,7 +666,7 @@ export default {
                 value: "" + this.searchterm
             }]);
             this.searchterm = "";
-            this.active = (this.searchs.length - 1).toString();
+            this.active = (this.searchs.length - 1);
             //console.log("active: " + this.active);
             if ($("#theFooter").height() < 300) {
                 $("#theFooter").height(300);
