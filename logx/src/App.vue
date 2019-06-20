@@ -67,7 +67,6 @@
 
                 </v-expansion-panel-content >
                 <!-- ======= EX-FILTERS ================================================= -->
-
                 <v-expansion-panel-content :value="panel[2]">
                     <div slot="header">Exclude Filters {{exfilters?'('+exfilters.length+')':""}}</div>
                     <v-layout row justify-center align-center>
@@ -83,6 +82,7 @@
                     </v-layout>
                 </v-expansion-panel-content>
             </v-expansion-panel>
+            <!-- ======= DRAWER ================================================= -->
         </v-navigation-drawer>
         <v-content fill-height fluid grid-list-sm id="main-content">
             <v-container id="main-container" fill-height fluid grid-list-sm>
@@ -318,7 +318,7 @@ function jqueryInit() {
             reader.readAsText(f);
         }
     }
-    console.log("!!!!!!!!!!!!!!!!! ready for drop");
+    //console.log("!!!!!!!!!!!!!!!!! ready for drop");
     //  document.getElementById('main-container').addEventListener('drop', function(e) {
     //    console.log("drop!");
     //    onDrop(e)
@@ -339,7 +339,7 @@ function jqueryInit() {
     //     onDrop(event)
     // });
     document.addEventListener("drop", function (e) {
-        console.log("drop!");
+        //console.log("drop!");
         onDrop(e);
     });
 
@@ -400,7 +400,7 @@ export default {
     watch: {
         highlights: {
             handler: function (val) {
-                console.log("saving highlights");
+                //console.log("saving highlights");
                 //console.error(val);
                 let model = this;
                 appStorage.saveHighlights(val);
@@ -409,7 +409,7 @@ export default {
         },
         filters: {
             handler: function (val) {
-                console.log("saving filters");
+                //console.log("saving filters");
                 //console.error(val);
                 let model = this;
                 appStorage.saveFilters(val);
@@ -418,7 +418,7 @@ export default {
         },
         exfilters: {
             handler: function (val) {
-                console.log("saving ex-filters");
+                //console.log("saving ex-filters");
                 //console.error(val);
                 let model = this;
                 appStorage.saveExFilters(val);
@@ -529,7 +529,7 @@ export default {
         model.exfilters = appStorage.loadLastExFiltersList();
         //console.log('Component Created');
         ipcRenderer.on("load-files-reply", (event, arg) => {
-            console.log("done");
+            //console.log("done");
             let lines = arg.split("\n");
             //document.getElementById('area').innerHTML = lines[0];
             model.logLines = lines;
@@ -694,7 +694,7 @@ export default {
             });
         },
         removeFilter: function (index) {
-            console.log("removeFilter: ", index);
+            //console.log("removeFilter: ", index);
             if (index === -1) {
                 this.filters = [];
                 return;
@@ -712,7 +712,7 @@ export default {
             this.highlights.splice(index, 1);
         },
         loadSavedPreset: function () {
-            console.log("loadFilters");
+            //console.log("loadFilters");
             //this.filters = [];
         },
         onResize: function (www) {
