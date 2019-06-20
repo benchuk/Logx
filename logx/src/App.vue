@@ -34,7 +34,8 @@
             </v-layout>
             <v-expansion-panel v-model="panel" expand>
                 <!-- ======= FILTERS ================================================= -->
-                <v-expansion-panel-content>
+                <v-expansion-panel-content :value="panel[0]">
+                    <div slot="header">Filters {{filters?'('+filters.length+')':""}}</div>
                     <v-layout row justify-center align-center>
                         <v-switch class="mt-0 mb-0 pa-0 ml-3" :label="`${useFilters?'On':'Off'}`" v-model="useFilters"></v-switch>
                         <v-btn class="mt-0 mr-0" v-on:click="addFilter" small dark>Add Filter<v-icon dark class="ml-1">playlist_add</v-icon>
@@ -49,9 +50,9 @@
                     </v-layout>
                 </v-expansion-panel-content>
                 <!-- ======= COLORS ================================================= -->
-                <v-expansion-panel-content>
+                <v-expansion-panel-content :value="panel[1]">
                     <!-- -------------------- -->
-                    <div slot="header">Colors</div>
+                    <div slot="header">Colors {{highlights?'('+highlights.length+')':""}}</div>
                     <v-layout row justify-center align-center>
                         <v-switch class="mt-0 pa-0 ml-3" :label="`${useColors?'On':'Off'}`" v-model="useColors"></v-switch>
                         <v-btn :disabled="!canAddColor" class="mt-0 mr-0" v-on:click="addColor" small dark>Add Color<v-icon dark class="ml-1">playlist_add</v-icon>
@@ -64,11 +65,11 @@
                         <v-text-field class="mt-0 pt-0" append-icon="call_made" @click:append="filterFromColor(index)"  :background-color="stylesCache[index+1]" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model.lazy="item.value"></v-text-field>
                     </v-layout>
 
-                </v-expansion-panel-content>
+                </v-expansion-panel-content >
                 <!-- ======= EX-FILTERS ================================================= -->
 
-                <v-expansion-panel-content>
-                    <div slot="header">Exclude Filters</div>
+                <v-expansion-panel-content :value="panel[2]">
+                    <div slot="header">Exclude Filters {{exfilters?'('+exfilters.length+')':""}}</div>
                     <v-layout row justify-center align-center>
                         <v-switch class="mt-0 pa-0 ml-3" :label="`${useExFilters?'On':'Off'}`" v-model="useExFilters"></v-switch>
                         <v-btn class="mt-0 mr-0" v-on:click="addExFilter" small dark>Add Ex-Filter<v-icon dark class="ml-1">playlist_add</v-icon>
@@ -475,7 +476,7 @@ export default {
             startPoint: -1,
             theView: undefined,
             drawer: true,
-            panel: [true, false],
+            panel: [true, true,false],
             items: [{
                     action: "15 min",
                     headline: "Brunch this weekend?",
@@ -637,7 +638,10 @@ export default {
             model.addStyle(model.highlights.length + 1)
             model.highlights.push({
                 value: "" + text
-            });            
+            });
+            console.log(this.panel)
+            this.panel[1]=true;
+            console.log(this.panel)           
 
         },
         getColor: function (index) {
