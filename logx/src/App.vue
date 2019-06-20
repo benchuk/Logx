@@ -639,9 +639,9 @@ export default {
             model.highlights.push({
                 value: "" + text
             });
-            console.log(this.panel)
+            //console.log(this.panel)
             this.panel[1]=true;
-            console.log(this.panel)           
+            //console.log(this.panel)           
 
         },
         getColor: function (index) {
