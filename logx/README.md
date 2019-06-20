@@ -1,21 +1,31 @@
-# logx
+# loggi
 
-> general debugging platform
-
-#### Build Setup
-
-```bash
-# install dependencies
+## Project setup
+```
 npm install
+```
 
-# server with hot reload at localhost:9080
-npm run dev
+### Compiles and hot-reloads for development
+```
+npm run serve
+```
 
-# build electron application for production
+### Compiles and minifies for production
+```
 npm run build
 ```
 
----
+### Run your tests
+```
+npm run test
+```
 
-This project was generated with [electron-vue](https://github.com/SimulatedGREG/electron-vue)@[4c6ee7b](https://github.com/SimulatedGREG/electron-vue/tree/4c6ee7bf4f9b4aa647a22ec1c1ca29c2e59c3645)
-using [vue-cli](https://github.com/vuejs/vue-cli). Documentation about the original structure can be found [here](https://simulatedgreg.gitbooks.io/electron-vue/content/index.html).
+### Lints and fixes files
+```
+npm run lint
+```
+
+### Customize configuration
+See [Configuration Reference](https://cli.vuejs.org/config/).
+
+https://github.com/nazmulidris/vue_webpack

@@ -4,7 +4,8 @@
     <div v-bind:id="'fast-text-view-' + factory.myInitId" class="fast-text-view-class">
 
         <div align=left id='logs-container' class='logrow'>
-            <div class='rownumber'>[0]</div>no data default</div>
+            <div class='rownumber'>[0]</div>no data default
+        </div>
     </div>
 </div>
 </template>
@@ -15,7 +16,7 @@ var myID = 0;
 
 import {
     EventBus
-} from './../event-bus.js';
+} from './event-bus.js';
 import {
     parse
 } from 'querystring';
@@ -39,8 +40,8 @@ export default {
         showFiltered(val, oldval) {
             let model = this;
 
-            console.log(model.ident + " :  ^^^^ showFiltered watch: " + val);
-            console.log(val);
+            //console.log(model.ident + " :  ^^^^ showFiltered watch: " + val);
+            //console.log(val);
             this.showFilteredInternal = val;
             this.isJumping = val;
             model.refreshView();
@@ -48,14 +49,14 @@ export default {
         position(val, oldval) {
             let model = this;
 
-            console.log(model.ident + " :  $ position watch: " + val);
-            console.log(val);
+            //console.log(model.ident + " :  $ position watch: " + val);
+            //console.log(val);
             if (val.source == this.factory.myInitId) {
-                console.log('skip self generated event');
+                //console.log('skip self generated event');
                 return;
             }
             if (model.lowerPosition == val.value) {
-                console.log('skip same position');
+                //console.log('skip same position');
                 return;
             }
             this.direction = 1;
@@ -68,27 +69,27 @@ export default {
                 parsedPosition = 0;
             }
             model.targetJump = parsedPosition;
-            console.log('position changed');
+            //console.log('position changed');
             model.jumpToPosition(parsedPosition, parsedPosition + this.displayrowscount);
         },
         height(val, oldval) {
-            //console.log(this.ident + " : !!!!!!!!!!!!!!!!!!!!!!!! height watch: " + val);
+            ////console.log(this.ident + " : !!!!!!!!!!!!!!!!!!!!!!!! height watch: " + val);
             //this.currentHeight = val;
             //this.matchHeight();
             //this.jumpToPosition(this.currentPosition);
         },
         lines(val, oldval) {
-            //console.log(this);
+            ////console.log(this);
             let model = this;
             if (!model.ready) {
                 return;
             }
-            console.log(model.ident + " : ~~~~~~~~~~~~~~~~~ lines watch: ");
+            //console.log(model.ident + " : ~~~~~~~~~~~~~~~~~ lines watch: ");
             if (val === undefined || val.length <= 0) {
-                console.error(model.ident + " : ~~~~~~~~~~~~~~~~~ !invalid data lines watch: " + val);
+                //console.error(model.ident + " : ~~~~~~~~~~~~~~~~~ !invalid data lines watch: " + val);
                 model.factory.setModel(["no data 3"]);
                 model.factory.setOriginalModel(["no data 3"]);
-                console.log(model);
+                //console.log(model);
             } else {
                 model.factory.setModel(val);
                 model.factory.setOriginalModel(val);
@@ -97,47 +98,47 @@ export default {
             model.updateLinesModel(true);
             model.refreshView();
         },
-        'useFilters' : {
+        'useFilters': {
             handler: function (val) {
                 if (!this.ready) {
                     return;
                 }
                 let model = this;
-                console.log(model.ident + " : -------- useFilters watch: " + val);
-                    model.filtersInternal = val ? model.filters : [];
-                    model.direction = 1;
+                //console.log(model.ident + " : -------- useFilters watch: " + val);
+                model.filtersInternal = val ? model.filters : [];
+                model.direction = 1;
 
-                    model.updateLinesModel(true);
-                    model.refreshView();
+                model.updateLinesModel(true);
+                model.refreshView();
             },
             deep: true
         },
-        'useExFilters' : {
+        'useExFilters': {
             handler: function (val) {
                 if (!this.ready) {
                     return;
                 }
                 let model = this;
-                console.log(model.ident + " : -------- exfiltersInternal watch: " + val);
-                    model.exfiltersInternal = val ? model.exfilters : [];
-                    model.direction = 1;
+                //console.log(model.ident + " : -------- exfiltersInternal watch: " + val);
+                model.exfiltersInternal = val ? model.exfilters : [];
+                model.direction = 1;
 
-                    model.updateLinesModel(true);
-                    model.refreshView();
+                model.updateLinesModel(true);
+                model.refreshView();
             },
             deep: true
         },
-        'useColors' : {
+        'useColors': {
             handler: function (val) {
                 if (!this.ready) {
                     return;
                 }
                 let model = this;
-                console.log(model.ident + " : -------- useColors watch: " + val);
-                    model.highlightsInternal = val ? model.highlights : [];
-                    //model.direction = 1;
-                    //model.updateLinesModel(true);
-                    model.refreshView();
+                //console.log(model.ident + " : -------- useColors watch: " + val);
+                model.highlightsInternal = val ? model.highlights : [];
+                //model.direction = 1;
+                //model.updateLinesModel(true);
+                model.refreshView();
             },
             deep: true
         },
@@ -147,7 +148,7 @@ export default {
                     return;
                 }
                 let model = this;
-                console.log(model.ident + " : -------- highlights watch: " + val);
+                //console.log(model.ident + " : -------- highlights watch: " + val);
                 model.highlightsInternal = val;
                 model.refreshView();
             },
@@ -158,9 +159,9 @@ export default {
                 let model = this;
                 clearTimeout(exfiltersHandler);
                 exfiltersHandler = setTimeout(function () {
-                    console.log(model.ident + " : !!!!!!!!!!!!!!!!!!!! ex--filters watch: " + val);
+                    //console.log(model.ident + " : !!!!!!!!!!!!!!!!!!!! ex--filters watch: " + val);
                     if (val && val[val.length - 1] && (val[val.length - 1].value == undefined || val[val.length - 1].value.length <= 0)) {
-                        console.log("skip... ex filter");
+                        //console.log("skip... ex filter");
                         return;
                     }
                     //this.currentPosition = 0;
@@ -179,10 +180,10 @@ export default {
                 $('#logx-progress' + model.factory.myInitId).height(2).css("visibility", "visible").css("margin", "4px");;
                 clearTimeout(model.filtersHandler);
                 model.filtersHandler = setTimeout(function () {
-                    console.log(model.ident + " : !!!!!!!!!!!!!!!!!!!! filters watch: " + val);
+                    //console.log(model.ident + " : !!!!!!!!!!!!!!!!!!!! filters watch: " + val);
                     //this.currentPosition = 0;
                     if (val && val[val.length - 1] && (val[val.length - 1].value == undefined || val[val.length - 1].value.length <= 0)) {
-                        console.log("skip... filter");
+                        //console.log("skip... filter");
                         return;
                     }
                     model.filtersInternal = val;
@@ -231,20 +232,20 @@ export default {
             //https://stackoverflow.com/questions/29387950/performance-of-google-chrome-vs-nodejs-v8
             function run() {
 
-                console.error("--------------------------------updateLinesModel " + shouldInitIndex);
+                //console.error("--------------------------------updateLinesModel " + shouldInitIndex);
                 var t0 = performance.now();
-                //console.info("this.useFilters: " + this.useFilters);
+                ////console.info("this.useFilters: " + this.useFilters);
                 if (model.useFilters == undefined) {
                     model.useFilters = true; //default
-                    //console.info("useFilters default");
+                    ////console.info("useFilters default");
                 }
                 if (model.useExFilters == undefined) {
                     model.useExFilters = false; //default
-                    //console.info("useExFilters default");
+                    ////console.info("useExFilters default");
                 }
 
                 if (model.exfiltersInternal == undefined || model.exfiltersInternal.length <= 0 || (model.exfiltersInternal.length == 1 && model.exfiltersInternal[0].value == "")) {
-                    //console.log("disable ex--filters");
+                    ////console.log("disable ex--filters");
                     model.useExFiltersInternal = false;
                 } else {
                     model.useExFiltersInternal = true;
@@ -252,7 +253,7 @@ export default {
                 model.useExFiltersInternal = model.useExFiltersInternal && model.useExFilters;
 
                 if (model.filtersInternal == undefined || model.filtersInternal.length <= 0 || (model.filtersInternal.length == 1 && model.filtersInternal[0].value == "")) {
-                    //console.log("disable filters");
+                    ////console.log("disable filters");
                     model.useFiltersInternal = false;
                 } else {
                     model.useFiltersInternal = true;
@@ -261,22 +262,22 @@ export default {
                 model.useFiltersInternal = model.useFiltersInternal && model.useFilters;
 
                 if (!model.useFiltersInternal && !model.useFilters && !model.useExFiltersInternal && !model.useExFilters) {
-                    //console.info("no filters at all");
+                    ////console.info("no filters at all");
                     model.factory.setModel(model.lines);
                     model.factory.setOriginalModel(model.lines);
                     //this.refreshView();
                     return;
                 }
 
-                // console.info("this.useExFiltersInternal: " + this.useExFiltersInternal);
-                // console.info("this.useExFilters: " + this.useExFilters);
-                // console.info("this.exfiltersInternal: " + this.exfiltersInternal);
-                // console.info(this.exfiltersInternal);
+                // //console.info("this.useExFiltersInternal: " + this.useExFiltersInternal);
+                // //console.info("this.useExFilters: " + this.useExFilters);
+                // //console.info("this.exfiltersInternal: " + this.exfiltersInternal);
+                // //console.info(this.exfiltersInternal);
 
-                // console.info("this.useFiltersInternal: " + this.useFiltersInternal);
-                // console.info("this.useFilters: " + this.useFilters);
-                // console.info("this.filtersInternal: " + this.filtersInternal);
-                // console.info(this.filtersInternal);
+                // //console.info("this.useFiltersInternal: " + this.useFiltersInternal);
+                // //console.info("this.useFilters: " + this.useFilters);
+                // //console.info("this.filtersInternal: " + this.filtersInternal);
+                // //console.info(this.filtersInternal);
 
                 model.factory.setOriginalModel(model.lines);
                 model.factory.setModel([]);
@@ -301,7 +302,7 @@ export default {
                             //     skipLine = true;
                             // }
                             if (line.toLowerCase().includes(exf.value.toLowerCase())) {
-                                //console.log("exclude line: " + line + " for filter: " + f.value);
+                                ////console.log("exclude line: " + line + " for filter: " + f.value);
                                 skipLine = true; //this line is excluded - move to next line
                             }
                         }
@@ -347,7 +348,7 @@ export default {
                                 didPositionInit = true;
                                 model.lowerPosition = counter;
                                 m.startVisibleIndex = counter;
-                                //console.error("setting new index: " + counter);
+                                ////console.error("setting new index: " + counter);
                             }
                             m.endVisibleIndex = counter;
                         } else {
@@ -377,52 +378,52 @@ export default {
                 //     this.refreshView();
                 // }
                 var t1 = performance.now();
-                console.log("Call to updateLinesModel took " + (t1 - t0) + " milliseconds.")
-                console.error("-------------------------------- DONE updateLinesModel " + shouldInitIndex);
+                //console.log("Call to updateLinesModel took " + (t1 - t0) + " milliseconds.")
+                //console.error("-------------------------------- DONE updateLinesModel " + shouldInitIndex);
 
             }
             run();
 
         },
         jumpToPosition: function (newLowerPosition, newUpperPosition) {
-            //console.log("jumpToPosition-> newLowerPosition: " + newLowerPosition + " newUpperPosition: " + newUpperPosition);
+            ////console.log("jumpToPosition-> newLowerPosition: " + newLowerPosition + " newUpperPosition: " + newUpperPosition);
 
             let model = this;
             //let max = this.factory.getModel().length - model.displayrowscount;
-            //console.log(this.factory.getModel().length);
-            //console.log(max);
+            ////console.log(this.factory.getModel().length);
+            ////console.log(max);
             // if (newPosition >= max) {
             //   newPosition = max;
             // }
 
             if (model.lowerPosition == newLowerPosition && model.upperPosition == newUpperPosition) {
-                console.log('same position...');
+                //console.log('same position...');
                 return;
             }
 
             if (newLowerPosition < 0) {
                 newLowerPosition = 0;
-                console.error("bad new lower position");
+                //console.error("bad new lower position");
             }
             if (newUpperPosition > this.factory.getModel().length - 1) {
                 newLowerPosition = this.factory.getModel().length - 1;
-                console.error("bad new upper position");
+                //console.error("bad new upper position");
             }
 
             model.lowerPosition = newLowerPosition;
             model.upperPosition = newUpperPosition;
-            //console.log('newPosition');
-            //console.log(newPosition);
+            ////console.log('newPosition');
+            ////console.log(newPosition);
             //EventBus.$emit('newPosition', newPosition);
 
             model.refreshView();
             //model.$forceUpdate()
         },
         refreshView: function () {
-            //console.log('refresh view');
+            ////console.log('refresh view');
 
             //if (this.prevLower == this.lowerPosition && this.prevUpper == this.upperPosition && this.prevDisplayrowscount == this.displayrowscount) {
-            //    console.error('skip refresh view - nothing changed');
+            //    //console.error('skip refresh view - nothing changed');
             //    return;
             //}
 
@@ -432,18 +433,18 @@ export default {
 
             this.lowerPosition = parseInt(this.lowerPosition);
             this.upperPosition = parseInt(this.upperPosition);
-            //console.log("refresh fast View " + this.factory.myInitId + " lower: " + this.lowerPosition, " upper: " + this.upperPosition + " showing: " + this.displayrowscount);
+            ////console.log("refresh fast View " + this.factory.myInitId + " lower: " + this.lowerPosition, " upper: " + this.upperPosition + " showing: " + this.displayrowscount);
             // if(this.lasStopPosition == this.currentPosition)
             // {
-            //   console.log("skip refresh: lasStopPosition: " + this.lasStopPosition + " currentPosition: " + this.currentPosition);
+            //   //console.log("skip refresh: lasStopPosition: " + this.lasStopPosition + " currentPosition: " + this.currentPosition);
             //   return;
             // }
             let model = this;
             let lines = this.factory.getModel();
-            //console.log(this.displayrowscount);
+            ////console.log(this.displayrowscount);
             let len = lines.length; //- this.displayrowscount;
-            //console.log("len:: " + len);
-            //console.log(this.linesData);
+            ////console.log("len:: " + len);
+            ////console.log(this.linesData);
             var backupHtml = model.container.innerHTML;
             model.container.innerHTML = "";
             //var tagetJump = -1;
@@ -458,7 +459,7 @@ export default {
 
             var c = 0;
             if (this.direction > 0) {
-                //console.log("FW");
+                ////console.log("FW");
                 c = parseInt(this.lowerPosition);
                 if (this.lowerPosition + this.displayrowscount > lines.endVisibleIndex && !model.isJumping) {
                     this.lowerPosition = lines.endVisibleIndex - this.displayrowscount;
@@ -470,7 +471,7 @@ export default {
                 let spaceToEnd = lines.length - this.displayrowscount;
                 c = this.lowerPosition > spaceToEnd ? spaceToEnd : this.lowerPosition;
             } else {
-                //console.log("BW");
+                ////console.log("BW");
                 c = parseInt(this.upperPosition);
                 if (this.upperPosition - this.displayrowscount <= lines.startVisibleIndex & !model.isJumping) {
                     this.upperPosition = lines.startVisibleIndex + this.displayrowscount;
@@ -482,24 +483,23 @@ export default {
                 c = this.upperPosition < this.displayrowscount ? this.displayrowscount : this.upperPosition;
             }
 
-            //console.log("using c: " + c);
+            ////console.log("using c: " + c);
             var took = 0;
             var firstTookIndex = -1;
             let showSkip = this.showFilteredInternal;
 
-            if(c < 0)
-            {
-                c=0;
+            if (c < 0) {
+                c = 0;
             }
             var data = "";
             while (c >= 0 && c < len && took <= this.displayrowscount) {
                 var line = lines[c];
                 if (line == undefined) {
-                    //console.log(c);
+                    ////console.log(c);
                 }
                 if (line.skip) {
                     if (showSkip) {
-                        var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex'> [" + line.rowid + "] </div><div id='skipline' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
+                        var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='skipline' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
                         if (this.direction > 0) {
                             //model.container.innerHTML += l;
                             data += l;
@@ -521,7 +521,7 @@ export default {
                         continue;
                         // line = "";
                     }
-                    var l2 = "<div id='" + line.rowid + "'>" + "<div class='rowIndex'> [" + line.rowid + "] </div><div id='rowdata' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
+                    var l2 = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='rowdata' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
                     if (this.direction > 0) {
                         //model.container.innerHTML += l2;
                         data += l2;
@@ -625,25 +625,24 @@ export default {
                 }
             }
 
-            //console.log("new lower: " + this.lowerPosition);
-            //console.log("new upper: " + this.upperPosition);
+            ////console.log("new lower: " + this.lowerPosition);
+            ////console.log("new upper: " + this.upperPosition);
 
             var i = 1;
-            //console.error('tag', this.highlightsInternal);
-            if(this.useColors)
-            {
-            for (var f of this.highlightsInternal) {
-                if (f == undefined || f.value == undefined || f.value == "") {
-                    continue;
+            ////console.error('tag', this.highlightsInternal);
+            if (this.useColors) {
+                for (var f of this.highlightsInternal) {
+                    if (f == undefined || f.value == undefined || f.value == "") {
+                        continue;
+                    }
+
+                    ////console.log('start');
+                    $('.theline-' + this.factory.myInitId).each(function (index) {
+                        ////console.log('refresh..?');
+                        $(this).highlight(f.value, "highlight" + i);
+                    });
+                    i++;
                 }
-                addStyle(i);
-                //console.log('start');
-                $('.theline-' + this.factory.myInitId).each(function (index) {
-                    //console.log('refresh..?');
-                    $(this).highlight(f.value, "highlight" + i);
-                });
-                i++;
-            }
             }
             //after render register for line click //todo unregister prev clicks - not sure needed.
             setTimeout(() => {
@@ -656,7 +655,7 @@ export default {
                     });
                 });
             }, 1);
-            //console.log('refresh view done');
+            ////console.log('refresh view done');
         },
         matchHeight: function () {
             //todo optimized when there is no actual height change - then do not render.
@@ -669,19 +668,19 @@ export default {
                 rowHeight = v > 0 ? v : 21;
             }
 
-            //console.log(this.factory.myInitId + " reqHeight (parent height): " + reqHeight);
-            //console.log(this.factory.myInitId + " rowHeight: " + rowHeight);
+            ////console.log(this.factory.myInitId + " reqHeight (parent height): " + reqHeight);
+            ////console.log(this.factory.myInitId + " rowHeight: " + rowHeight);
             this.displayrowscount = Math.round(reqHeight / rowHeight) - 4; //temp hack
             if (this.displayrowscount <= 0) {
                 this.displayrowscount = 10;
             }
-            //console.log(this.factory.myInitId + " this.displayrowscount: " + this.displayrowscount);
+            ////console.log(this.factory.myInitId + " this.displayrowscount: " + this.displayrowscount);
             this.refreshView();
         }
     },
     created() {
         //model.$forceUpdate();
-        console.log('fast text view Created');
+        //console.log('fast text view Created');
         this.factory = (function () {
             // let m = ["model init"];
             // let origianlModel = ["original model init"];
@@ -692,7 +691,7 @@ export default {
                 return that.m;
             }
             that.setModel = function (model) {
-                //console.log("asdasdasdasdasdasdasdasdasd");
+                ////console.log("asdasdasdasdasdasdasdasdasd");
                 that.m = model.slice();
             }
             that.setOriginalModel = function (model) {
@@ -703,35 +702,35 @@ export default {
             }
             return that;
         })();
-        //console.log(this);// = JSON.parse(JSON.stringify(["no data created"]));
+        ////console.log(this);// = JSON.parse(JSON.stringify(["no data created"]));
     },
     mounted: function () {
-        //console.log("fast text view mounted");
+        ////console.log("fast text view mounted");
         let model = this;
 
         $('#logx-progress' + model.factory.myInitId).height(0).css("visibility", "hidden").css("margin", "0px");
         var hasFocus = false;
         $('#fast-text-view-' + model.factory.myInitId).mouseover(function () {
-            //console.log('mouseover');
+            ////console.log('mouseover');
             hasFocus = true;
         });
 
         $('#fast-text-view-' + model.factory.myInitId).mouseout(function () {
-            //console.log('mouseout');
+            ////console.log('mouseout');
             hasFocus = false;
         });
 
         // window.getElementById('fast-text-view-' + model.factory.myInitId).addEventListener("focusout", function()
         // {
-        //     console.log('focusout');
+        //     //console.log('focusout');
         //     hasFocus = false;
         // });
         $(window).keydown(function (event) {
             if (!hasFocus) {
-                //console.log('skip key');
+                ////console.log('skip key');
                 return;
             }
-            console.error("event.keyCode: " + event.keyCode);
+            //console.error("event.keyCode: " + event.keyCode);
             if (event.keyCode == 40) {
                 //arrow up
                 model.direction = 1;
@@ -758,8 +757,7 @@ export default {
                 model.direction = 1;
                 var pos = model.factory.m.endVisibleIndex;
                 model.jumpToPosition(pos, 0);
-            }
-            else if (event.keyCode == 33) {
+            } else if (event.keyCode == 33) {
                 //page up
                 model.direction = 1;
                 var up = model.lowerPosition - model.displayrowscount;
@@ -767,8 +765,7 @@ export default {
                     up = model.factory.m.startVisibleIndex;
                 }
                 model.jumpToPosition(up, 0);
-            }
-            else if (event.keyCode == 34) {
+            } else if (event.keyCode == 34) {
                 //page down
                 model.direction = 1;
                 var down = model.lowerPosition + model.displayrowscount;;
@@ -790,9 +787,9 @@ export default {
             parent = $('#' + model.parentid);
             parentHTML = document.getElementById(model.parentid);
         }
-        //console.log("parent??: " + parent);
-        //console.log(parent);
-        //console.log("the height" + parent.height());
+        ////console.log("parent??: " + parent);
+        ////console.log(parent);
+        ////console.log("the height" + parent.height());
         var prevHeight = -1;;
         let mainC = $('#fast-text-view-' + model.factory.myInitId);
 
@@ -803,27 +800,27 @@ export default {
                 prevHeight = newHeight;
                 model.currentHeight = newHeight
                 model.matchHeight();
-                console.log("onParentResie");
+                //console.log("onParentResie");
             }
         }
         //  parent.resize(onParentResize);
-        //   console.log("parent resize");
+        //   //console.log("parent resize");
         //   setTimeout(() => {
         //     onParentResize();
         //  }, 1);
         //  parent.addEventListener('resize', function(e){
         //      e.preventDefault();
-        //       console.log("parent resize2");
+        //       //console.log("parent resize2");
         //         setTimeout(() => {
         //           onParentResize();
         //         }, 1);
         //   });
         var preEvent;
         $(document).ready(function () {
-            console.log('document $(document).ready: ' + model.factory.myInitId);
+            //console.log('document $(document).ready: ' + model.factory.myInitId);
             // clearTimeout(preEvent);
             // preEvent = setTimeout(() => {
-            //     console.log('onParentResize $(document).ready');
+            //     //console.log('onParentResize $(document).ready');
             //      model.updateLinesModel(true);
             //     //model.refreshView();
             //     onParentResize();
@@ -840,7 +837,7 @@ export default {
             }
             clearTimeout(preEvent);
             preEvent = setTimeout(() => {
-                console.log('onParentResize mousedown');
+                //console.log('onParentResize mousedown');
                 onParentResize();
             }, 300);
         });
@@ -851,7 +848,7 @@ export default {
             }
             clearTimeout(preEvent);
             preEvent = setTimeout(() => {
-                console.log('onParentResize mouseup');
+                //console.log('onParentResize mouseup');
                 onParentResize();
             }, 300);
         });
@@ -862,17 +859,17 @@ export default {
         // });
         window.addEventListener('resize', function (e) {
             e.preventDefault();
-            //console.log("window resize");
+            ////console.log("window resize");
             clearTimeout(preEvent);
             preEvent = setTimeout(() => {
-                console.log('onParentResize resize');
+                //console.log('onParentResize resize');
                 onParentResize();
             }, 300);
         });
-        // console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!  register !!!!!!!!!!!!!!!!");//
+        // //console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!  register !!!!!!!!!!!!!!!!");//
         // document.getElementById('fast-text-view-'+ model.factory.myInitId).addEventListener('onmousedown', function(e){
         //    //e.preventDefault();
-        //       console.log("window onmouseover");
+        //       //console.log("window onmouseover");
         //       setTimeout(() => {
         //         onParentResize();
         //       }, 1);
@@ -885,9 +882,9 @@ export default {
             this.factory.setOriginalModel(model.lines)
         }
         model.highlightsInternal = model.highlights;
-        //console.log("--------------------------");
-        //console.log(model.filters);
-        //console.log("--------------------------");
+        ////console.log("--------------------------");
+        ////console.log(model.filters);
+        ////console.log("--------------------------");
         model.filtersInternal = model.filters;
         model.exfiltersInternal = model.exfilters;
         //model.currentPosition = model.position ? model.position.value : 0;
@@ -898,20 +895,20 @@ export default {
         // }
         // else{
         //   const res = model.highlights.slice(0).map(x => x.value).filter(x => x != undefined || x != "");
-        //   console.error('h',res);
+        //   //console.error('h',res);
         //   model.highlightsInternal = res
         // }
         this.$nextTick(function () {
             init(model.factory);
             model.ready = true;
             // model.updateLinesModel(true);
-            // //console.error("init");
+            // ////console.error("init");
             // //model.jumpToPosition(model.currentPosition)
             // model.refreshView();
-            //console.error("register dbclick");
+            ////console.error("register dbclick");
             $('#fast-text-view-' + model.factory.myInitId).dblclick(function () {
                 var seltxt = getSelText();
-                //console.error('selected text:' + seltxt);
+                ////console.error('selected text:' + seltxt);
                 EventBus.$emit('textSelection', seltxt);
             });
         })
@@ -919,10 +916,10 @@ export default {
         var lastEventTimestamp = 0;
 
         function mouseWheelEvent(e) {
-            //console.log("wheel");
+            ////console.log("wheel");
             var currentTimestamp = Date.now();
             if (currentTimestamp - lastEventTimestamp < 50) {
-                //console.log(" skip: " + (currentTimestamp - lastEventTimestamp));
+                ////console.log(" skip: " + (currentTimestamp - lastEventTimestamp));
                 return;
             }
             var inrowEvents = (currentTimestamp - lastEventTimestamp < 100);
@@ -930,57 +927,57 @@ export default {
                 prevDelta = 0;
             }
             lastEventTimestamp = currentTimestamp;
-            // console.log("====================================");
-            // console.log(" -e.detail: " + -e.detail);
-            // console.log(" -e.wheelDelta: " + -e.wheelDelta);
-            // console.log(" event.deltaX: " + event.deltaX);
-            // console.log(" event.deltaY: " + event.deltaY);
-            // console.log(" event.deltaMode: " + event.deltaMode);
+            // //console.log("====================================");
+            // //console.log(" -e.detail: " + -e.detail);
+            // //console.log(" -e.wheelDelta: " + -e.wheelDelta);
+            // //console.log(" event.deltaX: " + event.deltaX);
+            // //console.log(" event.deltaY: " + event.deltaY);
+            // //console.log(" event.deltaMode: " + event.deltaMode);
             //var delta = e.wheelDelta ? e.wheelDelta : -e.detail;
             var delta = -event.deltaY;
             model.direction = delta > 0 ? -1 : 1;
-            //console.log("delta: " + delta);
-            //console.log("direction: " + model.direction);
+            ////console.log("delta: " + delta);
+            ////console.log("direction: " + model.direction);
             if ((prevDelta + delta) > 5 || (prevDelta + delta) < -5) {
-                //console.log(" event.deltaMode: " + event.deltaMode);
+                ////console.log(" event.deltaMode: " + event.deltaMode);
                 delta = prevDelta + delta;
                 prevDelta = 0;
             }
             if (delta >= 0 && delta <= 5) {
                 prevDelta += delta;
-                //console.log(" prevDelta: " + prevDelta);
+                ////console.log(" prevDelta: " + prevDelta);
                 return;
             }
             if (delta <= 0 && delta >= -5) {
                 prevDelta += delta;
-                //console.log(" prevDelta: " + prevDelta);
+                ////console.log(" prevDelta: " + prevDelta);
                 return;
             }
             delta = Math.round(delta / 3.0);
-            //console.log(" delta: " + delta);
+            ////console.log(" delta: " + delta);
             //delta+=prevDelta;
 
-            //console.log("mouseWheelEvent: model.currentPosition: " + model.currentPosition);
+            ////console.log("mouseWheelEvent: model.currentPosition: " + model.currentPosition);
             //var newPosition =-1;
             var lower = 0;
             var upper = 0;
-            //console.log("mouseWheelEvent: Math.round(delta * -1: " + Math.round(delta * -1));
+            ////console.log("mouseWheelEvent: Math.round(delta * -1: " + Math.round(delta * -1));
             if (model.direction > 0) {
-                //console.log("mouseWheelEvent: before 1: " + model.lowerPosition);
+                ////console.log("mouseWheelEvent: before 1: " + model.lowerPosition);
                 lower = model.lowerPosition + Math.round(delta * -1);
-                //console.log("mouseWheelEvent: after 1: " + model.lowerPosition);
+                ////console.log("mouseWheelEvent: after 1: " + model.lowerPosition);
             } else {
-                //console.log("mouseWheelEvent: before 2: " + model.upperPosition);
+                ////console.log("mouseWheelEvent: before 2: " + model.upperPosition);
                 upper = model.upperPosition + Math.round(delta * -1);
-                //console.log("mouseWheelEvent: after 2: " + model.upperPosition);
+                ////console.log("mouseWheelEvent: after 2: " + model.upperPosition);
             }
 
-            //console.log("mouseWheelEvent: lower: " + lower + " upper: " + upper);
+            ////console.log("mouseWheelEvent: lower: " + lower + " upper: " + upper);
             model.jumpToPosition(lower, upper);
-            //console.log(model.position);
-            //console.log(model.lines);
+            ////console.log(model.position);
+            ////console.log(model.lines);
         }
-        //console.log("register to: " + 'fast-text-view-' + model.factory.myInitId);
+        ////console.log("register to: " + 'fast-text-view-' + model.factory.myInitId);
         // var containerE = document.getElementById('fast-text-view-main');
         // containerE.addEventListener('mousewheel', mouseWheelEvent);
         document.getElementById('fast-text-view-' + model.factory.myInitId).addEventListener('mousewheel', mouseWheelEvent);
@@ -1001,8 +998,8 @@ function getSelText() {
 }
 
 function init(factory) {
-    //console.log("init highlight jquery");
-    //console.log($);
+    ////console.log("init highlight jquery");
+    ////console.log($);
     global.jQuery.fn.removeHighlight = function () {
         function newNormalize(node) {
             for (var i = 0, children = node.childNodes, nodeCount = children.length; i < nodeCount; i++) {
@@ -1060,102 +1057,67 @@ function init(factory) {
         });
     };
 }
-let stylesCache = {};
 
-function random_rgba() {
-    return 'rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')';
-}
-let calls = 1;
-let arr = [10, 20, 50, 100, 155];
-
-function random_rgba2(id) {
-    let cell = id % 4;
-    return 'rgb(' + Math.min(255, (id)) + ',' + Math.min(255, (id * id)) + ',' + Math.min(255, (arr[cell])) + ')';
-}
-
-function addStyle(id) {
-    if (stylesCache[id]) {
-        //console.log('skip');
-        return;
-    }
-    stylesCache[id] = "ok";
-    let backColor = random_rgba(id);
-    //let color = random_rgba();
-    var style = document.createElement('style');
-    style.type = 'text/css';
-    style.innerHTML =
-        `.highlight${id} {
-          background-color: ${backColor};
-          -moz-border-radius: 3px;
-          /* FF1+ */
-          -webkit-border-radius: 3px;
-          /* Saf3-4 */
-          border-radius: 3px;
-          /* Opera 10.5, IE 9, Saf5, Chrome */
-          -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-          /* FF3.5+ */
-          -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-          /* Saf3.0+, Chrome */
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-          /* Opera 10.5+, IE 9.0 */
-          color: white;
-        }`;
-    document.getElementsByTagName('head')[0].appendChild(style);
-}
 </script>
 
 <style>
 .fast-text-view-class {
-  max-height: 100%;
-  margin: 0px;
-  width: 100%;
-  height: 100%;
-  white-space: nowrap;
-  background-color: black;
-  color: greenyellow;
-  overflow-x: hidden;
-  overflow-y: hidden;
-  font-size: 14px;
+    max-height: 100%;
+    margin: 0px;
+    width: 100%;
+    height: 100%;
+    white-space: nowrap;
+    background-color: black;
+    color: greenyellow;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    font-size: 14px;
 }
-
+.unselectable {
+    -moz-user-select: -moz-none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+}
 .rownumber {
-  color: gray;
-  margin-right: 5px;
-  display: inline;
+    color: gray;
+    margin-right: 5px;
+    display: inline;
 }
 
 .rowIndex {
-  color: gray;
-  margin-right: 15px;
-  display: inline-block;
+    color: gray;
+    margin-right: 15px;
+    display: inline-block;
 }
 
 #rowdata {
-  display: inline-block;
-  color: greenyellow;
-  display: inline-block;
+    display: inline-block;
+    color: greenyellow;
+    display: inline-block;
 }
 
 #skipline {
-  display: inline-block;
-  color: grey;
-  display: inline-block;
+    display: inline-block;
+    color: grey;
+    display: inline-block;
 }
 
 .highlight1 {
-  background-color: #fff34d;
-  -moz-border-radius: 3px;
-  /* FF1+ */
-  -webkit-border-radius: 3px;
-  /* Saf3-4 */
-  border-radius: 3px;
-  /* Opera 10.5, IE 9, Saf5, Chrome */
-  -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-  /* FF3.5+ */
-  -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-  /* Saf3.0+, Chrome */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-  /* Opera 10.5+, IE 9.0 */
-  color: black;
+    background-color: #fff34d;
+    -moz-border-radius: 3px;
+    /* FF1+ */
+    -webkit-border-radius: 3px;
+    /* Saf3-4 */
+    border-radius: 3px;
+    /* Opera 10.5, IE 9, Saf5, Chrome */
+    -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+    /* FF3.5+ */
+    -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+    /* Saf3.0+, Chrome */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+    /* Opera 10.5+, IE 9.0 */
+    color: black;
 }
 </style>

@@ -12,132 +12,105 @@
                     </v-list-tile-content>
                 </v-list-tile>
             </v-list>
-        </v-navigation-drawer> -->
+      </v-navigation-drawer>-->
         <v-toolbar color="black" dark fixed app clipped-right>
             <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
             <v-toolbar-title>log(x)</v-toolbar-title>
             <v-spacer></v-spacer>
             <v-toolbar-items class="hidden-sm-and-down">
-                <v-text-field style="margin:15px;width=:600px;" :append-icon-cb="() => {}" solo-inverted class="mx-3" flat id="findall" placeholder="find all..." single-line append-icon="search" v-model="searchterm" color="white" @keyup.enter="finall" hide-details></v-text-field>
-                <v-btn color="blue darken-1" flat @click.stop="jump(0)">Top</v-btn>
+                <v-text-field style="margin:15px;width=:600px;" @click:append="() => {}" solo-inverted class="mx-3" flat id="findall" placeholder="New Search Tab" single-line append-icon="search" v-model="searchterm" color="white" @keyup.enter="finall" hide-details></v-text-field>
                 <v-btn color="blue darken-1" flat @click.native="searchDialog = true">Find multiple</v-btn>
-                <v-btn color="blue darken-1" flat @click.stop="dialog = true">Settings</v-btn>
+                <v-btn color="blue darken-1" flat @click.stop="jump(0)">Top</v-btn>
+                
+                <!-- <v-btn color="blue darken-1" flat @click.stop="dialog = true">Settings</v-btn> -->
                 <!-- <v-toolbar-side-icon @click.stop="drawerRight = !drawerRight"></v-toolbar-side-icon> -->
             </v-toolbar-items>
         </v-toolbar>
         <v-navigation-drawer fixed v-model="drawer" app>
-            <v-container>
-                <v-layout justify-center align-center>
-                    <v-flex>
-                        <v-switch :label="`Show Filtered: ${showFiltered.toString()}`" v-model="showFiltered" style="margin-left:15px"></v-switch>
-                        <!-- <v-checkbox :label="`dialog3: ${dialog3.toString()}`" v-model="dialog3"></v-checkbox> -->
-                    </v-flex>
-                </v-layout>
-            </v-container>
+            <v-layout justify-center align-center>
+                <v-flex>
+                    <v-switch class="mt-3 pa-0 ml-3" :label="`${showFiltered?'Showing All Lines':'Showing Filtered Lines'}`" v-model="showFiltered"></v-switch>
+                </v-flex>
+            </v-layout>
             <v-expansion-panel v-model="panel" expand>
-                <v-expansion-panel-content value=true>
-                     <v-switch :label="`Use Filters: ${useFilters.toString()}`" v-model="useFilters" style="margin-left:15px"></v-switch>
-                    <div slot="header">Include Filters</div>
-                    <v-btn flat small v-on:click="addFilter">+</v-btn>
-                    <v-list two-line>
-                        <template v-for="(item, index) in filters">
-                            <v-list-tile avatar ripple>
-                                <v-list-tile-content>
-                                    <v-layout row wrap>
+                <!-- ======= FILTERS ================================================= -->
+                <v-expansion-panel-content>
+                    <v-layout row justify-center align-center>
+                        <v-switch class="mt-0 mb-0 pa-0 ml-3" :label="`${useFilters?'On':'Off'}`" v-model="useFilters"></v-switch>
+                        <v-btn class="mt-0 mr-0" v-on:click="addFilter" small dark>Add Filter<v-icon dark class="ml-1">playlist_add</v-icon>
+                        </v-btn>
+                        <v-btn class="mt-0 ml-0" v-on:click="removeFilter(-1)" flat icon color='error'>
+                            <v-icon dark>delete_outline</v-icon>
+                        </v-btn>
+                    </v-layout>
+                    <v-layout class="ml-3 mr-3" row v-for="(item, index) in filters" :key="index">
+                        <v-text-field class="mt-0 pt-0" append-icon="color_lens" @click:append="colorFromFilter(index)" append-outer-icon="delete_outline" @click:append-outer="removeFilter(index)" v-model.lazy="item.value"></v-text-field>
 
-                                        <v-btn dark @click.stop="removeFilter(index)">-</v-btn>
-                                        <!-- <input v-model.lazy="item.value" style="width:100px;height:50px"> -->
-                                        <v-text-field v-model.lazy="item.value"></v-text-field>
-
-                                    </v-layout>
-                                </v-list-tile-content>
-
-                            </v-list-tile>
-                            <v-divider v-if="index + 1 < filters.length" :key="index"></v-divider>
-                        </template>
-                    </v-list>
+                    </v-layout>
                 </v-expansion-panel-content>
-
-                <v-expansion-panel-content value=true>
-                    <v-switch :label="`Use Filters: ${useColors.toString()}`" v-model="useColors" style="margin-left:15px"></v-switch>
+                <!-- ======= COLORS ================================================= -->
+                <v-expansion-panel-content>
+                    <!-- -------------------- -->
                     <div slot="header">Colors</div>
-                    <v-btn flat small v-on:click="addColor">+</v-btn>
-                    <v-list two-line>
-                        <template v-for="(item, index) in highlights">
-                            <v-list-tile avatar ripple>
-                                <v-list-tile-content>
-                                    <v-layout row wrap style="width:100%">
-                                        <v-btn dark @click.stop="removeColor(index)">-</v-btn>
-                                        <!-- <input v-model.lazy="item.value" style="width:100px;height:50px"> -->
-                                        <v-text-field style="width:100%" v-model="item.value" :class="['highlight' + (index+1)]"></v-text-field>
-                                    </v-layout>
-                                </v-list-tile-content>
-                            </v-list-tile>
-                            <v-divider v-if="index + 1 < highlights.length" :key="index"></v-divider>
-                        </template>
-                    </v-list>
-                </v-expansion-panel-content>
+                    <v-layout row justify-center align-center>
+                        <v-switch class="mt-0 pa-0 ml-3" :label="`${useColors?'On':'Off'}`" v-model="useColors"></v-switch>
+                        <v-btn :disabled="!canAddColor" class="mt-0 mr-0" v-on:click="addColor" small dark>Add Color<v-icon dark class="ml-1">playlist_add</v-icon>
+                        </v-btn>
+                        <v-btn class="mt-0 ml-0" v-on:click="removeColor(-1)" flat icon color='error'>
+                            <v-icon dark>delete_outline</v-icon>
+                        </v-btn>
+                    </v-layout>
+                    <v-layout class="ml-3 mr-3" row v-for="(item, index) in highlights" :key="index">
+                        <v-text-field class="mt-0 pt-0" append-icon="call_made" @click:append="filterFromColor(index)"  :background-color="stylesCache[index+1]" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model.lazy="item.value"></v-text-field>
+                    </v-layout>
 
-                <v-expansion-panel-content value=true>
-                    <v-switch :label="`Use Ex Filters: ${useExFilters.toString()}`" v-model="useExFilters" style="margin-left:15px"></v-switch>
+                </v-expansion-panel-content>
+                <!-- ======= EX-FILTERS ================================================= -->
+
+                <v-expansion-panel-content>
                     <div slot="header">Exclude Filters</div>
-                    <v-btn flat small v-on:click="addExFilter">+</v-btn>
-                    <v-list two-line>
-                        <template v-for="(item, index) in exfilters">
-                            <v-list-tile avatar ripple>
-                                <v-list-tile-content>
-                                    <v-layout row wrap>
-                                        <v-btn dark @click.stop="removeExFilter(index)">-</v-btn>
-                                        <!-- <input v-model.lazy="item.value" style="width:100px;height:50px"> -->
-                                        <v-text-field v-model.lazy="item.value"></v-text-field>
-                                    </v-layout>
-                                </v-list-tile-content>
-                            </v-list-tile>
-                            <v-divider v-if="index + 1 < filters.length" :key="index"></v-divider>
-                        </template>
-                    </v-list>
+                    <v-layout row justify-center align-center>
+                        <v-switch class="mt-0 pa-0 ml-3" :label="`${useExFilters?'On':'Off'}`" v-model="useExFilters"></v-switch>
+                        <v-btn class="mt-0 mr-0" v-on:click="addExFilter" small dark>Add Ex-Filter<v-icon dark class="ml-1">playlist_add</v-icon>
+                        </v-btn>
+                        <v-btn class="mt-0 ml-0" v-on:click="removeExFilter(-1)" flat icon color='error'>
+                            <v-icon dark>delete_outline</v-icon>
+                        </v-btn>
+                    </v-layout>
+                    <v-layout class="ml-3 mr-3" row v-for="(item, index) in exfilters" :key="index">
+                        <v-text-field class="mt-0 pt-0" append-outer-icon="delete_outline" @click:append-outer="removeExFilter(index)" v-model.lazy="item.value"></v-text-field>
+                    </v-layout>
                 </v-expansion-panel-content>
-
             </v-expansion-panel>
         </v-navigation-drawer>
         <v-content fill-height fluid grid-list-sm id="main-content">
             <v-container id="main-container" fill-height fluid grid-list-sm>
                 <v-layout justify-left align-top style="padding-top:30px">
                     <v-flex>
-
-                        <fast-text-view :lines="logLines" :position=position :height="logsHeight" :highlights="highlights" :ident="'main-logger'" :filters="filters" :parentid="'main-container'" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered"></fast-text-view>
-
+                        <fast-text-view :lines="logLines" :position="position" :height="logsHeight" :highlights="highlights" :ident="'main-logger'" :filters="filters" :parentid="'main-container'" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered"></fast-text-view>
                     </v-flex>
                 </v-layout>
             </v-container>
         </v-content>
         <v-navigation-drawer right temporary v-model="right" fixed></v-navigation-drawer>
-        <v-footer inset app fixed id="theFooter" height=30>
+        <v-footer inset app fixed id="theFooter" height="30">
             <v-container fluid fill-height pa-0>
                 <v-layout justify-left align-left>
                     <v-flex xs12>
                         <div id="resizer"></div>
-                        <v-tabs dark slider-color="white" style="height: 100%;" v-model="active">
-                            <v-tabs-slider color="yellow"></v-tabs-slider>
-                            <v-tab v-for="s in searchs" ripple>
-                                <v-btn depressed small v-on:click="removeSearch(s)">
-                                    X
+                        <v-tabs show-arrows dark slider-color="yellow" v-model="active">
+                            <!-- <v-tabs-slider color="yellow"></v-tabs-slider> -->
+                            <v-tab v-for="(s,index) in searchs" ripple v-bind:key="index">
+                                <v-btn class="ml-0 pl-0" fab flat small v-on:click="removeSearch(s)">
+                                    <v-icon dark color="grey">close</v-icon>
                                 </v-btn>
-                                <v-tooltip top>
-                                    <v-btn slot="activator" dark color="primary">{{ s[0].value.substring(0, 10) + "..." }}</v-btn>
-                                    <span>{{ s.reduce((accumulator, currentValue, currentIndex, array) => {return accumulator + " " + currentValue.value.substring(0, 10); }, "") }}</span>
-                                </v-tooltip>
-
-                                <!-- <v-chip  color="blue-grey darken-2" text-color="white">
-                      <v-avatar >1</v-avatar>
-                      {{ s[0].value.substring(0, 10) + "..." }}
-                    </v-chip> -->
+                                {{ s[0].value.length>13 ? s[0].value.substring(0, 10) + "...":s[0].value }}
 
                             </v-tab>
-                            <v-tabs-items style="height: 100%;">
-                                <v-tab-item v-for="s in searchs" style="height: 100%;">
-                                    <v-card flat style="height: 100%;">
-                                        <fast-text-view :showFiltered="false" :lines="logLines" :height="100" :highlights="highlights" :useExFilters="false" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'"></fast-text-view>
+                            <v-tabs-items>
+                                <v-tab-item v-for="(s,index) in searchs" v-bind:key="index">
+                                    <v-card flat>
+                                        <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :height="100" :highlights="highlights" :useExFilters="false" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'"></fast-text-view>
                                     </v-card>
                                 </v-tab-item>
                             </v-tabs-items>
@@ -161,7 +134,7 @@
           <v-btn color="blue darken-1" flat @click.native="dialog3 = false">Save</v-btn>
         </v-card-actions>
       </v-card>
-    </v-dialog> -->
+      </v-dialog>-->
 
         <v-dialog v-model="dialog" fullscreen hide-overlay transition="dialog-bottom-transition" scrollable>
             <v-card tile>
@@ -179,7 +152,7 @@
                             <v-icon>more_vert</v-icon>
                         </v-btn>
                         <v-list>
-                            <v-list-tile v-for="(item, i) in items" :key="i" @click="">
+                            <v-list-tile v-for="(item, i) in items" :key="i" @click>
                                 <v-list-tile-title>{{ item.title }}</v-list-tile-title>
                             </v-list-tile>
                         </v-list>
@@ -188,8 +161,7 @@
                 <v-card-text>
                     <v-btn color="primary" dark @click.stop="dialog2 = !dialog2">Open Dialog 2</v-btn>
                     <v-tooltip right>
-                        <v-btn slot="activator">Tool Tip Activator</v-btn>
-                        Tool Tip
+                        <v-btn slot="activator">Tool Tip Activator</v-btn>Tool Tip
                     </v-tooltip>
                     <v-list three-line subheader>
                         <v-subheader>User Controls</v-subheader>
@@ -244,7 +216,6 @@
         </v-dialog>
 
         <v-dialog v-model="searchDialog" persistent max-width="500px">
-            
             <v-card>
                 <v-card-title>
                     <span class="headline">Find multiple</span>
@@ -252,16 +223,13 @@
                 <v-card-text>
                     <v-container grid-list-md>
                         <v-layout wrap>
-
                             <v-list two-line>
                                 <template v-for="(f,index) in findMultiSearchTerms">
                                     <v-flex xs12 :key="index">
-                                        <v-text-field v-model.lazy="f.value" solo-inverted class="mx-3" flat single-line append-icon="search" color="white" @keyup.enter="findMulti()" hide-details>
-                                        </v-text-field>
+                                        <v-text-field v-model.lazy="f.value" solo-inverted class="mx-3" flat single-line append-icon="search" color="white" @keyup.enter="findMulti()" hide-details></v-text-field>
                                     </v-flex>
                                 </template>
                             </v-list>
-
                         </v-layout>
                     </v-container>
                 </v-card-text>
@@ -272,31 +240,44 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
-
     </v-app>
 </div>
 </template>
 
 <script>
-import appStorage from './appStorage'
-import JQuery from 'jquery'
-let $ = JQuery
-const {
+import appStorage from "./components/appStorage";
+import JQuery from "jquery";
+let $ = JQuery;
+import {
     ipcRenderer
-} = require('electron')
+} from "electron";
+
 //console.log($);
 function refreshView(filesPaths) {
     if (filesPaths == undefined || filesPaths.length <= 0) {
         return;
     }
     var params = {
-        "files": filesPaths
+        files: filesPaths
     };
-    var res = ipcRenderer.send('load-files', params);
+    filesPaths.forEach((f)=>{console.log("File: ", f);})
+    
+    var res = ipcRenderer.send("load-files", params);
 }
-console.error('-------------------------------------------');
+//console.error("-------------------------------------------");
 var filesPaths = appStorage.loadLastFileList();
 refreshView(filesPaths);
+
+function random_rgba() {
+    return 'rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')';
+}
+let calls = 1;
+let arr = [10, 20, 50, 100, 155];
+
+function random_rgba2(id) {
+    let cell = id % 4;
+    return 'rgb(' + Math.min(255, (id)) + ',' + Math.min(255, (id * id)) + ',' + Math.min(255, (arr[cell])) + ')';
+}
 
 function jqueryInit() {
     var startPoint = 0;
@@ -306,9 +287,10 @@ function jqueryInit() {
         filesPaths = [];
         e.preventDefault();
         e.stopPropagation();
-        var dt = e.dataTransfer || (e.originalEvent && e.originalEvent.dataTransfer);
+        var dt =
+            e.dataTransfer || (e.originalEvent && e.originalEvent.dataTransfer);
         var files = e.target.files || (dt && dt.files);
-        console.error(e);
+        //console.error(e);
         for (var i in files) {
             var p = e.dataTransfer.files[i].path;
             if (p != undefined) {
@@ -328,14 +310,14 @@ function jqueryInit() {
             reader.onload = function (e) {
                 // get file content
                 var text = e.target.result;
-                console.log('start')
-                document.getElementById('area').innerHTML = text;
-                console.log('end')
-            }
+                //console.log("start");
+                document.getElementById("area").innerHTML = text;
+                //console.log("end");
+            };
             reader.readAsText(f);
         }
     }
-    console.error("!!!!!!!!!!!!!!!!! ready for drop");
+    console.log("!!!!!!!!!!!!!!!!! ready for drop");
     //  document.getElementById('main-container').addEventListener('drop', function(e) {
     //    console.log("drop!");
     //    onDrop(e)
@@ -351,17 +333,17 @@ function jqueryInit() {
         //$(this).removeClass('dragging');
     });
     // $("html").on("drop", function(event) {
-    //     event.preventDefault();  
+    //     event.preventDefault();
     //     event.stopPropagation();
     //     onDrop(event)
     // });
-    document.addEventListener('drop', function (e) {
+    document.addEventListener("drop", function (e) {
         console.log("drop!");
-        onDrop(e)
+        onDrop(e);
     });
 
     function mousemove(e) {
-        console.log(".")
+        //console.log(".");
         var res = orgHeight + (startPoint - e.pageY);
         //console.log("mousemove: res: " + res);
         //let currentH = $("#theFooter").height();
@@ -374,13 +356,13 @@ function jqueryInit() {
     }
 
     function mouseup(e) {
-        console.log("mouseup")
+        c//onsole.log("mouseup");
         $("body,html").off("mousemove", mousemove);
         $("body,html,#resizer").off("mouseup", mouseup);
     }
 
     function mousedown(e) {
-        console.log("mousedown!!!!!!!!!!!!!")
+        c//onsole.log("mousedown!!!!!!!!!!!!!");
         $("body,html,#resizer").mouseup(mouseup);
         startPoint = e.pageY;
         orgHeight = $("#theFooter").height();
@@ -391,8 +373,8 @@ function jqueryInit() {
     //$("#resizer").height(900);
 }
 // window.onload = function() {
-// if (window.jQuery) {  
-//     // jQuery is loaded  
+// if (window.jQuery) {
+//     // jQuery is loaded
 //     alert("Yeah!");
 // } else {
 //     // jQuery is not loaded
@@ -401,36 +383,42 @@ function jqueryInit() {
 //}
 import {
     EventBus
-} from './event-bus.js';
-import FastTextView from './Controls/FastTextView.vue'
+} from "./components/event-bus";
+import FastTextView from "./components/FastTextView";
 export default {
-    name: 'logxmain-page',
+    name: "logxmain-page",
     components: {
         FastTextView
     },
+    computed: {
+        canAddColor() {
+         
+            return this.highlights == null || this.highlights.length==0 || this.highlights[this.highlights.length-1].value.trim().length>0;
+        }
+    },
     watch: {
-        'highlights': {
+        highlights: {
             handler: function (val) {
                 console.log("saving highlights");
-                console.error(val);
+                //console.error(val);
                 let model = this;
                 appStorage.saveHighlights(val);
             },
             deep: true
         },
-        'filters': {
+        filters: {
             handler: function (val) {
                 console.log("saving filters");
-                console.error(val);
+                //console.error(val);
                 let model = this;
                 appStorage.saveFilters(val);
             },
             deep: true
         },
-        'exfilters': {
+        exfilters: {
             handler: function (val) {
                 console.log("saving ex-filters");
-                console.error(val);
+                //console.error(val);
                 let model = this;
                 appStorage.saveExFilters(val);
             },
@@ -440,25 +428,32 @@ export default {
     data() {
         return {
             findMultiSearchTerms: [{
-                'value': ''
-            }, {
-                'value': ''
-            }, {
-                'value': ''
-            }, {
-                'value': ''
-            }, {
-                'value': ''
-            }, {
-                'value': ''
-            }],
+                    value: ""
+                },
+                {
+                    value: ""
+                },
+                {
+                    value: ""
+                },
+                {
+                    value: ""
+                },
+                {
+                    value: ""
+                },
+                {
+                    value: ""
+                }
+            ],
             searchDialog: false,
             showFiltered: false,
             position: {
-                'value': 0,
-                'source': 'default',
-                'showFiltered': false
+                value: 0,
+                source: "default",
+                showFiltered: false
             },
+            stylesCache: {},
             active: 0,
             drawerRight: false,
             right: null,
@@ -466,11 +461,11 @@ export default {
             notifications: true,
             sound: true,
             widgets: true,
-            useFilters:true,
+            useFilters: true,
             filters: [],
-            useExFilters:true,
+            useExFilters: true,
             exfilters: [],
-            useColors:true,
+            useColors: true,
             dialog: false,
             dialog3: false,
             logsHeight: 10,
@@ -479,44 +474,43 @@ export default {
             originalH: 35,
             startPoint: -1,
             theView: undefined,
-            text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-            drawer: false,
+            drawer: true,
             panel: [true, false],
             items: [{
-                    action: '15 min',
-                    headline: 'Brunch this weekend?',
-                    title: 'Ali Connors',
+                    action: "15 min",
+                    headline: "Brunch this weekend?",
+                    title: "Ali Connors",
                     subtitle: "1"
                 },
                 {
-                    action: '2 hr',
-                    headline: 'Summer BBQ',
-                    title: 'me, Scrott, Jennifer',
+                    action: "2 hr",
+                    headline: "Summer BBQ",
+                    title: "me, Scrott, Jennifer",
                     subtitle: "2"
                 },
                 {
-                    action: '6 hr',
-                    headline: 'Oui oui',
-                    title: 'Sandra Adams',
-                    subtitle: '3'
+                    action: "6 hr",
+                    headline: "Oui oui",
+                    title: "Sandra Adams",
+                    subtitle: "3"
                 },
                 {
-                    action: '12 hr',
-                    headline: 'Birthday gift',
-                    title: 'Trevor Hansen',
-                    subtitle: '4'
+                    action: "12 hr",
+                    headline: "Birthday gift",
+                    title: "Trevor Hansen",
+                    subtitle: "4"
                 },
                 {
-                    action: '18hr',
-                    headline: 'Recipe to try',
-                    title: 'Britta Holt',
-                    subtitle: 'asdasdasd'
+                    action: "18hr",
+                    headline: "Recipe to try",
+                    title: "Britta Holt",
+                    subtitle: "asdasdasd"
                 }
             ],
             searchReasultsContent: ["3", "5"],
             searchterm: "",
             searchs: []
-        }
+        };
     },
     beforeCreate() {
         //console.log('Nothing gets called before me!')
@@ -524,31 +518,36 @@ export default {
     created() {
         //model.$forceUpdate();
         let model = this;
-        model.highlights = appStorage.loadLastHighlightsList();
+        let highlights = appStorage.loadLastHighlightsList();
+        if (highlights) {
+            highlights.forEach(function (h) {
+                model.AddToHighlights(h.value);
+            })
+        }
         model.filters = appStorage.loadLastFiltersList();
         model.exfilters = appStorage.loadLastExFiltersList();
         //console.log('Component Created');
-        ipcRenderer.on('load-files-reply', (event, arg) => {
+        ipcRenderer.on("load-files-reply", (event, arg) => {
             console.log("done");
-            let lines = arg.split('\n');
+            let lines = arg.split("\n");
             //document.getElementById('area').innerHTML = lines[0];
             model.logLines = lines;
-            console.log(model);
+            //console.log(model);
             model.onResize(window);
         });
-        EventBus.$on('textSelection', text => {
-            console.log("textSelection " + text);
+        EventBus.$on("textSelection", text => {
+            //console.log("textSelection " + text);
             model.AddToHighlights(text);
             //model.filters = [{value:"start"}];
             // console.log("push!!!!!!!!");
             // console.error(model.filters[1]);
         });
-        EventBus.$on('showingFiltered', showingFiltered => {
-            console.log("showingFiltered" + showingFiltered);
+        EventBus.$on("showingFiltered", showingFiltered => {
+            //console.log("showingFiltered" + showingFiltered);
             model.showFiltered = showingFiltered;
         });
-        EventBus.$on('jumpto', pos => {
-            console.log("jumpto: " + pos.value);
+        EventBus.$on("jumpto", pos => {
+            //console.log("jumpto: " + pos.value);
             model.position = pos;
         });
         let prevKey = -1;
@@ -563,9 +562,9 @@ export default {
             if ((event.ctrlKey || prevKey == 91) && event.keyCode == 70) {
                 event.preventDefault();
                 prevKey = -1;
-                model.searchterm = '';
+                model.searchterm = "";
                 $("#findall").focus();
-                $("#findall").val('');
+                $("#findall").val("");
             }
             prevKey = event.keyCode;
         });
@@ -577,24 +576,25 @@ export default {
     mounted: function () {
         let model = this;
         model.logLines = [];
-        console.log(model);
+        //console.log(model);
         // for (var i = 0; i <= 200; i++) {
         //     //console.log(i);
         //     model.logLines.push("" + i);
         // }
         this.$nextTick(function () {
-            console.log('register resize');
-            window.addEventListener('resize', function (e) {
+            //console.log("register resize");
+            window.addEventListener("resize", function (e) {
                 e.preventDefault();
                 model.onResize(window);
-            })
+            });
             jqueryInit();
             model.onResize(window);
             model.loadSavedPreset();
-        })
-        console.log("ready")
+        });
+        //console.log("ready");
     },
     methods: {
+
         findMulti: function () {
             var searchTerms = [];
             for (var s of this.findMultiSearchTerms.slice()) {
@@ -602,44 +602,59 @@ export default {
                     continue;
                 }
                 searchTerms.push({
-                    'value': s.value
+                    value: s.value
                 });
             }
             this.searchDialog = false;
             this.searchs.push(searchTerms);
             this.active = (this.searchs.length - 1).toString();
-            console.log("active: " + this.active);
+            //console.log("active: " + this.active);
             if ($("#theFooter").height() < 300) {
                 $("#theFooter").height(300);
             }
         },
         jump: function (p) {
             this.position = {
-                'value': p,
-                'source': 'default',
-                'showFiltered': false
+                value: p,
+                source: "default",
+                showFiltered: false
             };
+        },
+        filterFromColor: function(index){
+            this.filters.unshift({
+                value: this.highlights[index].value
+            });
+        },
+        colorFromFilter: function(index){
+            this.AddToHighlights(this.filters[index].value)
         },
         AddToHighlights: function (text) {
             let model = this;
+            if(!this.canAddColor)
+            {
+              this.removeColor(model.highlights.length-1)
+            }
+            model.addStyle(model.highlights.length + 1)
             model.highlights.push({
-                'value': "" + text
-            });
+                value: "" + text
+            });            
+
+        },
+        getColor: function (index) {
+            return stylesCache[index]
         },
         removeSearch: function (s) {
             let index = this.searchs.indexOf(s);
-            console.log("index: " + index + " len: " + this.searchs.length);
+            //console.log("index: " + index + " len: " + this.searchs.length);
             var wasLast = false;
-            if(index == (this.searchs.length-1))
-            {
+            if (index == this.searchs.length - 1) {
                 wasLast = true;
             }
-            console.log("index: " + index);
+            //console.log("index: " + index);
             this.searchs.splice(index, 1);
             setTimeout(() => {
-                if(wasLast)
-                {
-                    this.active = (this.searchs.length-1).toString();
+                if (wasLast) {
+                    this.active = (this.searchs.length - 1).toString();
                 }
                 if (this.searchs.length <= 0) {
                     $("#theFooter").height(35);
@@ -648,53 +663,69 @@ export default {
         },
         finall: function () {
             this.searchs.push([{
-                'value': "" + this.searchterm
+                value: "" + this.searchterm
             }]);
+            this.searchterm = "";
             this.active = (this.searchs.length - 1).toString();
-            console.log("active: " + this.active);
+            //console.log("active: " + this.active);
             if ($("#theFooter").height() < 300) {
                 $("#theFooter").height(300);
             }
         },
         addExFilter: function (event) {
-            this.exfilters.push({
-                'value': ''
+            this.exfilters.unshift({
+                value: ""
             });
         },
         removeExFilter: function (index) {
+            if (index === -1) {
+                this.exfilters = [];
+                return;
+            }
             this.exfilters.splice(index, 1);
         },
         addFilter: function (event) {
-            this.filters.push({
-                'value': ''
+            this.filters.unshift({
+                value: ""
             });
         },
         removeFilter: function (index) {
+            console.log("removeFilter: ", index);
+            if (index === -1) {
+                this.filters = [];
+                return;
+            }
             this.filters.splice(index, 1);
         },
         addColor: function (event) {
-            this.AddToHighlights('');
+            this.AddToHighlights("");
         },
         removeColor: function (index) {
+            if (index === -1) {
+                this.highlights = [];
+                return;
+            }
             this.highlights.splice(index, 1);
         },
         loadSavedPreset: function () {
-            console.log('loadFilters');
+            console.log("loadFilters");
             //this.filters = [];
         },
         onResize: function (www) {
             //console.log('onResize!!!!!!!!!!!!!!!!!!!!!!!!!!');
             //console.log(www);
-            document.getElementById('main-container').setAttribute("style", "max-width:" + www.innerWidth + "px");
-            $('#main-content').css("padding-bottom", "30px");
-            $('#main-content').css("padding-top", "30px");
+            document
+                .getElementById("main-container")
+                .setAttribute("style", "max-width:" + www.innerWidth + "px");
+            $("#main-content").css("padding-bottom", "30px");
+            $("#main-content").css("padding-top", "30px");
         },
         up: function (e) {
-            console.log("up");
+            //console.log("up");
             this.startPoint = -1;
         },
         down: function (e) {
-            console.log("start point - down: " + e.pageY);
+            //console.log("start point - down: " + e.pageY);
             this.startPoint = e.pageY;
             this.originalH = this.h;
         },
@@ -707,7 +738,7 @@ export default {
             let y = this.startPoint - e.pageY;
             let x = this.originalH + this.startPoint - e.pageY;
             //console.log(x)
-            this.theView.style.height = x + 'px';
+            this.theView.style.height = x + "px";
             //this.h = x;
             //console.log(e.currentTarget)
             //e.currentTarget.height = x;
@@ -715,23 +746,53 @@ export default {
             if (e.preventDefault) e.preventDefault();
             e.cancelBubble = true;
             e.returnValue = false;
+        },
+        addStyle: function (id) {
+            if (this.stylesCache[id]) {
+                //console.log('skip');
+                return;
+            }
+            let backColor = random_rgba(id);
+            this.stylesCache[id] = backColor;
+            //let color = random_rgba();
+            var style = document.createElement('style');
+            style.type = 'text/css';
+            style.innerHTML =
+                `.highlight${id} {
+          background-color: ${backColor};
+          -moz-border-radius: 3px;
+          /* FF1+ */
+          -webkit-border-radius: 3px;
+          /* Saf3-4 */
+          border-radius: 3px;
+          /* Opera 10.5, IE 9, Saf5, Chrome */
+          -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+          /* FF3.5+ */
+          -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+          /* Saf3.0+, Chrome */
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+          /* Opera 10.5+, IE 9.0 */
+          color: white;
+        }`;
+            document.getElementsByTagName('head')[0].appendChild(style);
         }
     },
     props: {
         source: String
     }
-}
+};
 </script>
 
 <style>
-@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro');
+@import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro");
+
 #resizer {
-  background: #343436;
-  border-bottom: 1px solid black;
-  box-shadow: 0 0 1px black;
-  height: 17px;
-  position: relative;
-  z-index: 10;
-  cursor: row-resize;
+    background: #343436;
+    border-bottom: 1px solid black;
+    box-shadow: 0 0 1px black;
+    height: 17px;
+    position: relative;
+    z-index: 10;
+    cursor: row-resize;
 }
 </style>
