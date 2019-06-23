@@ -1,24 +1,14 @@
 <template>
 <div id="app">
     <v-app id="inspire" dark>
-        <!-- <v-navigation-drawer fixed v-model="drawerRight" right clipped app>
-            <v-list dense>
-                <v-list-tile @click.stop="right = !right">
-                    <v-list-tile-action>
-                        <v-icon>exit_to_app</v-icon>
-                    </v-list-tile-action>
-                    <v-list-tile-content>
-                        <v-list-tile-title>Open Temporary Drawer</v-list-tile-title>
-                    </v-list-tile-content>
-                </v-list-tile>
-            </v-list>
-      </v-navigation-drawer>-->
+      <!-- ======= TOOLBAR ================================================= -->
         <v-toolbar color="black" dark fixed app clipped-right>
             <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
             <v-toolbar-title>log(x)</v-toolbar-title>
             <v-spacer></v-spacer>
+            <v-text-field @click:append="finall" solo-inverted class="mt-2" id="findall" placeholder="New Search Tab" single-line append-icon="search" v-model="searchterm" color="grey" @keyup.enter="finall"></v-text-field>
+            <v-spacer></v-spacer>
             <v-toolbar-items class="hidden-sm-and-down">
-                <v-text-field style="margin:15px;width=:600px;" @click:append="() => {}" solo-inverted class="mx-3" flat id="findall" placeholder="New Search Tab" single-line append-icon="search" v-model="searchterm" color="white" @keyup.enter="finall" hide-details></v-text-field>
                 <v-btn color="blue darken-1" flat @click.native="searchDialog = true">Find multiple</v-btn>
                 <v-btn color="blue darken-1" flat @click.stop="jump(0)">Top</v-btn>
                 
@@ -26,6 +16,7 @@
                 <!-- <v-toolbar-side-icon @click.stop="drawerRight = !drawerRight"></v-toolbar-side-icon> -->
             </v-toolbar-items>
         </v-toolbar>
+        <!-- ======= NAV DRAWER ================================================= -->
         <v-navigation-drawer fixed v-model="drawer" app>
             <v-layout justify-center align-center>
                 <v-flex>
@@ -99,6 +90,7 @@
                 <v-layout justify-left align-left>
                     <v-flex xs12>
                         <div id="resizer"></div>
+                        <!-- ======= SEARCHES ================================================= -->
                         <v-tabs show-arrows dark slider-color="yellow" v-model="active">
                             <!-- <v-tabs-slider color="yellow"></v-tabs-slider> -->
                             <v-tab v-for="(s,index) in searchs" ripple v-bind:key="index">
@@ -106,8 +98,9 @@
                                     <v-icon dark color="grey">close</v-icon>
                                 </v-btn>
                                 {{ s[0].value.length>13 ? s[0].value.substring(0, 10) + "...":s[0].value }}
-
+                            
                             </v-tab>
+                            <v-btn v-if="searchs.length>1" @click="clearSearches" flat icon color="error"><v-icon small>delete_outline</v-icon></v-btn>
                             <v-tabs-items>
                                 <v-tab-item v-for="(s,index) in searchs" v-bind:key="index">
                                     <v-card flat>
@@ -346,8 +339,6 @@ function jqueryInit() {
     function mousemove(e) {
         //console.log(".");
         var res = orgHeight + (startPoint - e.pageY);
-        //console.log("mousemove: res: " + res);
-        //let currentH = $("#theFooter").height();
         $("#theFooter").height(res);
         if (e.stopPropagation) e.stopPropagation();
         if (e.preventDefault) e.preventDefault();
@@ -358,6 +349,8 @@ function jqueryInit() {
 
     function mouseup(e) {
         //console.log("mouseup");
+        var res = orgHeight + (startPoint - e.pageY);
+        $("#theFooter").height(res);
         $("body,html").off("mousemove", mousemove);
         $("body,html,#resizer").off("mouseup", mouseup);
     }
@@ -647,6 +640,10 @@ export default {
         getColor: function (index) {
             return stylesCache[index]
         },
+        clearSearches:function (s) {
+            this.searchs = []
+            $("#theFooter").height(35);
+        },
         removeSearch: function (s) {
             let index = this.searchs.indexOf(s);
             //console.log("index: " + index + " len: " + this.searchs.length);
@@ -666,12 +663,23 @@ export default {
             }, 10);
         },
         finall: function () {
-            this.searchs.push([{
-                value: "" + this.searchterm
-            }]);
+            let searchterm = this.searchterm.toLowerCase().trim();
+            if(searchterm.length==0)
+            {
+                return;
+            }
             this.searchterm = "";
+            let exists = this.searchs.findIndex(s => s.length==1 && s[0].value===searchterm);
+            if(exists>=0){
+                console.log(this.active)
+                this.active = exists;
+                console.log(this.active)
+                return;
+            }
+            this.searchs.push([{
+                value: "" + searchterm
+            }]);
             this.active = (this.searchs.length - 1);
-            //console.log("active: " + this.active);
             if ($("#theFooter").height() < 300) {
                 $("#theFooter").height(300);
             }
