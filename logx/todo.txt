@@ -1,4 +1,4 @@
 1. Fix build to use icon
-2. Fix build to use jquery to the silder will work
+2. Fix build to use jQuery to the slider will work
 3. Update README.md with new install and build instructions
 4. Fix debug and vscode tasks.json and launch.json
