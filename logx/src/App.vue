@@ -93,13 +93,16 @@
                         <!-- ======= SEARCHES ================================================= -->
                         <v-tabs show-arrows dark slider-color="yellow" v-model="active">
                             <!-- <v-tabs-slider color="yellow"></v-tabs-slider> -->
-                            <v-tab v-for="(s,index) in searchs" ripple v-bind:key="index">
-                                <v-btn class="ml-0 pl-0" fab flat small v-on:click="removeSearch(s)">
-                                    <v-icon dark color="grey">close</v-icon>
-                                </v-btn>
-                                {{ s[0].value.length>13 ? s[0].value.substring(0, 10) + "...":s[0].value }}
-
-                            </v-tab>
+                            <v-tooltip top debounce=1000 v-for="(s,index) in searchs" ripple v-bind:key="index">
+                                <template v-slot:activator="{ on } ">
+                                    <v-tab v-on="on">
+                                        <v-btn class="ml-0 pl-0" fab flat small v-on:click="removeSearch(s)">
+                                            <v-icon dark color="grey">close</v-icon>
+                                        </v-btn>{{ getFindTabText(s,true)}}
+                                    </v-tab>
+                                </template>
+                                <span>{{ getFindTabText(s,false)}}</span>
+                            </v-tooltip>
                             <v-btn v-if="searchs.length>1" @click="clearSearches" flat icon color="error">
                                 <v-icon small>delete_outline</v-icon>
                             </v-btn>
@@ -210,34 +213,28 @@
                 <div style="flex: 1 1 auto;"></div>
             </v-card>
         </v-dialog>
-
+        <!-- ======= FIND MULTI DIALOG ================================================= -->
         <v-dialog v-model="searchDialog" persistent max-width="500px">
             <v-card>
-                <v-card-title>
+                <v-card-title class="pb-0">
                     <span class="headline">Find multiple</span>
                 </v-card-title>
-                <v-card-text>
+                <v-card-text class="pa-0">
                     <v-container grid-list-md>
-                        <v-layout wrap>
-                            <v-list two-line>
-                                <template v-for="(f,index) in findMultiSearchTerms">
-                                    <v-flex xs12 :key="index">
-                                        <v-text-field v-model.lazy="f.value" solo-inverted class="mx-3" flat single-line append-icon="search" color="white" @keyup.enter="findMulti()" hide-details></v-text-field>
-                                    </v-flex>
-                                </template>
-                            </v-list>
+                        <v-layout class="mb-1" wrap v-for="(f,index) in findMultiSearchTerms" :key="index">
+                            <v-text-field :focus="index==0" :autofocus="index==0" :placeholder="`Find Text ${index+1}`" v-model="f.value" solo-inverted color="grey" flat single-line @keyup.enter="findMulti()" hide-details></v-text-field>
                         </v-layout>
                     </v-container>
                 </v-card-text>
-                <v-card-actions>
+                <v-card-actions class="pt-0">
+                    <v-btn color="grey darken-1" flat @click.native="searchDialog = false">Cancel</v-btn>
                     <v-spacer></v-spacer>
-                    <v-btn color="blue darken-1" flat @click.native="searchDialog = false">Close</v-btn>
                     <v-btn color="blue darken-1" flat @click.native="findMulti()">Find all</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
-
-        <v-snackbar v-model="snackbarVis" color="success" :timeout="2500" >
+        <!-- ======= TOAST ================================================= -->
+        <v-snackbar v-model="snackbarVis" color="deep-orange darken-1" :timeout="2500">
             {{ snackbarText }}
             <v-btn dark flat @click="snackbarVis = false">
                 Close
@@ -430,7 +427,7 @@ export default {
             deep: true
         }
     },
-    data() {
+    data: function () {
         return {
             findMultiSearchTerms: [{
                     value: ""
@@ -451,8 +448,8 @@ export default {
                     value: ""
                 }
             ],
-            snackbarVis : false,
-            snackbarText : "",
+            snackbarVis: false,
+            snackbarText: "",
             searchDialog: false,
             showFiltered: false,
             position: {
@@ -601,21 +598,46 @@ export default {
         //console.log("ready");
     },
     methods: {
-        showMessage: function(text){
+        getFindTabText: function (texts,forTab) {
+            if (!texts) {
+                return "";
+            }
+            if(forTab){
+                let str = texts[0].value;
+                if (texts.length > 1) {
+                    //console.log(texts.filter(t=>t.value && t.value.trim().length>0))
+                    str = texts.filter(t => t.value && t.value.trim().length > 0).map(x => `${x.value}`).join(',');
+                }
+                return str.length > 13 ? str.substring(0, 10) + "..." : str
+            }
+            else
+            {
+                return texts.filter(t => t.value && t.value.trim().length > 0).map(x => `${x.value}`).join(',');
+            }
+            //console.log('cccccc',str);
+            
+        },
+        showMessage: function (text) {
             this.snackbarText = text.toLowerCase();
             this.snackbarVis = true
         },
         findMulti: function () {
             var searchTerms = [];
             for (var s of this.findMultiSearchTerms.slice()) {
-                if (!s.value || s.value.length <= 0) {
+                if (!s.value || s.value.trim().length <= 0) {
                     continue;
                 }
                 searchTerms.push({
                     value: s.value
                 });
             }
+            if (searchTerms.length == 0) {
+                this.showMessage("no searches entered")
+                return;
+            }
             this.searchDialog = false;
+            this.findMultiSearchTerms.forEach(s => s.value = "");
+
             this.searchs.push(searchTerms);
             this.active = (this.searchs.length - 1).toString();
             //console.log("active: " + this.active);
@@ -651,7 +673,7 @@ export default {
         },
         AddToHighlights: function (text) {
             let model = this;
-            
+
             let lowertext = text.toLowerCase();
             let exists = model.highlights.findIndex(s => s.value.toLowerCase() === lowertext.toLowerCase());
             if (exists >= 0) {
