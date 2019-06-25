@@ -245,134 +245,147 @@
 </template>
 
 <script>
-import appStorage from "./components/appStorage";
-import JQuery from "jquery";
-let $ = JQuery;
-import {
-    ipcRenderer
-} from "electron";
+import appStorage from './components/appStorage'
+import JQuery from 'jquery'
+let $ = JQuery
+import { ipcRenderer } from 'electron'
 
 //console.log($);
 function refreshView(filesPaths) {
-    if (filesPaths == undefined || filesPaths.length <= 0) {
-        return;
-    }
-    var params = {
-        files: filesPaths
-    };
-    filesPaths.forEach((f) => {
-        console.log("File: ", f);
-    })
+  if (filesPaths == undefined || filesPaths.length <= 0) {
+    return
+  }
+  var params = {
+    files: filesPaths
+  }
+  filesPaths.forEach(f => {
+    console.log('File: ', f)
+  })
 
-    var res = ipcRenderer.send("load-files", params);
+  var res = ipcRenderer.send('load-files', params)
 }
 //console.error("-------------------------------------------");
-var filesPaths = appStorage.loadLastFileList();
-refreshView(filesPaths);
+var filesPaths = appStorage.loadLastFileList()
+refreshView(filesPaths)
 
 function random_rgba() {
-    return 'rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')';
+  return (
+    'rgb(' +
+    Math.floor(Math.random() * 256) +
+    ',' +
+    Math.floor(Math.random() * 256) +
+    ',' +
+    Math.floor(Math.random() * 256) +
+    ')'
+  )
 }
-let calls = 1;
-let arr = [10, 20, 50, 100, 155];
+let calls = 1
+let arr = [10, 20, 50, 100, 155]
 
 function random_rgba2(id) {
-    let cell = id % 4;
-    return 'rgb(' + Math.min(255, (id)) + ',' + Math.min(255, (id * id)) + ',' + Math.min(255, (arr[cell])) + ')';
+  let cell = id % 4
+  return (
+    'rgb(' +
+    Math.min(255, id) +
+    ',' +
+    Math.min(255, id * id) +
+    ',' +
+    Math.min(255, arr[cell]) +
+    ')'
+  )
 }
 
 function jqueryInit() {
-    var startPoint = 0;
-    var orgHeight = 0;
+  var startPoint = 0
+  var orgHeight = 0
 
-    function onDrop(e) {
-        filesPaths = [];
-        e.preventDefault();
-        e.stopPropagation();
-        var dt =
-            e.dataTransfer || (e.originalEvent && e.originalEvent.dataTransfer);
-        var files = e.target.files || (dt && dt.files);
-        //console.error(e);
-        for (var i in files) {
-            var p = e.dataTransfer.files[i].path;
-            if (p != undefined) {
-                filesPaths.push(p);
-            }
-        }
-        appStorage.saveFileListForWindow(filesPaths);
-        //windowLocalStorage["myFiles"] = filesPaths;
-        //saveLocalStorage();
-        refreshView(filesPaths);
-        //loadFileContent(filesPaths);
+  function onDrop(e) {
+    filesPaths = []
+    e.preventDefault()
+    e.stopPropagation()
+    var dt = e.dataTransfer || (e.originalEvent && e.originalEvent.dataTransfer)
+    var files = e.target.files || (dt && dt.files)
+    //console.error(e);
+    for (var i in files) {
+      var p = e.dataTransfer.files[i].path
+      if (p != undefined) {
+        filesPaths.push(p)
+      }
     }
+    appStorage.saveFileListForWindow(filesPaths)
+    //windowLocalStorage["myFiles"] = filesPaths;
+    //saveLocalStorage();
+    refreshView(filesPaths)
+    //loadFileContent(filesPaths);
+  }
 
-    function loadFileContent(filesPaths) {
-        for (var f of filesPaths) {
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                // get file content
-                var text = e.target.result;
-                //console.log("start");
-                document.getElementById("area").innerHTML = text;
-                //console.log("end");
-            };
-            reader.readAsText(f);
-        }
+  function loadFileContent(filesPaths) {
+    for (var f of filesPaths) {
+      var reader = new FileReader()
+      reader.onload = function(e) {
+        // get file content
+        var text = e.target.result
+        //console.log("start");
+        document.getElementById('area').innerHTML = text
+        //console.log("end");
+      }
+      reader.readAsText(f)
     }
-    //console.log("!!!!!!!!!!!!!!!!! ready for drop");
-    //  document.getElementById('main-container').addEventListener('drop', function(e) {
-    //    console.log("drop!");
-    //    onDrop(e)
-    // });
-    $("html").on("dragover", function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        //$(this).addClass('dragging');
-    });
-    $("html").on("dragleave", function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        //$(this).removeClass('dragging');
-    });
-    // $("html").on("drop", function(event) {
-    //     event.preventDefault();
-    //     event.stopPropagation();
-    //     onDrop(event)
-    // });
-    document.addEventListener("drop", function (e) {
-        //console.log("drop!");
-        onDrop(e);
-    });
+  }
+  //console.log("!!!!!!!!!!!!!!!!! ready for drop");
+  //  document.getElementById('main-container').addEventListener('drop', function(e) {
+  //    console.log("drop!");
+  //    onDrop(e)
+  // });
+  $('html').on('dragover', function(event) {
+    event.preventDefault()
+    event.stopPropagation()
+    //$(this).addClass('dragging');
+  })
+  $('html').on('dragleave', function(event) {
+    event.preventDefault()
+    event.stopPropagation()
+    //$(this).removeClass('dragging');
+  })
+  // $("html").on("drop", function(event) {
+  //     event.preventDefault();
+  //     event.stopPropagation();
+  //     onDrop(event)
+  // });
+  document.addEventListener('drop', function(e) {
+    //console.log("drop!");
+    onDrop(e)
+  })
 
-    function mousemove(e) {
-        //console.log(".");
-        var res = orgHeight + (startPoint - e.pageY);
-        $("#theFooter").height(res);
-        if (e.stopPropagation) e.stopPropagation();
-        if (e.preventDefault) e.preventDefault();
-        e.cancelBubble = true;
-        e.returnValue = false;
-        //$("#footer-container").height(res);
-    }
+  function mousemove(e) {
+    //console.log(".");
+    var res = orgHeight + (startPoint - e.pageY)
+    $('#theFooter').height(res)
+    if (e.stopPropagation) e.stopPropagation()
+    if (e.preventDefault) e.preventDefault()
+    e.cancelBubble = true
+    e.returnValue = false
+    //$("#footer-container").height(res);
+  }
 
-    function mouseup(e) {
-        //console.log("mouseup");
-        var res = orgHeight + (startPoint - e.pageY);
-        $("#theFooter").height(res);
-        $("body,html").off("mousemove", mousemove);
-        $("body,html,#resizer").off("mouseup", mouseup);
-    }
+  function mouseup(e) {
+    //console.log("mouseup");
+    var res = orgHeight + (startPoint - e.pageY)
+    $('#theFooter').height(res)
+    $('body,html').off('mousemove', mousemove)
+    $('body,html,#resizer').off('mouseup', mouseup)
+  }
 
-    function mousedown(e) {
-        //console.log("mousedown!!!!!!!!!!!!!");
-        $("body,html,#resizer").mouseup(mouseup);
-        startPoint = e.pageY;
-        orgHeight = $("#theFooter").height();
-        //$("#resizer").off("mousedown", mousedown);
-        $("body,html").mousemove(mousemove);
-    }
-    $("#resizer").mousedown(mousedown);
-    //$("#resizer").height(900);
+  function mousedown(e) {
+    //console.log("mousedown!!!!!!!!!!!!!");
+    $('body,html,#resizer').mouseup(mouseup)
+    startPoint = e.pageY
+    orgHeight = $('#theFooter').height()
+    //$("#resizer").off("mousedown", mousedown);
+    $('body,html').mousemove(mousemove)
+  }
+  $('#resizer').mousedown(mousedown)
+  //$("#resizer").height(900);
 }
 // window.onload = function() {
 // if (window.jQuery) {
@@ -383,462 +396,475 @@ function jqueryInit() {
 //     alert("Doesn't Work");
 // }
 //}
-import {
-    EventBus
-} from "./components/event-bus";
-import FastTextView from "./components/FastTextView";
+import { EventBus } from './components/event-bus'
+import FastTextView from './components/FastTextView'
 export default {
-    name: "logxmain-page",
-    components: {
-        FastTextView
+  name: 'logxmain-page',
+  components: {
+    FastTextView
+  },
+  computed: {
+    canAddColor() {
+      return (
+        this.highlights == null ||
+        this.highlights.length == 0 ||
+        this.highlights[this.highlights.length - 1].value.trim().length > 0
+      )
+    }
+  },
+  watch: {
+    highlights: {
+      handler: function(val) {
+        //console.log("saving highlights");
+        //console.error(val);
+        let model = this
+        appStorage.saveHighlights(val)
+      },
+      deep: true
     },
-    computed: {
-        canAddColor() {
-
-            return this.highlights == null || this.highlights.length == 0 || this.highlights[this.highlights.length - 1].value.trim().length > 0;
+    filters: {
+      handler: function(val) {
+        //console.log("saving filters");
+        //console.error(val);
+        let model = this
+        appStorage.saveFilters(val)
+      },
+      deep: true
+    },
+    exfilters: {
+      handler: function(val) {
+        //console.log("saving ex-filters");
+        //console.error(val);
+        let model = this
+        appStorage.saveExFilters(val)
+      },
+      deep: true
+    }
+  },
+  data: function() {
+    return {
+      findMultiSearchTerms: [
+        {
+          value: ''
+        },
+        {
+          value: ''
+        },
+        {
+          value: ''
+        },
+        {
+          value: ''
+        },
+        {
+          value: ''
+        },
+        {
+          value: ''
         }
-    },
-    watch: {
-        highlights: {
-            handler: function (val) {
-                //console.log("saving highlights");
-                //console.error(val);
-                let model = this;
-                appStorage.saveHighlights(val);
-            },
-            deep: true
+      ],
+      snackbarVis: false,
+      snackbarText: '',
+      searchDialog: false,
+      showFiltered: false,
+      position: {
+        value: 0,
+        source: 'default',
+        showFiltered: false
+      },
+      stylesCache: {},
+      active: 0,
+      drawerRight: false,
+      right: null,
+      left: null,
+      notifications: true,
+      sound: true,
+      widgets: true,
+      useFilters: true,
+      filters: [],
+      useExFilters: true,
+      exfilters: [],
+      useColors: true,
+      dialog: false,
+      dialog3: false,
+      logsHeight: 10,
+      highlights: [],
+      logLines: [],
+      originalH: 35,
+      startPoint: -1,
+      theView: undefined,
+      drawer: true,
+      panel: [true, true, false],
+      items: [
+        {
+          action: '15 min',
+          headline: 'Brunch this weekend?',
+          title: 'Ali Connors',
+          subtitle: '1'
         },
-        filters: {
-            handler: function (val) {
-                //console.log("saving filters");
-                //console.error(val);
-                let model = this;
-                appStorage.saveFilters(val);
-            },
-            deep: true
+        {
+          action: '2 hr',
+          headline: 'Summer BBQ',
+          title: 'me, Scrott, Jennifer',
+          subtitle: '2'
         },
-        exfilters: {
-            handler: function (val) {
-                //console.log("saving ex-filters");
-                //console.error(val);
-                let model = this;
-                appStorage.saveExFilters(val);
-            },
-            deep: true
+        {
+          action: '6 hr',
+          headline: 'Oui oui',
+          title: 'Sandra Adams',
+          subtitle: '3'
+        },
+        {
+          action: '12 hr',
+          headline: 'Birthday gift',
+          title: 'Trevor Hansen',
+          subtitle: '4'
+        },
+        {
+          action: '18hr',
+          headline: 'Recipe to try',
+          title: 'Britta Holt',
+          subtitle: 'asdasdasd'
         }
-    },
-    data: function () {
-        return {
-            findMultiSearchTerms: [{
-                    value: ""
-                },
-                {
-                    value: ""
-                },
-                {
-                    value: ""
-                },
-                {
-                    value: ""
-                },
-                {
-                    value: ""
-                },
-                {
-                    value: ""
-                }
-            ],
-            snackbarVis: false,
-            snackbarText: "",
-            searchDialog: false,
-            showFiltered: false,
-            position: {
-                value: 0,
-                source: "default",
-                showFiltered: false
-            },
-            stylesCache: {},
-            active: 0,
-            drawerRight: false,
-            right: null,
-            left: null,
-            notifications: true,
-            sound: true,
-            widgets: true,
-            useFilters: true,
-            filters: [],
-            useExFilters: true,
-            exfilters: [],
-            useColors: true,
-            dialog: false,
-            dialog3: false,
-            logsHeight: 10,
-            highlights: [],
-            logLines: [],
-            originalH: 35,
-            startPoint: -1,
-            theView: undefined,
-            drawer: true,
-            panel: [true, true, false],
-            items: [{
-                    action: "15 min",
-                    headline: "Brunch this weekend?",
-                    title: "Ali Connors",
-                    subtitle: "1"
-                },
-                {
-                    action: "2 hr",
-                    headline: "Summer BBQ",
-                    title: "me, Scrott, Jennifer",
-                    subtitle: "2"
-                },
-                {
-                    action: "6 hr",
-                    headline: "Oui oui",
-                    title: "Sandra Adams",
-                    subtitle: "3"
-                },
-                {
-                    action: "12 hr",
-                    headline: "Birthday gift",
-                    title: "Trevor Hansen",
-                    subtitle: "4"
-                },
-                {
-                    action: "18hr",
-                    headline: "Recipe to try",
-                    title: "Britta Holt",
-                    subtitle: "asdasdasd"
-                }
-            ],
-            searchReasultsContent: ["3", "5"],
-            searchterm: "",
-            searchs: []
-        };
-    },
-    beforeCreate() {
-        //console.log('Nothing gets called before me!')
-    },
-    created() {
-        //model.$forceUpdate();
-        let model = this;
-        let highlights = appStorage.loadLastHighlightsList();
-        if (highlights) {
-            highlights.forEach(function (h) {
-                model.AddToHighlights(h.value);
-            })
+      ],
+      searchReasultsContent: ['3', '5'],
+      searchterm: '',
+      searchs: []
+    }
+  },
+  beforeCreate() {
+    //console.log('Nothing gets called before me!')
+  },
+  created() {
+    //model.$forceUpdate();
+    let model = this
+    let highlights = appStorage.loadLastHighlightsList()
+    if (highlights) {
+      highlights.forEach(function(h) {
+        model.AddToHighlights(h.value)
+      })
+    }
+    model.filters = appStorage.loadLastFiltersList()
+    model.exfilters = appStorage.loadLastExFiltersList()
+    //console.log('Component Created');
+    ipcRenderer.on('load-files-reply', (event, arg) => {
+      //console.log("done");
+      let lines = arg.split('\n')
+      //document.getElementById('area').innerHTML = lines[0];
+      model.logLines = lines
+      //console.log(model);
+      model.onResize(window)
+    })
+    ipcRenderer.on('paste-data-reply', (event, arg) => {
+      //console.log("done");
+      appStorage.saveFileListForWindow(null)
+
+      let lines = arg.split('\n')
+      //document.getElementById('area').innerHTML = lines[0];
+      model.logLines = lines
+
+      //console.log(model);
+      model.onResize(window)
+    })
+    EventBus.$on('textSelection', text => {
+      //console.log("textSelection " + text);
+      model.AddToHighlights(text)
+      //model.filters = [{value:"start"}];
+      // console.log("push!!!!!!!!");
+      // console.error(model.filters[1]);
+    })
+    EventBus.$on('showingFiltered', showingFiltered => {
+      //console.log("showingFiltered" + showingFiltered);
+      model.showFiltered = showingFiltered
+    })
+    EventBus.$on('jumpto', pos => {
+      //console.log("jumpto: " + pos.value);
+      model.position = pos
+    })
+    let prevKey = -1
+    // document.addEventListener("keydown", function (e) {
+    //     if (e.which === 116) {
+    //       //location.reload();
+    //        console.error("!!!!!!!!!!!!!");
+    //     }
+    //  });
+    $(window).keydown(function(event) {
+      //console.log("event.keyCode: " + event.keyCode);
+      if ((event.ctrlKey || prevKey == 91) && event.keyCode == 70) {
+        event.preventDefault()
+        prevKey = -1
+        model.searchterm = ''
+        $('#findall').focus()
+        $('#findall').val('')
+      }
+      prevKey = event.keyCode
+    })
+    //  EventBus.$on('newPosition', newPosition => {
+    //   console.log("newPosition: " + newPosition);
+    //   model.newPosition = newPosition;
+    // });
+  },
+  mounted: function() {
+    let model = this
+    model.logLines = []
+    //console.log(model);
+    // for (var i = 0; i <= 200; i++) {
+    //     //console.log(i);
+    //     model.logLines.push("" + i);
+    // }
+    this.$nextTick(function() {
+      //console.log("register resize");
+      window.addEventListener('resize', function(e) {
+        e.preventDefault()
+        model.onResize(window)
+      })
+      jqueryInit()
+      model.onResize(window)
+      model.loadSavedPreset()
+    })
+    //console.log("ready");
+  },
+  methods: {
+    getFindTabText: function(texts, forTab) {
+      if (!texts) {
+        return ''
+      }
+      if (forTab) {
+        let str = texts[0].value
+        if (texts.length > 1) {
+          //console.log(texts.filter(t=>t.value && t.value.trim().length>0))
+          str = texts
+            .filter(t => t.value && t.value.trim().length > 0)
+            .map(x => `${x.value}`)
+            .join(',')
         }
-        model.filters = appStorage.loadLastFiltersList();
-        model.exfilters = appStorage.loadLastExFiltersList();
-        //console.log('Component Created');
-        ipcRenderer.on("load-files-reply", (event, arg) => {
-            //console.log("done");
-            let lines = arg.split("\n");
-            //document.getElementById('area').innerHTML = lines[0];
-            model.logLines = lines;
-            //console.log(model);
-            model.onResize(window);
-        });
-        ipcRenderer.on("paste-data-reply", (event, arg) => {
-            //console.log("done");
-            appStorage.saveFileListForWindow(null);
-
-            let lines = arg.split("\n");
-            //document.getElementById('area').innerHTML = lines[0];
-            model.logLines = lines;
-
-            //console.log(model);
-            model.onResize(window);
-        });
-        EventBus.$on("textSelection", text => {
-            //console.log("textSelection " + text);
-            model.AddToHighlights(text);
-            //model.filters = [{value:"start"}];
-            // console.log("push!!!!!!!!");
-            // console.error(model.filters[1]);
-        });
-        EventBus.$on("showingFiltered", showingFiltered => {
-            //console.log("showingFiltered" + showingFiltered);
-            model.showFiltered = showingFiltered;
-        });
-        EventBus.$on("jumpto", pos => {
-            //console.log("jumpto: " + pos.value);
-            model.position = pos;
-        });
-        let prevKey = -1;
-        // document.addEventListener("keydown", function (e) {
-        //     if (e.which === 116) {
-        //       //location.reload();
-        //        console.error("!!!!!!!!!!!!!");
-        //     }
-        //  });
-        $(window).keydown(function (event) {
-            //console.log("event.keyCode: " + event.keyCode);
-            if ((event.ctrlKey || prevKey == 91) && event.keyCode == 70) {
-                event.preventDefault();
-                prevKey = -1;
-                model.searchterm = "";
-                $("#findall").focus();
-                $("#findall").val("");
-            }
-            prevKey = event.keyCode;
-        });
-        //  EventBus.$on('newPosition', newPosition => {
-        //   console.log("newPosition: " + newPosition);
-        //   model.newPosition = newPosition;
-        // });
+        return str.length > 13 ? str.substring(0, 10) + '...' : str
+      } else {
+        return texts
+          .filter(t => t.value && t.value.trim().length > 0)
+          .map(x => `${x.value}`)
+          .join(',')
+      }
+      //console.log('cccccc',str);
     },
-    mounted: function () {
-        let model = this;
-        model.logLines = [];
-        //console.log(model);
-        // for (var i = 0; i <= 200; i++) {
-        //     //console.log(i);
-        //     model.logLines.push("" + i);
-        // }
-        this.$nextTick(function () {
-            //console.log("register resize");
-            window.addEventListener("resize", function (e) {
-                e.preventDefault();
-                model.onResize(window);
-            });
-            jqueryInit();
-            model.onResize(window);
-            model.loadSavedPreset();
-        });
-        //console.log("ready");
+    showMessage: function(text) {
+      this.snackbarText = text.toLowerCase()
+      this.snackbarVis = true
     },
-    methods: {
-        getFindTabText: function (texts,forTab) {
-            if (!texts) {
-                return "";
-            }
-            if(forTab){
-                let str = texts[0].value;
-                if (texts.length > 1) {
-                    //console.log(texts.filter(t=>t.value && t.value.trim().length>0))
-                    str = texts.filter(t => t.value && t.value.trim().length > 0).map(x => `${x.value}`).join(',');
-                }
-                return str.length > 13 ? str.substring(0, 10) + "..." : str
-            }
-            else
-            {
-                return texts.filter(t => t.value && t.value.trim().length > 0).map(x => `${x.value}`).join(',');
-            }
-            //console.log('cccccc',str);
-            
-        },
-        showMessage: function (text) {
-            this.snackbarText = text.toLowerCase();
-            this.snackbarVis = true
-        },
-        findMulti: function () {
-            var searchTerms = [];
-            for (var s of this.findMultiSearchTerms.slice()) {
-                if (!s.value || s.value.trim().length <= 0) {
-                    continue;
-                }
-                searchTerms.push({
-                    value: s.value
-                });
-            }
-            if (searchTerms.length == 0) {
-                this.showMessage("no searches entered")
-                return;
-            }
-            this.searchDialog = false;
-            this.findMultiSearchTerms.forEach(s => s.value = "");
+    findMulti: function() {
+      var searchTerms = []
+      for (var s of this.findMultiSearchTerms.slice()) {
+        if (!s.value || s.value.trim().length <= 0) {
+          continue
+        }
+        searchTerms.push({
+          value: s.value
+        })
+      }
+      if (searchTerms.length == 0) {
+        this.showMessage('no searches entered')
+        return
+      }
+      this.searchDialog = false
+      this.findMultiSearchTerms.forEach(s => (s.value = ''))
 
-            this.searchs.push(searchTerms);
-            this.active = (this.searchs.length - 1).toString();
-            //console.log("active: " + this.active);
-            if ($("#theFooter").height() < 300) {
-                $("#theFooter").height(300);
-            }
-        },
-        jump: function (p) {
-            this.position = {
-                value: p,
-                source: "default",
-                showFiltered: false
-            };
-        },
-        filterFromColor: function (index) {
-            let text = this.highlights[index].value;
-            if (text.trim().length == 0) {
-                return;
-            }
-            let lowertext = text.toLowerCase();
-            let exists = this.filters.findIndex(s => s.value.toLowerCase() === lowertext.toLowerCase());
-            if (exists >= 0) {
-                this.showMessage('Filter is Already Defined');
-                return;
-            }
+      this.searchs.push(searchTerms)
+      this.active = (this.searchs.length - 1).toString()
+      //console.log("active: " + this.active);
+      if ($('#theFooter').height() < 300) {
+        $('#theFooter').height(300)
+      }
+    },
+    jump: function(p) {
+      this.position = {
+        value: p,
+        source: 'default',
+        showFiltered: false
+      }
+    },
+    filterFromColor: function(index) {
+      let text = this.highlights[index].value
+      if (text.trim().length == 0) {
+        return
+      }
+      let lowertext = text.toLowerCase()
+      let exists = this.filters.findIndex(
+        s => s.value.toLowerCase() === lowertext.toLowerCase()
+      )
+      if (exists >= 0) {
+        this.showMessage('Filter is Already Defined')
+        return
+      }
 
-            this.filters.unshift({
-                value: this.highlights[index].value
-            });
-        },
-        colorFromFilter: function (index) {
-            this.AddToHighlights(this.filters[index].value)
-        },
-        AddToHighlights: function (text) {
-            if(!text){
-                return;
-            }
-            let model = this;
+      this.filters.unshift({
+        value: this.highlights[index].value
+      })
+    },
+    colorFromFilter: function(index) {
+      this.AddToHighlights(this.filters[index].value)
+    },
+    AddToHighlights: function(text) {
+      console.log(text)
+      if (!text) {
+        return
+      }
+      let model = this
 
-            let lowertext = text.toLowerCase();
-            let exists = model.highlights.findIndex(s => s.value.toLowerCase() === lowertext.toLowerCase());
-            if (exists >= 0) {
-                this.showMessage('Highlight is Already Defined');
-                return;
-            }
+      let lowertext = text.toLowerCase()
+      let exists = model.highlights.findIndex(
+        s => s.value.toLowerCase() === lowertext.toLowerCase()
+      )
+      if (exists >= 0) {
+        this.showMessage('Highlight is Already Defined')
+        return
+      }
 
-            if (!this.canAddColor) {
-                this.removeColor(model.highlights.length - 1)
-            }
-            model.addStyle(model.highlights.length + 1)
-            model.highlights.push({
-                value: "" + text
-            });
-            //console.log(this.panel)
-            this.panel[1] = true;
-            //console.log(this.panel)           
-
-        },
-        getColor: function (index) {
-            return stylesCache[index]
-        },
-        clearSearches: function (s) {
-            this.searchs = []
-            $("#theFooter").height(35);
-        },
-        removeSearch: function (s) {
-            let index = this.searchs.indexOf(s);
-            //console.log("index: " + index + " len: " + this.searchs.length);
-            var wasLast = false;
-            if (index == this.searchs.length - 1) {
-                wasLast = true;
-            }
-            //console.log("index: " + index);
-            this.searchs.splice(index, 1);
-            setTimeout(() => {
-                if (wasLast) {
-                    this.active = (this.searchs.length - 1).toString();
-                }
-                if (this.searchs.length <= 0) {
-                    $("#theFooter").height(35);
-                }
-            }, 10);
-        },
-        finall: function () {
-            let searchterm = this.searchterm.toLowerCase().trim();
-            if (searchterm.length == 0) {
-                return;
-            }
-            this.searchterm = "";
-            let exists = this.searchs.findIndex(s => s.length == 1 && s[0].value === searchterm);
-            if (exists >= 0) {
-                this.active = exists;
-                this.showMessage('Search is Already Defined');
-                return;
-            }
-            this.searchs.push([{
-                value: "" + searchterm
-            }]);
-            this.active = (this.searchs.length - 1);
-            if ($("#theFooter").height() < 300) {
-                $("#theFooter").height(300);
-            }
-        },
-        addExFilter: function (event) {
-            this.exfilters.unshift({
-                value: ""
-            });
-        },
-        removeExFilter: function (index) {
-            if (index === -1) {
-                this.exfilters = [];
-                return;
-            }
-            this.exfilters.splice(index, 1);
-        },
-        addFilter: function (event) {
-            this.filters.unshift({
-                value: ""
-            });
-        },
-        removeFilter: function (index) {
-            //console.log("removeFilter: ", index);
-            if (index === -1) {
-                this.filters = [];
-                return;
-            }
-            this.filters.splice(index, 1);
-        },
-        addColor: function (event) {
-            this.AddToHighlights("");
-        },
-        removeColor: function (index) {
-            if (index === -1) {
-                this.highlights = [];
-                return;
-            }
-            this.highlights.splice(index, 1);
-        },
-        loadSavedPreset: function () {
-            //console.log("loadFilters");
-            //this.filters = [];
-        },
-        onResize: function (www) {
-            //console.log('onResize!!!!!!!!!!!!!!!!!!!!!!!!!!');
-            //console.log(www);
-            document
-                .getElementById("main-container")
-                .setAttribute("style", "max-width:" + www.innerWidth + "px");
-            $("#main-content").css("padding-bottom", "30px");
-            $("#main-content").css("padding-top", "30px");
-        },
-        up: function (e) {
-            //console.log("up");
-            this.startPoint = -1;
-        },
-        down: function (e) {
-            //console.log("start point - down: " + e.pageY);
-            this.startPoint = e.pageY;
-            this.originalH = this.h;
-        },
-        move: function (e) {
-            if (this.startPoint <= 0) {
-                return;
-            }
-            //console.log(".")
-            //console.log(this.theView)
-            let y = this.startPoint - e.pageY;
-            let x = this.originalH + this.startPoint - e.pageY;
-            //console.log(x)
-            this.theView.style.height = x + "px";
-            //this.h = x;
-            //console.log(e.currentTarget)
-            //e.currentTarget.height = x;
-            if (e.stopPropagation) e.stopPropagation();
-            if (e.preventDefault) e.preventDefault();
-            e.cancelBubble = true;
-            e.returnValue = false;
-        },
-        addStyle: function (id) {
-            if (this.stylesCache[id]) {
-                //console.log('skip');
-                return;
-            }
-            let backColor = random_rgba(id);
-            this.stylesCache[id] = backColor;
-            //let color = random_rgba();
-            var style = document.createElement('style');
-            style.type = 'text/css';
-            style.innerHTML =
-                `.highlight${id} {
+      if (!this.canAddColor) {
+        this.removeColor(model.highlights.length - 1)
+      }
+      model.addStyle(model.highlights.length + 1)
+      model.highlights.push({
+        value: '' + text
+      })
+      //console.log(this.panel)
+      this.panel[1] = true
+      //console.log(this.panel)
+    },
+    getColor: function(index) {
+      return stylesCache[index]
+    },
+    clearSearches: function(s) {
+      this.searchs = []
+      $('#theFooter').height(35)
+    },
+    removeSearch: function(s) {
+      let index = this.searchs.indexOf(s)
+      //console.log("index: " + index + " len: " + this.searchs.length);
+      var wasLast = false
+      if (index == this.searchs.length - 1) {
+        wasLast = true
+      }
+      //console.log("index: " + index);
+      this.searchs.splice(index, 1)
+      setTimeout(() => {
+        if (wasLast) {
+          this.active = (this.searchs.length - 1).toString()
+        }
+        if (this.searchs.length <= 0) {
+          $('#theFooter').height(35)
+        }
+      }, 10)
+    },
+    finall: function() {
+      let searchterm = this.searchterm.toLowerCase().trim()
+      if (searchterm.length == 0) {
+        return
+      }
+      this.searchterm = ''
+      let exists = this.searchs.findIndex(
+        s => s.length == 1 && s[0].value === searchterm
+      )
+      if (exists >= 0) {
+        this.active = exists
+        this.showMessage('Search is Already Defined')
+        return
+      }
+      this.searchs.push([
+        {
+          value: '' + searchterm
+        }
+      ])
+      this.active = this.searchs.length - 1
+      if ($('#theFooter').height() < 300) {
+        $('#theFooter').height(300)
+      }
+    },
+    addExFilter: function(event) {
+      this.exfilters.unshift({
+        value: ''
+      })
+    },
+    removeExFilter: function(index) {
+      if (index === -1) {
+        this.exfilters = []
+        return
+      }
+      this.exfilters.splice(index, 1)
+    },
+    addFilter: function(event) {
+      this.filters.unshift({
+        value: ''
+      })
+    },
+    removeFilter: function(index) {
+      //console.log("removeFilter: ", index);
+      if (index === -1) {
+        this.filters = []
+        return
+      }
+      this.filters.splice(index, 1)
+    },
+    addColor: function(event) {
+      this.AddToHighlights('')
+    },
+    removeColor: function(index) {
+      if (index === -1) {
+        this.highlights = []
+        return
+      }
+      this.highlights.splice(index, 1)
+    },
+    loadSavedPreset: function() {
+      //console.log("loadFilters");
+      //this.filters = [];
+    },
+    onResize: function(www) {
+      //console.log('onResize!!!!!!!!!!!!!!!!!!!!!!!!!!');
+      //console.log(www);
+      document
+        .getElementById('main-container')
+        .setAttribute('style', 'max-width:' + www.innerWidth + 'px')
+      $('#main-content').css('padding-bottom', '30px')
+      $('#main-content').css('padding-top', '30px')
+    },
+    up: function(e) {
+      //console.log("up");
+      this.startPoint = -1
+    },
+    down: function(e) {
+      //console.log("start point - down: " + e.pageY);
+      this.startPoint = e.pageY
+      this.originalH = this.h
+    },
+    move: function(e) {
+      if (this.startPoint <= 0) {
+        return
+      }
+      //console.log(".")
+      //console.log(this.theView)
+      let y = this.startPoint - e.pageY
+      let x = this.originalH + this.startPoint - e.pageY
+      //console.log(x)
+      this.theView.style.height = x + 'px'
+      //this.h = x;
+      //console.log(e.currentTarget)
+      //e.currentTarget.height = x;
+      if (e.stopPropagation) e.stopPropagation()
+      if (e.preventDefault) e.preventDefault()
+      e.cancelBubble = true
+      e.returnValue = false
+    },
+    addStyle: function(id) {
+      if (this.stylesCache[id]) {
+        //console.log('skip');
+        return
+      }
+      let backColor = random_rgba(id)
+      this.stylesCache[id] = backColor
+      //let color = random_rgba();
+      var style = document.createElement('style')
+      style.type = 'text/css'
+      style.innerHTML = `.highlight${id} {
           background-color: ${backColor};
           -moz-border-radius: 3px;
           /* FF1+ */
@@ -853,26 +879,38 @@ export default {
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
           /* Opera 10.5+, IE 9.0 */
           color: white;
-        }`;
-            document.getElementsByTagName('head')[0].appendChild(style);
-        }
-    },
-    props: {
-        source: String
+        }`
+      document.getElementsByTagName('head')[0].appendChild(style)
     }
-};
+  },
+  props: {
+    source: String
+  }
+}
 </script>
 
 <style>
 @import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro");
 
 #resizer {
-    background: #343436;
-    border-bottom: 1px solid black;
-    box-shadow: 0 0 1px black;
-    height: 17px;
-    position: relative;
-    z-index: 10;
-    cursor: row-resize;
+  position: relative;
+  z-index: 10;
+  height: 17px;
+  background: #343436;
+  box-shadow: 0 0 1px black;
+  border-bottom: 1px solid black;
+  cursor: row-resize;
+}
+.ui-slider-range-min {
+  background-color: gray;
+}
+#slider-vertical {
+  background-color: #343436 !important;
+}
+.ui-state-default {
+  background-color: gray !important;
+}
+.ui-widget-header {
+  background: #343436 !important;
 }
 </style>

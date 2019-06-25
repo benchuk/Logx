@@ -290,12 +290,14 @@ export default {
 
                 model.factory.setOriginalModel(model.lines);
                 model.factory.setModel([]);
+                model.factory.setModelFiltered([]);
                 let m = model.factory.getModel();
+                let modelFiltered = model.factory.getModelFiltered();
                 var counter = -1;
                 var didPositionInit = !shouldInitIndex;
                 var theFilters = model.filtersInternal ? model.filtersInternal.unique() : [];
                 var theExFilters = model.exfiltersInternal ? model.exfiltersInternal.unique() : [];
-                let USE = model.useFiltersInternal;
+                let USE_FILTER = model.useFiltersInternal;
                 let LINES = model.lines;
                 let LINES_LEN = LINES.length;
                 //for (let line of LINES) {
@@ -326,29 +328,34 @@ export default {
                         }
                     }
 
-                    if (USE) {
+                    if (USE_FILTER) {
                         var addToView = false;
-                        for (var f of theFilters) {
 
+                        for (var f of theFilters) {
                             //827.824999999
                             // if (line.toLowerCase().indexOf(f.value)) {
                             //     addToView = true;
                             // }
-
                             //861.9399999999996
                             if (line.toLowerCase().includes(f.value.toLowerCase())) {
                                 addToView = true;
+                                break;
                             }
-
                             //729.329999999 ms
                             // var patt = new RegExp(f.value);
                             // if (patt.test(line.toLowerCase())) {
                             //     addToView = true;
                             // }
                         }
+
                         if (addToView) //add line only once if any of the filters apply
                         {
                             m.push({
+                                'line': line,
+                                'rowid': counter,
+                                'skip': false
+                            });
+                            modelFiltered.push({
                                 'line': line,
                                 'rowid': counter,
                                 'skip': false
@@ -373,6 +380,11 @@ export default {
                             'rowid': counter,
                             'skip': false
                         }); //do not use filters
+                        modelFiltered.push({
+                            'line': line,
+                            'rowid': counter,
+                            'skip': false
+                        }); //do not use filters
                         if (!didPositionInit) {
                             didPositionInit = true;
                             model.lowerPosition = counter;
@@ -380,8 +392,10 @@ export default {
                         }
                         m.endVisibleIndex = counter;
                     }
-
                 }
+                modelFiltered.startVisibleIndex = 0;
+                modelFiltered.endVisibleIndex = modelFiltered.length - 1;
+
                 model.upperPosition = model.lowerPosition + model.displayrowscount;
                 // if (this.ready) {
                 //     this.refreshView();
@@ -397,10 +411,6 @@ export default {
         jumpToPosition: function (newLowerPosition, newUpperPosition) {
             ////console.log("jumpToPosition-> newLowerPosition: " + newLowerPosition + " newUpperPosition: " + newUpperPosition);
 
-           
-
-            
-            
             let model = this;
             //let max = this.factory.getModel().length - model.displayrowscount;
             ////console.log(this.factory.getModel().length);
@@ -430,7 +440,15 @@ export default {
             //EventBus.$emit('newPosition', newPosition);
 
             var sliderPostion = 0;
-            var len = this.factory.getModel().length
+            var len = 0
+            if(this.showFilteredInternal)
+            {
+                len = this.factory.getModel().length
+            }
+            else
+            {
+                len = this.factory.getModelFiltered().length
+            }
             console.log("this.direction: " + this.direction);
             if(this.direction > 0)
             {
@@ -440,8 +458,18 @@ export default {
             {
                 sliderPostion = model.upperPosition;
             }
+            console.log("len: " + len);
+            console.log("sliderPostion: " + sliderPostion);
             var silderValue = Math.floor( (  (len -  sliderPostion) / len) *100)
             console.log("silderValue: " + silderValue);
+            if(silderValue > 97)
+            {
+                silderValue = 100;
+            }
+            else if(silderValue < 2)
+            {
+                silderValue = 0;
+            }
             jQuery("#slider-vertical").slider("value",  silderValue);
 
             model.refreshView();
@@ -467,15 +495,18 @@ export default {
             //   //console.log("skip refresh: lasStopPosition: " + this.lasStopPosition + " currentPosition: " + this.currentPosition);
             //   return;
             // }
+            let showSkip = this.showFilteredInternal;
             let model = this;
-            let lines = this.factory.getModel();
-            ////console.log(this.displayrowscount);
+            //let lines = this.factory.getModel();
+            let lines = showSkip ? this.factory.getModel() : this.factory.getModelFiltered();
+            console.log("lines count", lines.length);
             let len = lines.length; //- this.displayrowscount;
             ////console.log("len:: " + len);
             ////console.log(this.linesData);
             var backupHtml = model.container.innerHTML;
             model.container.innerHTML = "";
             //var tagetJump = -1;
+            //TBD: this logic is probably a bug
             if (model.isJumping) {
                 //model.isJumping = false;
                 //tagetJump = model.targetJump;
@@ -485,46 +516,54 @@ export default {
                 this.showFilteredInternal = false;
             }
 
-            var c = 0;
+            var POSITION = 0;
             if (this.direction > 0) {
                 ////console.log("FW");
-                c = parseInt(this.lowerPosition);
+                POSITION = parseInt(this.lowerPosition);
                 if (this.lowerPosition + this.displayrowscount > lines.endVisibleIndex && !model.isJumping) {
                     this.lowerPosition = lines.endVisibleIndex - this.displayrowscount;
                     if (this.lowerPosition < lines.startVisibleIndex) {
                         this.lowerPosition = lines.startVisibleIndex;
+                        console.log("override lowerPosition",this.lowerPosition);
                     }
-                    c = this.lowerPosition;
+                    POSITION = this.lowerPosition;
                 }
                 let spaceToEnd = lines.length - this.displayrowscount;
-                c = this.lowerPosition > spaceToEnd ? spaceToEnd : this.lowerPosition;
+                POSITION = this.lowerPosition > spaceToEnd ? spaceToEnd : this.lowerPosition;
             } else {
                 ////console.log("BW");
-                c = parseInt(this.upperPosition);
+                POSITION = parseInt(this.upperPosition);
                 if (this.upperPosition - this.displayrowscount <= lines.startVisibleIndex & !model.isJumping) {
                     this.upperPosition = lines.startVisibleIndex + this.displayrowscount;
                     if (this.upperPosition > lines.endVisibleIndex) {
                         this.upperPosition = lines.endVisibleIndex;
+                        console.log("override upperPosition",this.upperPosition);
                     }
-                    c = this.upperPosition;
+                    POSITION = this.upperPosition;
                 }
-                c = this.upperPosition < this.displayrowscount ? this.displayrowscount : this.upperPosition;
+                POSITION = this.upperPosition < this.displayrowscount ? this.displayrowscount : this.upperPosition;
             }
 
             ////console.log("using c: " + c);
             var took = 0;
             var firstTookIndex = -1;
-            let showSkip = this.showFilteredInternal;
+            
 
-            if (c < 0) {
-                c = 0;
+            if (POSITION < 0) {
+                POSITION = 0;
             }
             var data = "";
-            while (c >= 0 && c < len && took <= this.displayrowscount) {
-                var line = lines[c];
+            while (POSITION >= 0 && POSITION < len && took <= this.displayrowscount) {
+                var line = lines[POSITION];
+                if(line === undefined)
+                {
+                    line =  {skip:true}
+                }
+                
                 if (line == undefined) {
                     ////console.log(c);
                 }
+                //console.log("POSITION", POSITION);
                 if (line.skip) {
                     if (showSkip) {
                         var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='skipline' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
@@ -540,12 +579,12 @@ export default {
 
                         took++;
                         if (firstTookIndex < 0) {
-                            firstTookIndex = c;
+                            firstTookIndex = POSITION;
                         }
                     }
                 } else {
                     if (line === undefined) {
-                        c += this.direction;
+                        POSITION += this.direction;
                         continue;
                         // line = "";
                     }
@@ -561,18 +600,19 @@ export default {
                     }
                     took++;
                     if (firstTookIndex < 0) {
-                        firstTookIndex = c;
+                        firstTookIndex = POSITION;
                     }
                 }
-                c += this.direction;
+
+                POSITION += this.direction;
             }
 
             if (this.direction > 0) {
                 this.lowerPosition = firstTookIndex;
-                this.upperPosition = c;
+                this.upperPosition = POSITION;
             } else {
                 this.upperPosition = firstTookIndex;
-                this.lowerPosition = c;
+                this.lowerPosition = POSITION;
             }
             // if(this.lowerPosition != c)//there is no way more down - nothing to refresh - use last view which had more data
             // {
@@ -585,7 +625,9 @@ export default {
 
             model.container.innerHTML = data;
 
-            // add missing line if took too litle
+            //This happen when at the end of all files/data we need to backup a little to render the right amount of lines
+            //Else while scrolling the data will disappear and user will see nothing.
+            //So: add missing line if took too litle
             //if we are moving fw and cannot get more data then add to the start and move the lower bound more down
             if (took < this.displayrowscount) {
                 var tempHtml = ""; //model.container.innerHTML;
@@ -722,6 +764,14 @@ export default {
                 ////console.log("asdasdasdasdasdasdasdasdasd");
                 that.m = model.slice();
             }
+            that.setModelFiltered = function(model)
+            {
+                that.modelFiltered = model.slice();
+            }
+            that.getModelFiltered = function(model)
+            {
+                return that.modelFiltered;
+            }
             that.setOriginalModel = function (model) {
                 that.origianlModel = model.slice();
             }
@@ -769,8 +819,18 @@ export default {
                             // console.log("adding silder: " +lineNum )
                             // model.jumpToPosition(lineNum, 0);
                             //$( "#amount" ).val( ui.value );
+                            let len = 0;
+                            if(model.showFilteredInternal)
+                            {
+                                len = model.factory.getModel().length
+                            }
+                            else
+                            {
+                                len = model.factory.getModelFiltered().length
+                            }
+                            console.log("using len: " + len)
                             var lineNumPrecentage = parseInt(ui.value)/100;
-                            var lineNum = model.lines.length - Math.floor(model.lines.length*lineNumPrecentage)
+                            var lineNum = len - Math.floor(len*lineNumPrecentage)
                             //console.log("adding silder: " +lineNum )
                             model.jumpToPosition(lineNum, 0);
                             
@@ -807,7 +867,13 @@ export default {
             } else if (event.keyCode == 36) {
                 //Home
                 model.direction = 1;
-                var pos = model.factory.m.startVisibleIndex;
+
+                var pos = 0;
+                // if(!model.showFiltered)
+                // {
+                //     pos = model.factory.m.startVisibleIndex;
+                // }
+                console.log("Home clicked jump to: " + pos);
                 model.jumpToPosition(pos, 0);
             } else if (event.keyCode == 35) {
                 //End
@@ -1118,64 +1184,66 @@ function init(factory) {
 
 <style>
 .fast-text-view-class {
-    max-height: 100%;
-    margin: 0px;
-    width: 100%;
-    height: 100%;
-    white-space: nowrap;
-    background-color: black;
-    color: greenyellow;
-    overflow-x: hidden;
-    overflow-y: hidden;
-    font-size: 14px;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  margin: 0;
+  color: greenyellow;
+  font-size: 14px;
+  white-space: nowrap;
+  background-color: black;
 }
 
 .unselectable {
-    -moz-user-select: -moz-none;
-    -khtml-user-select: none;
-    -webkit-user-select: none;
-    -o-user-select: none;
-    user-select: none;
+          user-select:      none;
+
+   -khtml-user-select:      none;
+  -webkit-user-select:      none;
+     -moz-user-select: -moz-none;
+       -o-user-select:      none;
 }
 
 .rownumber {
-    color: gray;
-    margin-right: 5px;
-    display: inline;
+  display: inline;
+  margin-right: 5px;
+  color: gray;
 }
 
 .rowIndex {
-    color: gray;
-    margin-right: 15px;
-    display: inline-block;
+  display: inline-block;
+  margin-right: 15px;
+  color: gray;
 }
 
 #rowdata {
-    display: inline-block;
-    color: greenyellow;
-    display: inline-block;
+  display: inline-block;
+  display: inline-block;
+  color: greenyellow;
 }
 
 #skipline {
-    display: inline-block;
-    color: grey;
-    display: inline-block;
+  display: inline-block;
+  display: inline-block;
+  color: grey;
 }
 
 .highlight1 {
-    background-color: #fff34d;
-    -moz-border-radius: 3px;
-    /* FF1+ */
-    -webkit-border-radius: 3px;
-    /* Saf3-4 */
-    border-radius: 3px;
-    /* Opera 10.5, IE 9, Saf5, Chrome */
-    -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-    /* FF3.5+ */
-    -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-    /* Saf3.0+, Chrome */
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-    /* Opera 10.5+, IE 9.0 */
-    color: black;
+  /* Opera 10.5+, IE 9.0 */
+  color: black;
+  background-color: #fff34d;
+  /* Saf3.0+, Chrome */
+          box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
+  /* Saf3-4 */
+          border-radius: 3px;
+  /* FF1+ */
+
+  -webkit-border-radius: 3px;
+     -moz-border-radius: 3px;
+  /* FF3.5+ */
+  -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
+  /* Opera 10.5, IE 9, Saf5, Chrome */
+     -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
 }
 </style>
