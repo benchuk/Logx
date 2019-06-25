@@ -1,7 +1,7 @@
 <template>
 <div id="app">
     <v-app id="inspire" dark>
-      <!-- ======= TOOLBAR ================================================= -->
+        <!-- ======= TOOLBAR ================================================= -->
         <v-toolbar color="black" dark fixed app clipped-right>
             <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
             <v-toolbar-title>log(x)</v-toolbar-title>
@@ -11,7 +11,7 @@
             <v-toolbar-items class="hidden-sm-and-down">
                 <v-btn color="blue darken-1" flat @click.native="searchDialog = true">Find multiple</v-btn>
                 <v-btn color="blue darken-1" flat @click.stop="jump(0)">Top</v-btn>
-                
+
                 <!-- <v-btn color="blue darken-1" flat @click.stop="dialog = true">Settings</v-btn> -->
                 <!-- <v-toolbar-side-icon @click.stop="drawerRight = !drawerRight"></v-toolbar-side-icon> -->
             </v-toolbar-items>
@@ -53,10 +53,10 @@
                         </v-btn>
                     </v-layout>
                     <v-layout class="ml-3 mr-3" row v-for="(item, index) in highlights" :key="index">
-                        <v-text-field class="mt-0 pt-0" append-icon="call_made" @click:append="filterFromColor(index)"  :background-color="stylesCache[index+1]" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model.lazy="item.value"></v-text-field>
+                        <v-text-field class="mt-0 pt-0" append-icon="call_made" @click:append="filterFromColor(index)" :background-color="stylesCache[index+1]" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model.lazy="item.value"></v-text-field>
                     </v-layout>
 
-                </v-expansion-panel-content >
+                </v-expansion-panel-content>
                 <!-- ======= EX-FILTERS ================================================= -->
                 <v-expansion-panel-content :value="panel[2]">
                     <div slot="header">Exclude Filters {{exfilters?'('+exfilters.length+')':""}}</div>
@@ -98,9 +98,11 @@
                                     <v-icon dark color="grey">close</v-icon>
                                 </v-btn>
                                 {{ s[0].value.length>13 ? s[0].value.substring(0, 10) + "...":s[0].value }}
-                            
+
                             </v-tab>
-                            <v-btn v-if="searchs.length>1" @click="clearSearches" flat icon color="error"><v-icon small>delete_outline</v-icon></v-btn>
+                            <v-btn v-if="searchs.length>1" @click="clearSearches" flat icon color="error">
+                                <v-icon small>delete_outline</v-icon>
+                            </v-btn>
                             <v-tabs-items>
                                 <v-tab-item v-for="(s,index) in searchs" v-bind:key="index">
                                     <v-card flat>
@@ -234,6 +236,13 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
+
+        <v-snackbar v-model="snackbarVis" color="success" :timeout="2500" >
+            {{ snackbarText }}
+            <v-btn dark flat @click="snackbarVis = false">
+                Close
+            </v-btn>
+        </v-snackbar>
     </v-app>
 </div>
 </template>
@@ -254,8 +263,10 @@ function refreshView(filesPaths) {
     var params = {
         files: filesPaths
     };
-    filesPaths.forEach((f)=>{console.log("File: ", f);})
-    
+    filesPaths.forEach((f) => {
+        console.log("File: ", f);
+    })
+
     var res = ipcRenderer.send("load-files", params);
 }
 //console.error("-------------------------------------------");
@@ -386,8 +397,8 @@ export default {
     },
     computed: {
         canAddColor() {
-         
-            return this.highlights == null || this.highlights.length==0 || this.highlights[this.highlights.length-1].value.trim().length>0;
+
+            return this.highlights == null || this.highlights.length == 0 || this.highlights[this.highlights.length - 1].value.trim().length > 0;
         }
     },
     watch: {
@@ -440,6 +451,8 @@ export default {
                     value: ""
                 }
             ],
+            snackbarVis : false,
+            snackbarText : "",
             searchDialog: false,
             showFiltered: false,
             position: {
@@ -469,7 +482,7 @@ export default {
             startPoint: -1,
             theView: undefined,
             drawer: true,
-            panel: [true, true,false],
+            panel: [true, true, false],
             items: [{
                     action: "15 min",
                     headline: "Brunch this weekend?",
@@ -588,7 +601,10 @@ export default {
         //console.log("ready");
     },
     methods: {
-
+        showMessage: function(text){
+            this.snackbarText = text.toLowerCase();
+            this.snackbarVis = true
+        },
         findMulti: function () {
             var searchTerms = [];
             for (var s of this.findMultiSearchTerms.slice()) {
@@ -614,33 +630,51 @@ export default {
                 showFiltered: false
             };
         },
-        filterFromColor: function(index){
+        filterFromColor: function (index) {
+            let text = this.highlights[index].value;
+            if (text.trim().length == 0) {
+                return;
+            }
+            let lowertext = text.toLowerCase();
+            let exists = this.filters.findIndex(s => s.value.toLowerCase() === lowertext.toLowerCase());
+            if (exists >= 0) {
+                this.showMessage('Filter is Already Defined');
+                return;
+            }
+
             this.filters.unshift({
                 value: this.highlights[index].value
             });
         },
-        colorFromFilter: function(index){
+        colorFromFilter: function (index) {
             this.AddToHighlights(this.filters[index].value)
         },
         AddToHighlights: function (text) {
             let model = this;
-            if(!this.canAddColor)
-            {
-              this.removeColor(model.highlights.length-1)
+            
+            let lowertext = text.toLowerCase();
+            let exists = model.highlights.findIndex(s => s.value.toLowerCase() === lowertext.toLowerCase());
+            if (exists >= 0) {
+                this.showMessage('Highlight is Already Defined');
+                return;
+            }
+
+            if (!this.canAddColor) {
+                this.removeColor(model.highlights.length - 1)
             }
             model.addStyle(model.highlights.length + 1)
             model.highlights.push({
                 value: "" + text
             });
             //console.log(this.panel)
-            this.panel[1]=true;
+            this.panel[1] = true;
             //console.log(this.panel)           
 
         },
         getColor: function (index) {
             return stylesCache[index]
         },
-        clearSearches:function (s) {
+        clearSearches: function (s) {
             this.searchs = []
             $("#theFooter").height(35);
         },
@@ -664,16 +698,14 @@ export default {
         },
         finall: function () {
             let searchterm = this.searchterm.toLowerCase().trim();
-            if(searchterm.length==0)
-            {
+            if (searchterm.length == 0) {
                 return;
             }
             this.searchterm = "";
-            let exists = this.searchs.findIndex(s => s.length==1 && s[0].value===searchterm);
-            if(exists>=0){
-                console.log(this.active)
+            let exists = this.searchs.findIndex(s => s.length == 1 && s[0].value === searchterm);
+            if (exists >= 0) {
                 this.active = exists;
-                console.log(this.active)
+                this.showMessage('Search is Already Defined');
                 return;
             }
             this.searchs.push([{
