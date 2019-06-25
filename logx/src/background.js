@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 'use strict'
 
-import { app, protocol, BrowserWindow,ipcMain} from 'electron'
+import { app, protocol, BrowserWindow,ipcMain, Menu} from 'electron'
 import {
   createProtocol,
   installVueDevtools
@@ -9,6 +9,7 @@ import {
 
 // eslint-disable-next-line no-unused-vars
 import file_handler from './loggi_files_handler'
+import app_menu from './components/appMenu'
 file_handler(ipcMain)
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
@@ -25,7 +26,7 @@ function createWindow () {
   win = new BrowserWindow({ width: 800, height: 600, webPreferences: {
     nodeIntegration: true
   } })
-
+  app_menu(win);
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
@@ -48,6 +49,9 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+app.on('Paste',(a)=>{
+  console.log('sdsdssds',a);
 })
 
 app.on('activate', () => {

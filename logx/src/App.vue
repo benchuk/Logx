@@ -539,6 +539,17 @@ export default {
             //console.log(model);
             model.onResize(window);
         });
+        ipcRenderer.on("paste-data-reply", (event, arg) => {
+            //console.log("done");
+            appStorage.saveFileListForWindow(null);
+
+            let lines = arg.split("\n");
+            //document.getElementById('area').innerHTML = lines[0];
+            model.logLines = lines;
+
+            //console.log(model);
+            model.onResize(window);
+        });
         EventBus.$on("textSelection", text => {
             //console.log("textSelection " + text);
             model.AddToHighlights(text);
@@ -672,6 +683,9 @@ export default {
             this.AddToHighlights(this.filters[index].value)
         },
         AddToHighlights: function (text) {
+            if(!text){
+                return;
+            }
             let model = this;
 
             let lowertext = text.toLowerCase();
