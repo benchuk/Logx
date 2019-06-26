@@ -1108,16 +1108,15 @@ export default {
 }
 
 function getSelText() {
-    var seltxt = ''; // store selected text
+    
     // get selected text
+    var text = "";
     if (window.getSelection) {
-        seltxt = window.getSelection();
-    } else if (document.getSelection) {
-        seltxt = document.getSelection();
-    } else if (document.selection) {
-        seltxt = document.selection.createRange().text;
+        text = window.getSelection().toString();
+    } else if (document.selection && document.selection.type != "Control") {
+        text = document.selection.createRange().text;
     }
-    return seltxt;
+    return text;
 }
 
 function init(factory) {

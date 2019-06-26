@@ -44,7 +44,7 @@ function init(win) {
         { role: 'paste' },
         { type: 'separator' },
         {
-          label: 'clipboard',
+          label: 'From Clipboard',
           click() {
             let txt = clipboard.readText()
             console.log('paste: ', txt)
