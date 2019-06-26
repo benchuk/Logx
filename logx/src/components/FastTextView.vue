@@ -2,6 +2,7 @@
 <div>
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="/resources/demos/style.css">
+    <div v-bind:id="'slider-vertical-'+ factory.myInitId" style="height:100%; position: absolute; top: 0px; right: 7px;"></div>
     <v-progress-linear v-bind:id="'logx-progress' + factory.myInitId" :indeterminate="true" style="height:2px"></v-progress-linear>
 
     <div v-bind:id="'fast-text-view-' + factory.myInitId" class="fast-text-view-class">
@@ -11,7 +12,7 @@
 
         </div>
     </div>
-    <div id="slider-vertical" style="height:90%;  position: fixed;  top: 70px;right: 5px;"></div>
+    
 
 </div>
 </template>
@@ -67,7 +68,7 @@ export default {
         position(val, oldval) {
             let model = this;
 
-            console.log('position for src id ' + val.source + " my id: " + this.factory.myInitId);
+            console.log('position for src id ' + val.source + " my id: " + model.factory.myInitId);
             if (val.source == this.factory.myInitId) {
                 console.log('skip self generated event');
                 return;
@@ -524,7 +525,7 @@ export default {
             console.log("sliderPostion: " + sliderPostion);
             var silderValue = Math.floor( (  (modelLen -  sliderPostion) / modelLen) *100)
             console.log("silderValue: " + silderValue);
-            jQuery("#slider-vertical").slider("value",  silderValue);
+            jQuery('#slider-vertical-'+model.factory.myInitId).slider("value",  silderValue);
             model.refreshView();
         },
         refreshView: function () {
@@ -684,7 +685,7 @@ export default {
                 //console.log(model.ident + " : !!!!!!!!!!!!!!!!!!!! ex--filters watch: " + val);
                 setTimeout(() => {
                 
-                    jQuery("#slider-vertical").slider({
+                    jQuery('#slider-vertical-'+model.factory.myInitId).slider({
                         orientation: "vertical",
                         range: "min",
                         min: 0,
@@ -1040,6 +1041,8 @@ function init(factory) {
 </script>
 
 <style>
+
+
 .fast-text-view-class {
   overflow-x: hidden;
   overflow-y: hidden;

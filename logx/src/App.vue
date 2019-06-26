@@ -904,7 +904,7 @@ export default {
 .ui-slider-range-min {
   background-color: gray;
 }
-#slider-vertical {
+.ui-slider {
   background-color: #343436 !important;
 }
 .ui-state-default {
@@ -912,5 +912,11 @@ export default {
 }
 .ui-widget-header {
   background: #343436 !important;
+}
+.ui-corner-all {
+  border-top-right-radius: 9px !important;
+  border-bottom-right-radius: 9px !important;
+  border-bottom-left-radius: 9px !important;
+  border-top-left-radius: 9px !important;
 }
 </style>
