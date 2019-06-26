@@ -53,76 +53,7 @@ export default {
             //console.log(val);
             this.showFilteredInternal = val;
             this.isJumping = val;
-            if(this.showFilteredInternal)
-            {
-                //get position in full model
-                var lineData = model.factory.getModelFiltered()[this.positionInternal];
-                this.positionInternal = lineData.rowid;
-                console.log("restore original position for rowid: " + this.positionInternal);
-                let pos2 = this.positionInternal;
-                $( "#"+ pos2).fadeOut( "slow", function() {
-                    $( "#"+ pos2 ).fadeIn( "slow", function() {
-                            // Animation complete   
-                    });
-                });
-            }
-            else
-            {
-                let lines = model.factory.getModelFiltered()
-                //find closest line
-                // if(this.positionInternal >= lines.length -1)
-                // {
-                //     this.positionInternal = lines.length -1;
-                //     model.jumpToPosition(this.positionInternal);
-                //     model.refreshView();
-                //     return;
-                // }
-
-                var prevIndex = this.positionInternal;
-                var newDisplayRowId = -1;             
-
-                let currentLineRowId = model.factory.getModel()[this.positionInternal].rowid;
-                //console.log(currentLineRowId);
-                
-                var index = 0;
-                while(index < lines.length)
-                {
-                     var lineData = lines[index];
-                    if(lineData.rowid >= currentLineRowId)
-                    {
-                        newDisplayRowId = lineData.rowid;
-                        this.positionInternal = index;
-                        break;
-                    }
-                    index++;
-                }
-                if(newDisplayRowId > 0)
-                {
-                    var topViewIndex = prevIndex + this.displayrowscount;
-                    var c = 0;
-                    for(var i = prevIndex; i<topViewIndex; i++)
-                    {
-                        c++;
-                        if(model.factory.getModel()[i]!== undefined)
-                        {
-                            if(newDisplayRowId == model.factory.getModel()[i].rowid)
-                            {
-                                setTimeout(() => {
-                                    let pos = newDisplayRowId;
-                                    $( "#"+ pos).fadeOut( "slow", function() {
-                                        $( "#"+ pos ).fadeIn( "slow", function() {
-                                                // Animation complete   
-                                        });
-                                    });
-                                }, 0);
-                            
-                                this.positionInternal = this.positionInternal - c + 1;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+            this.handlePosition();
             model.jumpToPosition(this.positionInternal);
             model.refreshView();
         },
@@ -296,6 +227,79 @@ export default {
         }
     },
     methods: {
+        handlePosition: function(){
+            let model = this;
+            if(this.showFilteredInternal)
+            {
+                //get position in full model
+                var lineData = model.factory.getModelFiltered()[this.positionInternal];
+                this.positionInternal = lineData.rowid;
+                console.log("restore original position for rowid: " + this.positionInternal);
+                let pos2 = this.positionInternal;
+                $( "#"+ pos2).fadeOut( "slow", function() {
+                    $( "#"+ pos2 ).fadeIn( "slow", function() {
+                            // Animation complete   
+                    });
+                });
+            }
+            else
+            {
+                let lines = model.factory.getModelFiltered()
+                //find closest line
+                // if(this.positionInternal >= lines.length -1)
+                // {
+                //     this.positionInternal = lines.length -1;
+                //     model.jumpToPosition(this.positionInternal);
+                //     model.refreshView();
+                //     return;
+                // }
+
+                var prevIndex = this.positionInternal;
+                var newDisplayRowId = -1;             
+
+                let currentLineRowId = model.factory.getModel()[this.positionInternal].rowid;
+                //console.log(currentLineRowId);
+                
+                var index = 0;
+                while(index < lines.length)
+                {
+                     var lineData = lines[index];
+                    if(lineData.rowid >= currentLineRowId)
+                    {
+                        newDisplayRowId = lineData.rowid;
+                        this.positionInternal = index;
+                        break;
+                    }
+                    index++;
+                }
+                if(newDisplayRowId > 0)
+                {
+                    var topViewIndex = prevIndex + this.displayrowscount;
+                    var c = 0;
+                    for(var i = prevIndex; i<topViewIndex; i++)
+                    {
+                        c++;
+                        if(model.factory.getModel()[i]!== undefined)
+                        {
+                            if(newDisplayRowId == model.factory.getModel()[i].rowid)
+                            {
+                                setTimeout(() => {
+                                    let pos = newDisplayRowId;
+                                    $( "#"+ pos).fadeOut( "slow", function() {
+                                        $( "#"+ pos ).fadeIn( "slow", function() {
+                                                // Animation complete   
+                                        });
+                                    });
+                                }, 0);
+                            
+                                this.positionInternal = this.positionInternal - c + 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        },
         updateLinesModel: function (shouldInitIndex) {
 
             let model = this;
