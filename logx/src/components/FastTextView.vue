@@ -49,10 +49,17 @@ export default {
         showFiltered(val, oldval) {
             let model = this;
 
-            //console.log(model.ident + " :  ^^^^ showFiltered watch: " + val);
+            console.log(" :  ^^^^ showFiltered watch: ",val);
             //console.log(val);
+            if(this.showFilteredInternal == val)
+            {
+                console.log("ignore show filter logic");
+                return;
+            }
             this.showFilteredInternal = val;
             this.isJumping = val;
+            this.shouldHandlePosition = true
+            console.log("this.positionInternal",this.positionInternal);
             this.handlePosition();
             model.jumpToPosition(this.positionInternal);
             model.refreshView();
@@ -60,18 +67,33 @@ export default {
         position(val, oldval) {
             let model = this;
 
+            console.log('position for src id ' + val.source + " my id: " + this.factory.myInitId);
             if (val.source == this.factory.myInitId) {
-                //console.log('skip self generated event');
+                console.log('skip self generated event');
                 return;
             }
             
             this.direction = 1;
             model.isJumping = true;
             //if (val.showFiltered) {
-            EventBus.$emit('showingFiltered', true);
+            setTimeout(() => {
+                EventBus.$emit('showingFiltered', true);
+            }, 0);
+            
+            this.showFilteredInternal = true;
             //}
             let parsedPosition = parseInt(val.value);
+            setTimeout(() => {
+                    console.log("anim 1 for src id: " + this.factory.myInitId);
+                    $( "#"+ parsedPosition).fadeOut( "slow", function() {
+                        $( "#"+ parsedPosition ).fadeIn( "slow", function() {
+                                // Animation complete   
+                        });
+                    });
+            }, 0);
             model.targetJump = parsedPosition;
+            // model.positionInternal = parsedPosition;
+            // model.handlePosition()
             //console.log('position changed');
             model.jumpToPosition(parsedPosition);
         },
@@ -229,6 +251,12 @@ export default {
     methods: {
         handlePosition: function(){
             let model = this;
+            if(!model.shouldHandlePosition)
+            {
+                console.log("jumping skip handlePosition");
+                return;
+            }
+            model.shouldHandlePosition = false;
             if(this.showFilteredInternal)
             {
                 //get position in full model
@@ -236,30 +264,24 @@ export default {
                 this.positionInternal = lineData.rowid;
                 console.log("restore original position for rowid: " + this.positionInternal);
                 let pos2 = this.positionInternal;
-                $( "#"+ pos2).fadeOut( "slow", function() {
-                    $( "#"+ pos2 ).fadeIn( "slow", function() {
-                            // Animation complete   
+                setTimeout(() => {
+                    console.log("anim 2 for src id: " + this.factory.myInitId);
+                    $( "#"+ pos2).fadeOut( "slow", function() {
+                        $( "#"+ pos2 ).fadeIn( "slow", function() {
+                                // Animation complete   
+                        });
                     });
-                });
+                }, 0);
             }
             else
             {
                 let lines = model.factory.getModelFiltered()
-                //find closest line
-                // if(this.positionInternal >= lines.length -1)
-                // {
-                //     this.positionInternal = lines.length -1;
-                //     model.jumpToPosition(this.positionInternal);
-                //     model.refreshView();
-                //     return;
-                // }
 
                 var prevIndex = this.positionInternal;
                 var newDisplayRowId = -1;             
 
                 let currentLineRowId = model.factory.getModel()[this.positionInternal].rowid;
                 //console.log(currentLineRowId);
-                
                 var index = 0;
                 while(index < lines.length)
                 {
@@ -285,13 +307,13 @@ export default {
                             {
                                 setTimeout(() => {
                                     let pos = newDisplayRowId;
+                                    console.log("anim 3");
                                     $( "#"+ pos).fadeOut( "slow", function() {
                                         $( "#"+ pos ).fadeIn( "slow", function() {
                                                 // Animation complete   
                                         });
                                     });
                                 }, 0);
-                            
                                 this.positionInternal = this.positionInternal - c + 1;
                                 break;
                             }
@@ -303,11 +325,9 @@ export default {
         updateLinesModel: function (shouldInitIndex) {
 
             let model = this;
-
             //wraping this with a function make performance better!
             //https://stackoverflow.com/questions/29387950/performance-of-google-chrome-vs-nodejs-v8
             function run() {
-
                 //console.error("--------------------------------updateLinesModel " + shouldInitIndex);
                 var t0 = performance.now();
                 ////console.info("this.useFilters: " + this.useFilters);
@@ -507,73 +527,6 @@ export default {
             jQuery("#slider-vertical").slider("value",  silderValue);
             model.refreshView();
         },
-        jumpToPositionOld: function (newLowerPosition, newUpperPosition) {
-            ////console.log("jumpToPosition-> newLowerPosition: " + newLowerPosition + " newUpperPosition: " + newUpperPosition);
-
-            let model = this;
-            //let max = this.factory.getModel().length - model.displayrowscount;
-            ////console.log(this.factory.getModel().length);
-            ////console.log(max);
-            // if (newPosition >= max) {
-            //   newPosition = max;
-            // }
-
-            if (model.lowerPosition == newLowerPosition && model.upperPosition == newUpperPosition) {
-                //console.log('same position...');
-                return;
-            }
-
-            if (newLowerPosition < 0) {
-                newLowerPosition = 0;
-                //console.error("bad new lower position");
-            }
-            if (newUpperPosition > this.factory.getModel().length - 1) {
-                newLowerPosition = this.factory.getModel().length - 1;
-                //console.error("bad new upper position");
-            }
-
-            model.lowerPosition = newLowerPosition;
-            model.upperPosition = newUpperPosition;
-            console.log("lowerPosition: " + model.lowerPosition);
-            console.log("upperPosition: " + model.upperPosition);
-            //EventBus.$emit('newPosition', newPosition);
-
-            var sliderPostion = 0;
-            var len = 0
-            if(this.showFilteredInternal)
-            {
-                len = this.factory.getModel().length
-            }
-            else
-            {
-                len = this.factory.getModelFiltered().length
-            }
-            console.log("this.direction: " + this.direction);
-            if(this.direction > 0)
-            {
-                sliderPostion = model.lowerPosition;
-            }
-            else
-            {
-                sliderPostion = model.upperPosition;
-            }
-            console.log("len: " + len);
-            console.log("sliderPostion: " + sliderPostion);
-            var silderValue = Math.floor( (  (len -  sliderPostion) / len) *100)
-            console.log("silderValue: " + silderValue);
-            if(silderValue > 97)
-            {
-                silderValue = 100;
-            }
-            else if(silderValue < 2)
-            {
-                silderValue = 0;
-            }
-            jQuery("#slider-vertical").slider("value",  silderValue);
-
-            model.refreshView();
-            //model.$forceUpdate()
-        },
         refreshView: function () {
             let POSITION = parseInt(this.positionInternal);
             if(isNaN(POSITION))
@@ -640,13 +593,14 @@ export default {
             //after render register for line click //todo unregister prev clicks - not sure needed.
             setTimeout(() => {
                 $('#' + model.targetJump).css("background-color", "#2C2B2B");
-                $('.theline-' + this.factory.myInitId).click(function () {
-                    EventBus.$emit('jumpto', {
-                        'value': $(this).parent().attr('id'),
-                        'source': model.factory.myInitId,
-                        'showFiltered': true
+                    $('.theline-' + model.factory.myInitId).click(function () {
+                        console.log("search click: for src id: " + model.factory.myInitId)
+                        EventBus.$emit('jumpto', {
+                            'value': $(this).parent().attr('id'),
+                            'source': model.factory.myInitId,
+                            'showFiltered': true
+                        });
                     });
-                });
             }, 1);
 
         },
