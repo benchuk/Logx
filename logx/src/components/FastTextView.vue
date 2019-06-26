@@ -53,33 +53,96 @@ export default {
             //console.log(val);
             this.showFilteredInternal = val;
             this.isJumping = val;
+            if(this.showFilteredInternal)
+            {
+                //get position in full model
+                var lineData = model.factory.getModelFiltered()[this.positionInternal];
+                this.positionInternal = lineData.rowid;
+                console.log("restore original position for rowid: " + this.positionInternal);
+                let pos2 = this.positionInternal;
+                $( "#"+ pos2).fadeOut( "slow", function() {
+                    $( "#"+ pos2 ).fadeIn( "slow", function() {
+                            // Animation complete   
+                    });
+                });
+            }
+            else
+            {
+                let lines = model.factory.getModelFiltered()
+                //find closest line
+                // if(this.positionInternal >= lines.length -1)
+                // {
+                //     this.positionInternal = lines.length -1;
+                //     model.jumpToPosition(this.positionInternal);
+                //     model.refreshView();
+                //     return;
+                // }
+
+                var prevIndex = this.positionInternal;
+                var newDisplayRowId = -1;             
+
+                let currentLineRowId = model.factory.getModel()[this.positionInternal].rowid;
+                //console.log(currentLineRowId);
+                
+                var index = 0;
+                while(index < lines.length)
+                {
+                     var lineData = lines[index];
+                    if(lineData.rowid >= currentLineRowId)
+                    {
+                        newDisplayRowId = lineData.rowid;
+                        this.positionInternal = index;
+                        break;
+                    }
+                    index++;
+                }
+                if(newDisplayRowId > 0)
+                {
+                    var topViewIndex = prevIndex + this.displayrowscount;
+                    var c = 0;
+                    for(var i = prevIndex; i<topViewIndex; i++)
+                    {
+                        c++;
+                        if(model.factory.getModel()[i]!== undefined)
+                        {
+                            if(newDisplayRowId == model.factory.getModel()[i].rowid)
+                            {
+                                setTimeout(() => {
+                                    let pos = newDisplayRowId;
+                                    $( "#"+ pos).fadeOut( "slow", function() {
+                                        $( "#"+ pos ).fadeIn( "slow", function() {
+                                                // Animation complete   
+                                        });
+                                    });
+                                }, 0);
+                            
+                                this.positionInternal = this.positionInternal - c + 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            model.jumpToPosition(this.positionInternal);
             model.refreshView();
         },
         position(val, oldval) {
             let model = this;
 
-            //console.log(model.ident + " :  $ position watch: " + val);
-            //console.log(val);
             if (val.source == this.factory.myInitId) {
                 //console.log('skip self generated event');
                 return;
             }
-            if (model.lowerPosition == val.value) {
-                //console.log('skip same position');
-                return;
-            }
+            
             this.direction = 1;
             model.isJumping = true;
             //if (val.showFiltered) {
             EventBus.$emit('showingFiltered', true);
             //}
             let parsedPosition = parseInt(val.value);
-            if (parsedPosition < 0) {
-                parsedPosition = 0;
-            }
             model.targetJump = parsedPosition;
             //console.log('position changed');
-            model.jumpToPosition(parsedPosition, parsedPosition + this.displayrowscount);
+            model.jumpToPosition(parsedPosition);
         },
         height(val, oldval) {
             ////console.log(this.ident + " : !!!!!!!!!!!!!!!!!!!!!!!! height watch: " + val);
@@ -262,7 +325,7 @@ export default {
                 model.useExFiltersInternal = model.useExFiltersInternal && model.useExFilters;
 
                 if (model.filtersInternal == undefined || model.filtersInternal.length <= 0 || (model.filtersInternal.length == 1 && model.filtersInternal[0].value == "")) {
-                    ////console.log("disable filters");
+                    //console.log("disable filters");
                     model.useFiltersInternal = false;
                 } else {
                     model.useFiltersInternal = true;
@@ -274,6 +337,7 @@ export default {
                     ////console.info("no filters at all");
                     model.factory.setModel(model.lines);
                     model.factory.setOriginalModel(model.lines);
+                    model.factory.setModelFiltered(model.lines);
                     //this.refreshView();
                     return;
                 }
@@ -329,6 +393,7 @@ export default {
                     }
 
                     if (USE_FILTER) {
+
                         var addToView = false;
 
                         for (var f of theFilters) {
@@ -360,13 +425,6 @@ export default {
                                 'rowid': counter,
                                 'skip': false
                             });
-                            if (!didPositionInit) {
-                                didPositionInit = true;
-                                model.lowerPosition = counter;
-                                m.startVisibleIndex = counter;
-                                ////console.error("setting new index: " + counter);
-                            }
-                            m.endVisibleIndex = counter;
                         } else {
                             m.push({
                                 'line': line,
@@ -385,30 +443,67 @@ export default {
                             'rowid': counter,
                             'skip': false
                         }); //do not use filters
-                        if (!didPositionInit) {
-                            didPositionInit = true;
-                            model.lowerPosition = counter;
-                            m.startVisibleIndex = counter;
-                        }
-                        m.endVisibleIndex = counter;
                     }
                 }
-                modelFiltered.startVisibleIndex = 0;
-                modelFiltered.endVisibleIndex = modelFiltered.length - 1;
-
-                model.upperPosition = model.lowerPosition + model.displayrowscount;
-                // if (this.ready) {
-                //     this.refreshView();
-                // }
                 var t1 = performance.now();
                 //console.log("Call to updateLinesModel took " + (t1 - t0) + " milliseconds.")
                 //console.error("-------------------------------- DONE updateLinesModel " + shouldInitIndex);
 
             }
             run();
-
         },
-        jumpToPosition: function (newLowerPosition, newUpperPosition) {
+        jumpToPosition: function(newPosition)
+        {
+            console.log("jumpToPosition",newPosition);
+            let showSkip = this.showFilteredInternal;
+            let model = this;
+            let lines = showSkip ? this.factory.getModel() : this.factory.getModelFiltered();
+            let len = lines.length;
+            let spaceToEnd = len - this.displayrowscount;
+           
+            let POSITION = parseInt(newPosition);
+
+            if(POSITION >= spaceToEnd || POSITION >= len)
+            {
+                this.positionInternal = spaceToEnd;
+                console.log("Skip jump - nothing to render - reached end of files: " + POSITION);
+                //return;
+                this.positionInternal = spaceToEnd;
+                POSITION = spaceToEnd;
+            }
+
+            if(POSITION < 0)
+            {
+                console.log("invalid position - setting to zero");
+                this.positionInternal = 0;
+                POSITION = 0;
+            }
+
+            if(POSITION == this.positionInternal)
+            {
+                console.log("Skip jump - nothing to render - position is the same: " + POSITION);
+            }
+
+            this.positionInternal = POSITION;
+
+            var modelLen = 0
+            if(this.showFilteredInternal)
+            {
+                modelLen = this.factory.getModel().length
+            }
+            else
+            {
+                modelLen = this.factory.getModelFiltered().length
+            }
+            var sliderPostion = POSITION;
+            console.log("modelLen: " + modelLen);
+            console.log("sliderPostion: " + sliderPostion);
+            var silderValue = Math.floor( (  (modelLen -  sliderPostion) / modelLen) *100)
+            console.log("silderValue: " + silderValue);
+            jQuery("#slider-vertical").slider("value",  silderValue);
+            model.refreshView();
+        },
+        jumpToPositionOld: function (newLowerPosition, newUpperPosition) {
             ////console.log("jumpToPosition-> newLowerPosition: " + newLowerPosition + " newUpperPosition: " + newUpperPosition);
 
             let model = this;
@@ -476,236 +571,60 @@ export default {
             //model.$forceUpdate()
         },
         refreshView: function () {
-            ////console.log('refresh view');
+            let POSITION = parseInt(this.positionInternal);
+            if(isNaN(POSITION))
+            {
+                this.positionInternal = 0;
+                POSITION = 0;
+            }
+            console.log('refresh view new POSITION', POSITION);
+            console.log('refresh view new');
 
-            //if (this.prevLower == this.lowerPosition && this.prevUpper == this.upperPosition && this.prevDisplayrowscount == this.displayrowscount) {
-            //    //console.error('skip refresh view - nothing changed');
-            //    return;
-            //}
-
-            this.prevDisplayrowscount = this.displayrowscount;
-            this.prevLower = this.lowerPosition;
-            this.prevUpper = this.upperPosition;
-
-            this.lowerPosition = parseInt(this.lowerPosition);
-            this.upperPosition = parseInt(this.upperPosition);
-            ////console.log("refresh fast View " + this.factory.myInitId + " lower: " + this.lowerPosition, " upper: " + this.upperPosition + " showing: " + this.displayrowscount);
-            // if(this.lasStopPosition == this.currentPosition)
-            // {
-            //   //console.log("skip refresh: lasStopPosition: " + this.lasStopPosition + " currentPosition: " + this.currentPosition);
-            //   return;
-            // }
             let showSkip = this.showFilteredInternal;
             let model = this;
-            //let lines = this.factory.getModel();
             let lines = showSkip ? this.factory.getModel() : this.factory.getModelFiltered();
-            console.log("lines count", lines.length);
-            let len = lines.length; //- this.displayrowscount;
-            ////console.log("len:: " + len);
-            ////console.log(this.linesData);
+            let len = lines.length;
+            console.log("lines count", len);
+            let spaceToEnd = len - this.displayrowscount;
+             //if havily filtered then the minimum display is 'displayrowscount'
+            if(spaceToEnd < this.displayrowscount)
+            {
+                spaceToEnd = this.displayrowscount
+            }
             var backupHtml = model.container.innerHTML;
             model.container.innerHTML = "";
-            //var tagetJump = -1;
-            //TBD: this logic is probably a bug
             if (model.isJumping) {
-                //model.isJumping = false;
-                //tagetJump = model.targetJump;
-                //model.targetJump = -1;
                 this.showFilteredInternal = true;
             } else {
                 this.showFilteredInternal = false;
             }
-
-            var POSITION = 0;
-            if (this.direction > 0) {
-                ////console.log("FW");
-                POSITION = parseInt(this.lowerPosition);
-                if (this.lowerPosition + this.displayrowscount > lines.endVisibleIndex && !model.isJumping) {
-                    this.lowerPosition = lines.endVisibleIndex - this.displayrowscount;
-                    if (this.lowerPosition < lines.startVisibleIndex) {
-                        this.lowerPosition = lines.startVisibleIndex;
-                        console.log("override lowerPosition",this.lowerPosition);
-                    }
-                    POSITION = this.lowerPosition;
-                }
-                let spaceToEnd = lines.length - this.displayrowscount;
-                POSITION = this.lowerPosition > spaceToEnd ? spaceToEnd : this.lowerPosition;
-            } else {
-                ////console.log("BW");
-                POSITION = parseInt(this.upperPosition);
-                if (this.upperPosition - this.displayrowscount <= lines.startVisibleIndex & !model.isJumping) {
-                    this.upperPosition = lines.startVisibleIndex + this.displayrowscount;
-                    if (this.upperPosition > lines.endVisibleIndex) {
-                        this.upperPosition = lines.endVisibleIndex;
-                        console.log("override upperPosition",this.upperPosition);
-                    }
-                    POSITION = this.upperPosition;
-                }
-                POSITION = this.upperPosition < this.displayrowscount ? this.displayrowscount : this.upperPosition;
-            }
-
-            ////console.log("using c: " + c);
-            var took = 0;
-            var firstTookIndex = -1;
-            
-
-            if (POSITION < 0) {
-                POSITION = 0;
-            }
+           
             var data = "";
-            while (POSITION >= 0 && POSITION < len && took <= this.displayrowscount) {
+            let counter = this.displayrowscount;
+            while (POSITION >= 0 && POSITION < len && counter > 0) {
                 var line = lines[POSITION];
-                if(line === undefined)
+                if(line !== undefined)
                 {
-                    line =  {skip:true}
-                }
-                
-                if (line == undefined) {
-                    ////console.log(c);
-                }
-                //console.log("POSITION", POSITION);
-                if (line.skip) {
-                    if (showSkip) {
+                    if (line.skip && showSkip) {
                         var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='skipline' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
-                        if (this.direction > 0) {
-                            //model.container.innerHTML += l;
-                            data += l;
-                        } else {
-                            // let temp = model.container.innerHTML;
-                            // model.container.innerHTML = l + temp;
-                            let temp = data;
-                            data = l + temp;
-                        }
-
-                        took++;
-                        if (firstTookIndex < 0) {
-                            firstTookIndex = POSITION;
-                        }
-                    }
-                } else {
-                    if (line === undefined) {
-                        POSITION += this.direction;
-                        continue;
-                        // line = "";
-                    }
-                    var l2 = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='rowdata' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
-                    if (this.direction > 0) {
-                        //model.container.innerHTML += l2;
-                        data += l2;
+                        data += l;
                     } else {
-                        // let temp = model.container.innerHTML;
-                        // model.container.innerHTML = l2 + temp;
-                        let temp = data;
-                        data = l2 + temp;
-                    }
-                    took++;
-                    if (firstTookIndex < 0) {
-                        firstTookIndex = POSITION;
+                        var l2 = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='rowdata' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";                    
+                        data += l2;
                     }
                 }
-
-                POSITION += this.direction;
+                POSITION++;
+                counter--;
             }
-
-            if (this.direction > 0) {
-                this.lowerPosition = firstTookIndex;
-                this.upperPosition = POSITION;
-            } else {
-                this.upperPosition = firstTookIndex;
-                this.lowerPosition = POSITION;
-            }
-            // if(this.lowerPosition != c)//there is no way more down - nothing to refresh - use last view which had more data
-            // {
-            //   //this.lowerPosition = c;
-            //   model.container.innerHTML = data;
-            // }
-            // else{
-            //   model.container.innerHTML = backupHtml;
-            // }
-
+            
             model.container.innerHTML = data;
 
-            //This happen when at the end of all files/data we need to backup a little to render the right amount of lines
-            //Else while scrolling the data will disappear and user will see nothing.
-            //So: add missing line if took too litle
-            //if we are moving fw and cannot get more data then add to the start and move the lower bound more down
-            if (took < this.displayrowscount) {
-                var tempHtml = ""; //model.container.innerHTML;
-                if (this.direction > 0) {
-                    let upTo = this.displayrowscount - took;
-                    var took2 = 1;
-                    var index = 0;
-                    while (took2 < upTo && (this.lowerPosition - index > lines.startVisibleIndex)) //add elements at the begging of the html
-                    {
-                        index++;
-                        var line = lines[this.lowerPosition - index]; //take prev lines
-                        if (line.skip) {
-                            if (showSkip) {
-                                var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex'> [" + line.rowid + "] </div><div id='skipline' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
-                                var tttt = tempHtml;
-                                tempHtml = l + tttt;
-                                took2++;
-                            }
-                        } else {
-                            if (line === undefined) {
-                                continue;
-                            }
-                            var l2 = "<div id='" + line.rowid + "'>" + "<div class='rowIndex'> [" + line.rowid + "] </div><div id='rowdata' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
-                            var tttt = tempHtml;
-                            tempHtml = l2 + tttt;
-                            took2++;
-                        }
-                    }
-                    this.lowerPosition = this.lowerPosition - index;
-                    let ttt = model.container.innerHTML;
-                    model.container.innerHTML = tempHtml + ttt; //add to the start
-                } else //if we are moving bw and cannot get more data then add to the end and move the upper bound more up
-                {
-                    var took2 = 1;
-                    let upTo = this.displayrowscount - took + 1;
-                    var index = 0;
-                    while (took2 <= upTo && (this.upperPosition + index < lines.endVisibleIndex)) //add elements at the begging of the htmls
-                    {
-                        index++;
-                        var line = lines[this.upperPosition + index];
-                        if (line == undefined) {
-                            break;
-                        }
-                        if (line.skip) {
-                            if (showSkip) {
-                                var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex'> [" + line.rowid + "] </div><div id='skipline' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
-                                if (this.direction > 0) {
-                                    //model.container.innerHTML += l;
-                                    tempHtml += l;
-                                    took2++;
-                                }
-                            }
-                        } else {
-                            if (line === undefined) {
-                                continue;
-                            }
-                            var l2 = "<div id='" + line.rowid + "'>" + "<div class='rowIndex'> [" + line.rowid + "] </div><div id='rowdata' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
-                            tempHtml += l2;
-                            took2++;
-                        }
-                    }
-                    this.upperPosition = this.upperPosition + (took - this.displayrowscount); //take the upper part more up
-                    let ttt = model.container.innerHTML;
-                    model.container.innerHTML = ttt + tempHtml; //add to the end
-                }
-            }
-
-            ////console.log("new lower: " + this.lowerPosition);
-            ////console.log("new upper: " + this.upperPosition);
-
             var i = 1;
-            ////console.error('tag', this.highlightsInternal);
             if (this.useColors) {
                 for (var f of this.highlightsInternal) {
                     if (f == undefined || f.value == undefined || f.value == "") {
                         continue;
                     }
-
                     ////console.log('start');
                     $('.theline-' + this.factory.myInitId).each(function (index) {
                         ////console.log('refresh..?');
@@ -725,7 +644,7 @@ export default {
                     });
                 });
             }, 1);
-            ////console.log('refresh view done');
+
         },
         matchHeight: function () {
             //todo optimized when there is no actual height change - then do not render.
@@ -846,58 +765,38 @@ export default {
                 ////console.log('skip key');
                 return;
             }
-            
-            //console.error("event.keyCode: " + event.keyCode);
+            console.log("keyCode", event.keyCode)
             if (event.keyCode == 40) {
                 //arrow up
                 model.direction = 1;
-                var up = model.lowerPosition + 1;
-                if (up > model.lines.length) {
-                    up = model.lines.length;
-                }
-                model.jumpToPosition(up, 0);
+                var up = model.positionInternal + 1;
+                console.log("up",up)
+                model.jumpToPosition(up);
             } else if (event.keyCode == 38) {
-                //arrow down
-                model.direction = -1;
-                var down = model.upperPosition - 1;
-                if (down < 0) {
-                    down = 0;
-                }
-                model.jumpToPosition(0, down);
+                var down = model.positionInternal - 1;
+                model.jumpToPosition(down);
             } else if (event.keyCode == 36) {
                 //Home
                 model.direction = 1;
-
                 var pos = 0;
-                // if(!model.showFiltered)
-                // {
-                //     pos = model.factory.m.startVisibleIndex;
-                // }
                 console.log("Home clicked jump to: " + pos);
-                model.jumpToPosition(pos, 0);
+                model.jumpToPosition(pos);
             } else if (event.keyCode == 35) {
                 //End
                 model.direction = 1;
-                var pos = model.factory.m.endVisibleIndex;
-                model.jumpToPosition(pos, 0);
+                var pos = model.showFilteredInternal ?  (model.factory.getModel().length-1) : (model.factory.getModelFiltered().length-1)
+                model.jumpToPosition(pos);
             } else if (event.keyCode == 33) {
                 //page up
                 model.direction = 1;
-                var up = model.lowerPosition - model.displayrowscount;
-                if (up <= model.factory.m.startVisibleIndex) {
-                    up = model.factory.m.startVisibleIndex;
-                }
-                model.jumpToPosition(up, 0);
+                var up = model.positionInternal - model.displayrowscount;
+                model.jumpToPosition(up);
             } else if (event.keyCode == 34) {
                 //page down
                 model.direction = 1;
-                var down = model.lowerPosition + model.displayrowscount;;
-                if (down >= model.factory.m.endVisibleIndex) {
-                    down = model.factory.m.endVisibleIndex;
-                }
-                model.jumpToPosition(down, 0);
+                var down = model.positionInternal + model.displayrowscount;
+                model.jumpToPosition(down);
             }
-
         });
         model.container = document.getElementById('fast-text-view-' + model.factory.myInitId);
         //.log("model.parentid: " + model.parentid);
@@ -1058,7 +957,7 @@ export default {
             // //console.log(" event.deltaMode: " + event.deltaMode);
             //var delta = e.wheelDelta ? e.wheelDelta : -e.detail;
             var delta = -event.deltaY;
-            model.direction = delta > 0 ? -1 : 1;
+            let direction = delta > 0 ? -1 : 1;
             ////console.log("delta: " + delta);
             ////console.log("direction: " + model.direction);
             if ((prevDelta + delta) > 5 || (prevDelta + delta) < -5) {
@@ -1082,21 +981,22 @@ export default {
 
             ////console.log("mouseWheelEvent: model.currentPosition: " + model.currentPosition);
             //var newPosition =-1;
-            var lower = 0;
-            var upper = 0;
+            // var lower = 0;
+            // var upper = 0;
             ////console.log("mouseWheelEvent: Math.round(delta * -1: " + Math.round(delta * -1));
-            if (model.direction > 0) {
-                ////console.log("mouseWheelEvent: before 1: " + model.lowerPosition);
-                lower = model.lowerPosition + Math.round(delta * -1);
-                ////console.log("mouseWheelEvent: after 1: " + model.lowerPosition);
-            } else {
-                ////console.log("mouseWheelEvent: before 2: " + model.upperPosition);
-                upper = model.upperPosition + Math.round(delta * -1);
-                ////console.log("mouseWheelEvent: after 2: " + model.upperPosition);
-            }
+            // if (model.direction > 0) {
+            //     ////console.log("mouseWheelEvent: before 1: " + model.lowerPosition);
+            //     lower = model.lowerPosition + Math.round(delta * -1);
+            //     ////console.log("mouseWheelEvent: after 1: " + model.lowerPosition);
+            // } else {
+            //     ////console.log("mouseWheelEvent: before 2: " + model.upperPosition);
+            //     upper = model.upperPosition + Math.round(delta * -1);
+            //     ////console.log("mouseWheelEvent: after 2: " + model.upperPosition);
+            // }
 
             ////console.log("mouseWheelEvent: lower: " + lower + " upper: " + upper);
-            model.jumpToPosition(lower, upper);
+            let newPosition = model.positionInternal + Math.round(delta * -1);
+            model.jumpToPosition(newPosition);
             ////console.log(model.position);
             ////console.log(model.lines);
         }
