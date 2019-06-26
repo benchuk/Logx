@@ -47,7 +47,7 @@ function init(win) {
           label: 'From Clipboard',
           click() {
             let txt = clipboard.readText()
-            console.log('paste: ', txt)
+            //console.log('paste: ', txt)
             var logLines = []
             var remaining = txt
             var index = remaining.indexOf('\n')
@@ -68,7 +68,7 @@ function init(win) {
               remaining = remaining.trim()
               logLines.push(remaining)
             }
-            console.log('paste:: ', logLines)
+            //console.log('paste:: ', logLines)
             if (logLines.length > 0) {
               win.webContents.send('paste-data-reply', logLines.join('\n'))
               //ipcMain.emit('load-files-reply', )
