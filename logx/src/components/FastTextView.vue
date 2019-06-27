@@ -58,24 +58,23 @@ export default {
                 return;
             }
             this.showFilteredInternal = val;
-            this.isJumping = val;
-            this.shouldHandlePosition = true
             console.log("this.positionInternal",this.positionInternal);
-            this.handlePosition();
-            model.jumpToPosition(this.positionInternal);
+            if(model.useFiltersInternal)
+            {
+                this.handlePosition(val);
+            }
+            //model.jumpToPosition(this.positionInternal);
             model.refreshView();
         },
         position(val, oldval) {
             let model = this;
-
+            console.log('------ position changed');
             console.log('position for src id ' + val.source + " my id: " + model.factory.myInitId);
             if (val.source == this.factory.myInitId) {
                 console.log('skip self generated event');
                 return;
             }
             
-            this.direction = 1;
-            model.isJumping = true;
             //if (val.showFiltered) {
             setTimeout(() => {
                 EventBus.$emit('showingFiltered', true);
@@ -95,7 +94,7 @@ export default {
             model.targetJump = parsedPosition;
             // model.positionInternal = parsedPosition;
             // model.handlePosition()
-            //console.log('position changed');
+            
             model.jumpToPosition(parsedPosition);
         },
         height(val, oldval) {
@@ -114,13 +113,16 @@ export default {
             if (val === undefined || val.length <= 0) {
                 //console.error(model.ident + " : ~~~~~~~~~~~~~~~~~ !invalid data lines watch: " + val);
                 model.factory.setModel(["no data 3"]);
+                model.factory.setModelFiltered(["no data 3"]);
                 model.factory.setOriginalModel(["no data 3"]);
                 //console.log(model);
-            } else {
-                model.factory.setModel(val);
-                model.factory.setOriginalModel(val);
             }
-            this.direction = 1;
+            //  else {
+            //     model.factory.setModel(val);
+            //     model.factory.setModelFiltered(val);
+            //     model.factory.setOriginalModel(val);
+            // }
+            //TBD: set position to zero???
             model.updateLinesModel(true);
             model.refreshView();
         },
@@ -131,10 +133,13 @@ export default {
                 }
                 let model = this;
                 //console.log(model.ident + " : -------- useFilters watch: " + val);
-                model.filtersInternal = val ? model.filters : [];
-                model.direction = 1;
-
-                model.updateLinesModel(true);
+                //model.filtersInternal = model.filters;//val ? model.filters : [];
+                model.useFiltersInternal = val;
+                //should not handle position transition between models if we are on NONE-FILTERD model - in such a case this is only coloring issue
+                if(!this.showFilteredInternal)
+                {
+                    model.handlePosition(!val)
+                }
                 model.refreshView();
             },
             deep: true
@@ -147,9 +152,7 @@ export default {
                 let model = this;
                 //console.log(model.ident + " : -------- exfiltersInternal watch: " + val);
                 model.exfiltersInternal = val ? model.exfilters : [];
-                model.direction = 1;
-
-                model.updateLinesModel(true);
+                //model.updateLinesModel(true);
                 model.refreshView();
             },
             deep: true
@@ -162,7 +165,6 @@ export default {
                 let model = this;
                 //console.log(model.ident + " : -------- useColors watch: " + val);
                 model.highlightsInternal = val ? model.highlights : [];
-                //model.direction = 1;
                 //model.updateLinesModel(true);
                 model.refreshView();
             },
@@ -192,7 +194,7 @@ export default {
                     }
                     //this.currentPosition = 0;
                     model.exfiltersInternal = val;
-                    model.direction = 1;
+
                     model.updateLinesModel(true);
                     model.refreshView();
                 }, 500);
@@ -213,8 +215,6 @@ export default {
                         return;
                     }
                     model.filtersInternal = val;
-                    model.direction = 1;
-
                     model.updateLinesModel(true);
                     model.refreshView();
                     $('#logx-progress' + model.factory.myInitId).height(0).css("visibility", "hidden").css("margin", "0px");
@@ -233,7 +233,6 @@ export default {
             targetJump: -1,
             lasStopPosition: -1,
             prevPosition: -1,
-            direction: 1,
             showFilteredInternal: false,
             ready: false,
             factory: {},
@@ -245,20 +244,14 @@ export default {
             filtersInternal: [],
             exfiltersInternal: [],
             useFiltersInternal: true,
-            useExFiltersInternal: true,
-            isJumping: false
+            useExFiltersInternal: true
         }
     },
     methods: {
-        handlePosition: function(){
+        handlePosition: function(shouldMoveFromFilteredToFull){
+            console.log("->handlePosition");
             let model = this;
-            if(!model.shouldHandlePosition)
-            {
-                console.log("jumping skip handlePosition");
-                return;
-            }
-            model.shouldHandlePosition = false;
-            if(this.showFilteredInternal)
+            if(shouldMoveFromFilteredToFull)
             {
                 //get position in full model
                 var lineData = model.factory.getModelFiltered()[this.positionInternal];
@@ -315,7 +308,8 @@ export default {
                                         });
                                     });
                                 }, 0);
-                                this.positionInternal = this.positionInternal - c + 1;
+                                let newPosScreen = this.positionInternal - c + 1;
+                                this.positionInternal = newPosScreen >= 0 ? newPosScreen : 0;
                                 break;
                             }
                         }
@@ -358,14 +352,14 @@ export default {
 
                 model.useFiltersInternal = model.useFiltersInternal && model.useFilters;
 
-                if (!model.useFiltersInternal && !model.useFilters && !model.useExFiltersInternal && !model.useExFilters) {
-                    ////console.info("no filters at all");
-                    model.factory.setModel(model.lines);
-                    model.factory.setOriginalModel(model.lines);
-                    model.factory.setModelFiltered(model.lines);
-                    //this.refreshView();
-                    return;
-                }
+                // if (!model.useFiltersInternal && !model.useFilters && !model.useExFiltersInternal && !model.useExFilters) {
+                //     ////console.info("no filters at all");
+                //     model.factory.setModel(model.lines);
+                //     model.factory.setOriginalModel(model.lines);
+                //     model.factory.setModelFiltered(model.lines);
+                //     //this.refreshView();
+                //     return;
+                // }
 
                 // //console.info("this.useExFiltersInternal: " + this.useExFiltersInternal);
                 // //console.info("this.useExFilters: " + this.useExFilters);
@@ -386,7 +380,7 @@ export default {
                 var didPositionInit = !shouldInitIndex;
                 var theFilters = model.filtersInternal ? model.filtersInternal.unique() : [];
                 var theExFilters = model.exfiltersInternal ? model.exfiltersInternal.unique() : [];
-                let USE_FILTER = model.useFiltersInternal;
+                //let USE_FILTER = model.useFiltersInternal;
                 let LINES = model.lines;
                 let LINES_LEN = LINES.length;
                 //for (let line of LINES) {
@@ -417,58 +411,45 @@ export default {
                         }
                     }
 
-                    if (USE_FILTER) {
+                    var addToView = false;
 
-                        var addToView = false;
-
-                        for (var f of theFilters) {
-                            //827.824999999
-                            // if (line.toLowerCase().indexOf(f.value)) {
-                            //     addToView = true;
-                            // }
-                            //861.9399999999996
-                            if (line.toLowerCase().includes(f.value.toLowerCase())) {
-                                addToView = true;
-                                break;
-                            }
-                            //729.329999999 ms
-                            // var patt = new RegExp(f.value);
-                            // if (patt.test(line.toLowerCase())) {
-                            //     addToView = true;
-                            // }
+                    for (var f of theFilters) {
+                        //827.824999999
+                        // if (line.toLowerCase().indexOf(f.value)) {
+                        //     addToView = true;
+                        // }
+                        //861.9399999999996
+                        if (line.toLowerCase().includes(f.value.toLowerCase())) {
+                            addToView = true;
+                            break;
                         }
+                        //729.329999999 ms
+                        // var patt = new RegExp(f.value);
+                        // if (patt.test(line.toLowerCase())) {
+                        //     addToView = true;
+                        // }
+                    }
 
-                        if (addToView) //add line only once if any of the filters apply
-                        {
-                            m.push({
-                                'line': line,
-                                'rowid': counter,
-                                'skip': false
-                            });
-                            modelFiltered.push({
-                                'line': line,
-                                'rowid': counter,
-                                'skip': false
-                            });
-                        } else {
-                            m.push({
-                                'line': line,
-                                'rowid': counter,
-                                'skip': true
-                            });
-                        }
-                    } else {
+                    if (addToView) //add line only once if any of the filters apply
+                    {
                         m.push({
                             'line': line,
                             'rowid': counter,
                             'skip': false
-                        }); //do not use filters
+                        });
                         modelFiltered.push({
                             'line': line,
                             'rowid': counter,
                             'skip': false
-                        }); //do not use filters
+                        });
+                    } else {
+                        m.push({
+                            'line': line,
+                            'rowid': counter,
+                            'skip': true
+                        });
                     }
+                    
                 }
                 var t1 = performance.now();
                 //console.log("Call to updateLinesModel took " + (t1 - t0) + " milliseconds.")
@@ -482,7 +463,7 @@ export default {
             console.log("jumpToPosition",newPosition);
             let showSkip = this.showFilteredInternal;
             let model = this;
-            let lines = showSkip ? this.factory.getModel() : this.factory.getModelFiltered();
+            let lines = (showSkip || !this.useFiltersInternal) ? this.factory.getModel() : this.factory.getModelFiltered();
             let len = lines.length;
             let spaceToEnd = len - this.displayrowscount;
            
@@ -530,7 +511,7 @@ export default {
         },
         refreshView: function () {
             let POSITION = parseInt(this.positionInternal);
-            if(isNaN(POSITION))
+            if(isNaN(POSITION) || POSITION < 0)
             {
                 this.positionInternal = 0;
                 POSITION = 0;
@@ -538,7 +519,7 @@ export default {
             console.log('refresh view new POSITION', POSITION);
             console.log('refresh view new');
 
-            let showSkip = this.showFilteredInternal;
+            let showSkip = this.showFilteredInternal || !this.useFiltersInternal;
             let model = this;
             let lines = showSkip ? this.factory.getModel() : this.factory.getModelFiltered();
             let len = lines.length;
@@ -551,25 +532,31 @@ export default {
             }
             var backupHtml = model.container.innerHTML;
             model.container.innerHTML = "";
-            if (model.isJumping) {
-                this.showFilteredInternal = true;
-            } else {
-                this.showFilteredInternal = false;
-            }
-           
+
             var data = "";
             let counter = this.displayrowscount;
             while (POSITION >= 0 && POSITION < len && counter > 0) {
                 var line = lines[POSITION];
                 if(line !== undefined)
                 {
-                    if (line.skip && showSkip) {
-                        var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='skipline' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
-                        data += l;
-                    } else {
-                        var l2 = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='rowdata' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";                    
-                        data += l2;
+                    var skipOrNotId = "rowdata";
+                    if(this.showFilteredInternal)
+                    {
+                        if(this.useFiltersInternal && line.skip)
+                        {
+                            skipOrNotId = "skipline";
+                        }
                     }
+
+                    var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='"+skipOrNotId+"' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
+                    data += l;
+                    // if (line.skip && showSkip) {
+                    //     var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='skipline' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
+                    //     data += l;
+                    // } else {
+                    //     var l2 = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='rowdata' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";                    
+                    //     data += l2;
+                    // }
                 }
                 POSITION++;
                 counter--;
@@ -727,7 +714,6 @@ export default {
             console.log("keyCode", event.keyCode)
             if (event.keyCode == 40) {
                 //arrow up
-                model.direction = 1;
                 var up = model.positionInternal + 1;
                 console.log("up",up)
                 model.jumpToPosition(up);
@@ -736,23 +722,19 @@ export default {
                 model.jumpToPosition(down);
             } else if (event.keyCode == 36) {
                 //Home
-                model.direction = 1;
                 var pos = 0;
                 console.log("Home clicked jump to: " + pos);
                 model.jumpToPosition(pos);
             } else if (event.keyCode == 35) {
                 //End
-                model.direction = 1;
                 var pos = model.showFilteredInternal ?  (model.factory.getModel().length-1) : (model.factory.getModelFiltered().length-1)
                 model.jumpToPosition(pos);
             } else if (event.keyCode == 33) {
                 //page up
-                model.direction = 1;
                 var up = model.positionInternal - model.displayrowscount;
                 model.jumpToPosition(up);
             } else if (event.keyCode == 34) {
                 //page down
-                model.direction = 1;
                 var down = model.positionInternal + model.displayrowscount;
                 model.jumpToPosition(down);
             }
@@ -1041,8 +1023,6 @@ function init(factory) {
 </script>
 
 <style>
-
-
 .fast-text-view-class {
   overflow-x: hidden;
   overflow-y: hidden;
