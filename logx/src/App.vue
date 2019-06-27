@@ -10,8 +10,8 @@
             <v-spacer></v-spacer>
             <v-toolbar-items class="hidden-sm-and-down">
                 <v-btn color="blue darken-1" flat @click.native="searchDialog = true">Find multiple</v-btn>
-                <v-btn color="blue darken-1" flat @click.stop="jump(0)">Top</v-btn>
-
+                <v-btn class="ma-0 pa-0" color="blue darken-1" fab flat small @click="filesDialog = true"><v-icon class="ma-0 pa-0" small>attach_file</v-icon></v-btn>
+                <v-btn class="ma-0 pa-0" color="green" fab flat small @click.stop="jump(0)"><v-icon class="ma-0 pa-0" small>vertical_align_top</v-icon></v-btn>
                 <!-- <v-btn color="blue darken-1" flat @click.stop="dialog = true">Settings</v-btn> -->
                 <!-- <v-toolbar-side-icon @click.stop="drawerRight = !drawerRight"></v-toolbar-side-icon> -->
             </v-toolbar-items>
@@ -214,7 +214,7 @@
             </v-card>
         </v-dialog>
         <!-- ======= FIND MULTI DIALOG ================================================= -->
-        <v-dialog v-model="searchDialog" persistent max-width="500px">
+        <v-dialog v-model="searchDialog" max-width="500px">
             <v-card>
                 <v-card-title class="pb-0">
                     <span class="headline">Find multiple</span>
@@ -230,6 +230,23 @@
                     <v-btn color="grey darken-1" flat @click.native="searchDialog = false">Cancel</v-btn>
                     <v-spacer></v-spacer>
                     <v-btn color="blue darken-1" flat @click.native="findMulti()">Find all</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+        <!-- ======= FILES DIALOG ================================================= -->
+        <v-dialog v-model="filesDialog"  max-width="600px">
+            <v-card>
+                <v-card-title class="pb-1">
+                    <span class="headline">Dropped Files</span>
+                </v-card-title>
+                <v-card-text >
+                        <v-layout class="ma-0 pa-0" wrap v-for="(f,index) in filesList" :key="index">
+                            <v-text-field class="ma-0 pa-0" :value="getFileName(index)" style="font-size: 1em" readonly solo color="grey" flat single-line hide-details append-outer-icon="delete_outline" @click:append-outer="removeFile(index)"></v-text-field>
+                        </v-layout>
+                </v-card-text>
+                <v-card-actions class="pt-0">
+                    <v-spacer></v-spacer>
+                    <v-btn color="grey darken-1" flat @click.native="filesDialog = false">Close</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -251,8 +268,8 @@ let $ = JQuery
 import { ipcRenderer } from 'electron'
 
 //console.log($);
-function refreshView(filesPaths) {
-  if (filesPaths == undefined || filesPaths.length <= 0) {
+function loadFilesOnServer(filesPaths) {
+  if (filesPaths == undefined) {
     return
   }
   var params = {
@@ -266,7 +283,7 @@ function refreshView(filesPaths) {
 }
 //console.error("-------------------------------------------");
 var filesPaths = appStorage.loadLastFileList()
-refreshView(filesPaths)
+loadFilesOnServer(filesPaths)
 
 function random_rgba() {
   return (
@@ -315,7 +332,7 @@ function jqueryInit() {
     appStorage.saveFileListForWindow(filesPaths)
     //windowLocalStorage["myFiles"] = filesPaths;
     //saveLocalStorage();
-    refreshView(filesPaths)
+    loadFilesOnServer(filesPaths)
     //loadFileContent(filesPaths);
   }
 
@@ -332,11 +349,7 @@ function jqueryInit() {
       reader.readAsText(f)
     }
   }
-  //console.log("!!!!!!!!!!!!!!!!! ready for drop");
-  //  document.getElementById('main-container').addEventListener('drop', function(e) {
-  //    console.log("drop!");
-  //    onDrop(e)
-  // });
+
   $('html').on('dragover', function(event) {
     event.preventDefault()
     event.stopPropagation()
@@ -347,13 +360,9 @@ function jqueryInit() {
     event.stopPropagation()
     //$(this).removeClass('dragging');
   })
-  // $("html").on("drop", function(event) {
-  //     event.preventDefault();
-  //     event.stopPropagation();
-  //     onDrop(event)
-  // });
+
   document.addEventListener('drop', function(e) {
-    //console.log("drop!");
+
     onDrop(e)
   })
 
@@ -466,6 +475,7 @@ export default {
       snackbarVis: false,
       snackbarText: '',
       searchDialog: false,
+      filesDialog: false,
       showFiltered: false,
       position: {
         value: 0,
@@ -529,7 +539,8 @@ export default {
       ],
       searchReasultsContent: ['3', '5'],
       searchterm: '',
-      searchs: []
+      searchs: [],
+      filesList:[]
     }
   },
   beforeCreate() {
@@ -552,6 +563,7 @@ export default {
       let lines = arg.split('\n')
       //document.getElementById('area').innerHTML = lines[0];
       model.logLines = lines
+      model.filesList = appStorage.loadLastFileList();
       //console.log(model);
       model.onResize(window)
     })
@@ -562,7 +574,7 @@ export default {
       let lines = arg.split('\n')
       //document.getElementById('area').innerHTML = lines[0];
       model.logLines = lines
-
+      model.filesList = appStorage.loadLastFileList();
       //console.log(model);
       model.onResize(window)
     })
@@ -625,6 +637,20 @@ export default {
     //console.log("ready");
   },
   methods: {
+    removeFile : function(index){
+      if(!this.filesList || this.filesList.length<index){
+          return;
+      }
+      this.filesList.splice(index,1);
+      appStorage.saveFileListForWindow(this.filesList)
+      loadFilesOnServer(this.filesList)
+    },
+    getFileName: function(index){
+        if(!this.filesList || this.filesList.length<index){
+          return "";
+        }
+        return this.filesList[index].split('\\').pop().split('/').pop();
+    },
     getFindTabText: function(texts, forTab) {
       if (!texts) {
         return ''
