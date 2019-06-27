@@ -237,12 +237,15 @@
         <v-dialog v-model="filesDialog"  max-width="600px">
             <v-card>
                 <v-card-title class="pb-1">
-                    <span class="headline">Dropped Files</span>
+                    <span class="headline">Dropped files</span>
                 </v-card-title>
-                <v-card-text >
+                <v-card-text v-if="filesList && filesList.length>0" >
                         <v-layout class="ma-0 pa-0" wrap v-for="(f,index) in filesList" :key="index">
                             <v-text-field class="ma-0 pa-0" :value="getFileName(index)" style="font-size: 1em" readonly solo color="grey" flat single-line hide-details append-outer-icon="delete_outline" @click:append-outer="removeFile(index)"></v-text-field>
                         </v-layout>
+                </v-card-text>
+                <v-card-text v-else>
+                  No Files
                 </v-card-text>
                 <v-card-actions class="pt-0">
                     <v-spacer></v-spacer>
@@ -261,7 +264,12 @@
 </div>
 </template>
 
+
 <script>
+
+//////////////////////////////////////////////////////////////////
+//// JS //////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
 import appStorage from './components/appStorage'
 import JQuery from 'jquery'
 let $ = JQuery
@@ -450,6 +458,9 @@ export default {
       deep: true
     }
   },
+  //////////////////////////////////////////////////////////////////
+  //// DATA ////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////
   data: function() {
     return {
       findMultiSearchTerms: [
@@ -546,6 +557,9 @@ export default {
   beforeCreate() {
     //console.log('Nothing gets called before me!')
   },
+  //////////////////////////////////////////////////////////////////
+  //// CREATED /////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////
   created() {
     //model.$forceUpdate();
     let model = this
@@ -616,6 +630,9 @@ export default {
     //   model.newPosition = newPosition;
     // });
   },
+  //////////////////////////////////////////////////////////////////
+  //// MOUNTED /////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////
   mounted: function() {
     let model = this
     model.logLines = []
@@ -636,6 +653,9 @@ export default {
     })
     //console.log("ready");
   },
+  //////////////////////////////////////////////////////////////////
+  //// METHODS /////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////
   methods: {
     removeFile : function(index){
       if(!this.filesList || this.filesList.length<index){
@@ -916,6 +936,9 @@ export default {
 </script>
 
 <style>
+/* /////////////////////////////////////////////////////////////////
+  //// STYLES //////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////// */
 @import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro");
 
 #resizer {
