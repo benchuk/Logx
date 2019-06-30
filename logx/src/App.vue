@@ -30,7 +30,7 @@
             <v-expansion-panel v-model="panel" expand>
                <v-layout row justify-center align-center class="ml-3">
                         <v-combobox @input="onFilterPresetSelected" v-model="selectedPresetName" :items="filterPresets" label="Select a filter present or create new"></v-combobox>
-                        <v-btn flat icon color="white">
+                        <v-btn v-on:click="savePresetClicked" flat icon color="white" :disabled="canSave == false">
                             <v-icon>save</v-icon>
                         </v-btn>
                 </v-layout>
@@ -439,48 +439,52 @@ export default {
   watch: {
     highlights: {
       handler: function(val) {
-        //console.log("saving highlights");
+        console.log('highlights --------------')
         //console.error(val);
         let model = this
         //appStorage.saveHighlights(val)
-        model.savePreset(
-          model.selectedPresetName,
-          model.filters,
-          model.exfilters,
-          val
-        )
+        model.canSave = true
+        // model.savePreset(
+        //   model.selectedPresetName,
+        //   model.filters,
+        //   model.exfilters,
+        //   val
+        // )
       },
       deep: true
     },
     filters: {
       handler: function(val) {
+        console.log('filters --------------')
         //console.log("saving filters");
         //console.error(val);
         let model = this
+        model.canSave = true
         //appStorage.saveFilters(val)
 
-        model.savePreset(
-          model.selectedPresetName,
-          val,
-          model.exfilters,
-          model.highlights
-        )
+        // model.savePreset(
+        //   model.selectedPresetName,
+        //   val,
+        //   model.exfilters,
+        //   model.highlights
+        // )
       },
       deep: true
     },
     exfilters: {
       handler: function(val) {
+        console.error('exfilters --------------')
         //console.log("saving ex-filters");
         //console.error(val);
         let model = this
         //appStorage.saveExFilters(val)
-
-        model.savePreset(
-          model.selectedPresetName,
-          model.filters,
-          val,
-          model.highlights
-        )
+        model.canSave = true
+        // model.savePreset(
+        //   model.selectedPresetName,
+        //   model.filters,
+        //   val,
+        //   model.highlights
+        // )
       },
       deep: true
     }
@@ -490,8 +494,9 @@ export default {
   //////////////////////////////////////////////////////////////////
   data: function() {
     return {
+      canSave: false,
       filterPresets: [],
-      selectedPresetName: 'Debug',
+      selectedPresetName: '',
       findMultiSearchTerms: [
         {
           value: ''
@@ -596,7 +601,6 @@ export default {
     model.filterPresets = appStorage.loadPresets().map(f => f.name)
     model.selectedPresetName = appStorage.getLastPresetsName()
     model.loadPreset(model.selectedPresetName)
-
     //console.log('Component Created');
     ipcRenderer.on('load-files-reply', (event, arg) => {
       //console.log("done");
@@ -651,6 +655,12 @@ export default {
       }
       prevKey = event.keyCode
     })
+
+    setTimeout(() => {
+      console.log('canSave -> false')
+      model.canSave = false
+    }, 0)
+
     //  EventBus.$on('newPosition', newPosition => {
     //   console.log("newPosition: " + newPosition);
     //   model.newPosition = newPosition;
@@ -682,15 +692,19 @@ export default {
   //// METHODS /////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////
   methods: {
+    savePresetClicked: function() {
+      let model = this
+      model.canSave = false
+      model.savePreset(
+        model.selectedPresetName,
+        model.filters,
+        model.exfilters,
+        model.highlights
+      )
+    },
     savePreset: function(presetName, filters, excludeFilters, highlights) {
       console.log('savePreset to storage for preset name: ' + presetName)
-      appStorage.savePreset(
-        this.selectedPresetName,
-        filters,
-        excludeFilters,
-        highlights
-      )
-      appStorage.saveLastUsedPresetName(this.selectedPresetName)
+      appStorage.savePreset(presetName, filters, excludeFilters, highlights)
     },
     loadPreset: function(presetName) {
       console.log('load preset: ' + presetName)
@@ -706,6 +720,10 @@ export default {
       }
       model.filters = model.filtersForPresetName(presetName)
       model.exfilters = model.excludeFiltersForPresetName(presetName)
+      setTimeout(() => {
+        console.log('canSave -> false')
+        model.canSave = false
+      }, 0)
     },
     filtersForPresetName: function(presetName) {
       var preset = appStorage.loadPresets().find(l => l.name === presetName)
@@ -730,6 +748,7 @@ export default {
     onFilterPresetSelected: function(selectedPresetName) {
       console.log('New Preset Name: ' + selectedPresetName)
       this.loadPreset(selectedPresetName)
+      appStorage.saveLastUsedPresetName(selectedPresetName)
     },
     removeFile: function(index) {
       if (!this.filesList || this.filesList.length < index) {
