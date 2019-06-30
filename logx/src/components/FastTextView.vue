@@ -2,18 +2,14 @@
 <div>
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="/resources/demos/style.css">
-    <div v-bind:id="'slider-vertical-'+ factory.myInitId" style="height:100%; position: absolute; top: 0px; right: 7px;"></div>
+    <div v-bind:id="'slider-vertical-'+ factory.myInitId" style="position: absolute; right: 4px;"></div>
     <v-progress-linear v-bind:id="'logx-progress' + factory.myInitId" :indeterminate="true" style="height:2px"></v-progress-linear>
-
     <div v-bind:id="'fast-text-view-' + factory.myInitId" class="fast-text-view-class">
-
         <div align=left id='logs-container' class='logrow'>
             <div class='rownumber'>[0]</div>no data default
 
         </div>
     </div>
-    
-
 </div>
 </template>
 
@@ -50,20 +46,19 @@ export default {
         showFiltered(val, oldval) {
             let model = this;
 
-            console.log(" :  ^^^^ showFiltered watch: ",val);
+            console.log(" :  ^^^^ showFiltered watch: ", val);
             //console.log(val);
-            if(this.showFilteredInternal == val)
-            {
+            if (this.showFilteredInternal == val) {
                 console.log("ignore show filter logic");
                 return;
             }
             this.showFilteredInternal = val;
-            console.log("this.positionInternal",this.positionInternal);
-            if(model.useFiltersInternal)
-            {
+            console.log("this.positionInternal", this.positionInternal);
+            if (model.useFiltersInternal) {
                 this.handlePosition(val);
             }
             //model.jumpToPosition(this.positionInternal);
+            model.setupSlider();
             model.refreshView();
         },
         position(val, oldval) {
@@ -74,34 +69,28 @@ export default {
                 console.log('skip self generated event');
                 return;
             }
-            
+
             //if (val.showFiltered) {
             setTimeout(() => {
                 EventBus.$emit('showingFiltered', true);
             }, 0);
-            
+
             this.showFilteredInternal = true;
             //}
             let parsedPosition = parseInt(val.value);
             setTimeout(() => {
-                    console.log("anim 1 for src id: " + this.factory.myInitId);
-                    $( "#"+ parsedPosition).fadeOut( "slow", function() {
-                        $( "#"+ parsedPosition ).fadeIn( "slow", function() {
-                                // Animation complete   
-                        });
+                console.log("anim 1 for src id: " + this.factory.myInitId);
+                $("#" + parsedPosition).fadeOut("slow", function () {
+                    $("#" + parsedPosition).fadeIn("slow", function () {
+                        // Animation complete   
                     });
+                });
             }, 0);
             model.targetJump = parsedPosition;
             // model.positionInternal = parsedPosition;
             // model.handlePosition()
-            
+
             model.jumpToPosition(parsedPosition);
-        },
-        height(val, oldval) {
-            ////console.log(this.ident + " : !!!!!!!!!!!!!!!!!!!!!!!! height watch: " + val);
-            //this.currentHeight = val;
-            //this.matchHeight();
-            //this.jumpToPosition(this.currentPosition);
         },
         lines(val, oldval) {
             ////console.log(this);
@@ -136,10 +125,10 @@ export default {
                 //model.filtersInternal = model.filters;//val ? model.filters : [];
                 model.useFiltersInternal = val;
                 //should not handle position transition between models if we are on NONE-FILTERD model - in such a case this is only coloring issue
-                if(!this.showFilteredInternal)
-                {
+                if (!this.showFilteredInternal) {
                     model.handlePosition(!val)
                 }
+                model.setupSlider();
                 model.refreshView();
             },
             deep: true
@@ -239,7 +228,6 @@ export default {
             displayrowscount: 20,
             lowerPosition: 0,
             upperPosition: 0,
-            currentHeight: 10,
             highlightsInternal: [],
             filtersInternal: [],
             exfiltersInternal: [],
@@ -248,11 +236,10 @@ export default {
         }
     },
     methods: {
-        handlePosition: function(shouldMoveFromFilteredToFull){
+        handlePosition: function (shouldMoveFromFilteredToFull) {
             console.log("->handlePosition");
             let model = this;
-            if(shouldMoveFromFilteredToFull)
-            {
+            if (shouldMoveFromFilteredToFull) {
                 //get position in full model
                 var lineData = model.factory.getModelFiltered()[this.positionInternal];
                 this.positionInternal = lineData.rowid;
@@ -260,51 +247,43 @@ export default {
                 let pos2 = this.positionInternal;
                 setTimeout(() => {
                     console.log("anim 2 for src id: " + this.factory.myInitId);
-                    $( "#"+ pos2).fadeOut( "slow", function() {
-                        $( "#"+ pos2 ).fadeIn( "slow", function() {
-                                // Animation complete   
+                    $("#" + pos2).fadeOut("slow", function () {
+                        $("#" + pos2).fadeIn("slow", function () {
+                            // Animation complete   
                         });
                     });
                 }, 0);
-            }
-            else
-            {
+            } else {
                 let lines = model.factory.getModelFiltered()
 
                 var prevIndex = this.positionInternal;
-                var newDisplayRowId = -1;             
+                var newDisplayRowId = -1;
 
                 let currentLineRowId = model.factory.getModel()[this.positionInternal].rowid;
                 //console.log(currentLineRowId);
                 var index = 0;
-                while(index < lines.length)
-                {
-                     var lineData = lines[index];
-                    if(lineData.rowid >= currentLineRowId)
-                    {
+                while (index < lines.length) {
+                    var lineData = lines[index];
+                    if (lineData.rowid >= currentLineRowId) {
                         newDisplayRowId = lineData.rowid;
                         this.positionInternal = index;
                         break;
                     }
                     index++;
                 }
-                if(newDisplayRowId > 0)
-                {
+                if (newDisplayRowId > 0) {
                     var topViewIndex = prevIndex + this.displayrowscount;
                     var c = 0;
-                    for(var i = prevIndex; i<topViewIndex; i++)
-                    {
+                    for (var i = prevIndex; i < topViewIndex; i++) {
                         c++;
-                        if(model.factory.getModel()[i]!== undefined)
-                        {
-                            if(newDisplayRowId == model.factory.getModel()[i].rowid)
-                            {
+                        if (model.factory.getModel()[i] !== undefined) {
+                            if (newDisplayRowId == model.factory.getModel()[i].rowid) {
                                 setTimeout(() => {
                                     let pos = newDisplayRowId;
                                     console.log("anim 3");
-                                    $( "#"+ pos).fadeOut( "slow", function() {
-                                        $( "#"+ pos ).fadeIn( "slow", function() {
-                                                // Animation complete   
+                                    $("#" + pos).fadeOut("slow", function () {
+                                        $("#" + pos).fadeIn("slow", function () {
+                                            // Animation complete   
                                         });
                                     });
                                 }, 0);
@@ -449,7 +428,7 @@ export default {
                             'skip': true
                         });
                     }
-                    
+
                 }
                 var t1 = performance.now();
                 //console.log("Call to updateLinesModel took " + (t1 - t0) + " milliseconds.")
@@ -458,19 +437,17 @@ export default {
             }
             run();
         },
-        jumpToPosition: function(newPosition)
-        {
-            console.log("jumpToPosition",newPosition);
+        jumpToPosition: function (newPosition) {
+            console.log("jumpToPosition", newPosition);
             let showSkip = this.showFilteredInternal;
             let model = this;
             let lines = (showSkip || !this.useFiltersInternal) ? this.factory.getModel() : this.factory.getModelFiltered();
             let len = lines.length;
             let spaceToEnd = len - this.displayrowscount;
-           
+
             let POSITION = parseInt(newPosition);
 
-            if(POSITION >= spaceToEnd || POSITION >= len)
-            {
+            if (POSITION >= spaceToEnd || POSITION >= len) {
                 this.positionInternal = spaceToEnd;
                 console.log("Skip jump - nothing to render - reached end of files: " + POSITION);
                 //return;
@@ -478,41 +455,38 @@ export default {
                 POSITION = spaceToEnd;
             }
 
-            if(POSITION < 0)
-            {
+            if (POSITION < 0) {
                 console.log("invalid position - setting to zero");
                 this.positionInternal = 0;
                 POSITION = 0;
             }
 
-            if(POSITION == this.positionInternal)
-            {
+            if (POSITION == this.positionInternal) {
                 console.log("Skip jump - nothing to render - position is the same: " + POSITION);
             }
 
             this.positionInternal = POSITION;
 
             var modelLen = 0
-            if(this.showFilteredInternal)
-            {
+            if (this.showFilteredInternal || !this.useFiltersInternal) {
                 modelLen = this.factory.getModel().length
-            }
-            else
-            {
+            } else {
                 modelLen = this.factory.getModelFiltered().length
             }
             var sliderPostion = POSITION;
+            console.log("------------- WHEEL");
+            console.log(this.factory.getModel().length);
+            console.log(this.factory.getModelFiltered().length);
             console.log("modelLen: " + modelLen);
             console.log("sliderPostion: " + sliderPostion);
-            var silderValue = Math.floor( (  (modelLen -  sliderPostion) / modelLen) *100)
-            console.log("silderValue: " + silderValue);
-            jQuery('#slider-vertical-'+model.factory.myInitId).slider("value",  silderValue);
+            // var silderValue = Math.floor(((modelLen - sliderPostion) / modelLen) * 100)
+            // console.log("silderValue: " + silderValue);
+            jQuery('#slider-vertical-' + model.factory.myInitId).slider("value", modelLen - model.displayrowscount - sliderPostion /*silderValue*/ );
             model.refreshView();
         },
         refreshView: function () {
             let POSITION = parseInt(this.positionInternal);
-            if(isNaN(POSITION) || POSITION < 0)
-            {
+            if (isNaN(POSITION) || POSITION < 0) {
                 this.positionInternal = 0;
                 POSITION = 0;
             }
@@ -525,9 +499,8 @@ export default {
             let len = lines.length;
             console.log("lines count", len);
             let spaceToEnd = len - this.displayrowscount;
-             //if havily filtered then the minimum display is 'displayrowscount'
-            if(spaceToEnd < this.displayrowscount)
-            {
+            //if havily filtered then the minimum display is 'displayrowscount'
+            if (spaceToEnd < this.displayrowscount) {
                 spaceToEnd = this.displayrowscount
             }
             var backupHtml = model.container.innerHTML;
@@ -537,18 +510,15 @@ export default {
             let counter = this.displayrowscount;
             while (POSITION >= 0 && POSITION < len && counter > 0) {
                 var line = lines[POSITION];
-                if(line !== undefined)
-                {
+                if (line !== undefined) {
                     var skipOrNotId = "rowdata";
-                    if(this.showFilteredInternal)
-                    {
-                        if(this.useFiltersInternal && line.skip)
-                        {
+                    if (this.showFilteredInternal) {
+                        if (this.useFiltersInternal && line.skip) {
                             skipOrNotId = "skipline";
                         }
                     }
 
-                    var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='"+skipOrNotId+"' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
+                    var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='" + skipOrNotId + "' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
                     data += l;
                     // if (line.skip && showSkip) {
                     //     var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='skipline' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
@@ -561,7 +531,7 @@ export default {
                 POSITION++;
                 counter--;
             }
-            
+
             model.container.innerHTML = data;
 
             var i = 1;
@@ -581,20 +551,22 @@ export default {
             //after render register for line click //todo unregister prev clicks - not sure needed.
             setTimeout(() => {
                 $('#' + model.targetJump).css("background-color", "#2C2B2B");
-                    $('.theline-' + model.factory.myInitId).click(function () {
-                        console.log("search click: for src id: " + model.factory.myInitId)
-                        EventBus.$emit('jumpto', {
-                            'value': $(this).parent().attr('id'),
-                            'source': model.factory.myInitId,
-                            'showFiltered': true
-                        });
+                $('.theline-' + model.factory.myInitId).click(function () {
+                    console.log("search click: for src id: " + model.factory.myInitId)
+                    EventBus.$emit('jumpto', {
+                        'value': $(this).parent().attr('id'),
+                        'source': model.factory.myInitId,
+                        'showFiltered': true
                     });
+                });
             }, 1);
 
         },
         matchHeight: function () {
             //todo optimized when there is no actual height change - then do not render.
             let reqHeight = this.currentHeight;
+            console.error("matchHeight");
+
             let rowElement = document.getElementById('rowdata');
             var v;
             var rowHeight = 21; //default
@@ -602,15 +574,56 @@ export default {
                 v = rowElement.clientHeight;
                 rowHeight = v > 0 ? v : 21;
             }
-
+            console.log("reqHeight", reqHeight);
+            console.log("document.documentElement.clientHeight", document.documentElement.clientHeight);
+            console.log("reqHeight", reqHeight);
+            console.log("rowHeight", rowHeight);
             ////console.log(this.factory.myInitId + " reqHeight (parent height): " + reqHeight);
             ////console.log(this.factory.myInitId + " rowHeight: " + rowHeight);
             this.displayrowscount = Math.round(reqHeight / rowHeight) - 4; //temp hack
             if (this.displayrowscount <= 0) {
                 this.displayrowscount = 10;
             }
+            console.log("this.displayrowscount", this.displayrowscount);
             ////console.log(this.factory.myInitId + " this.displayrowscount: " + this.displayrowscount);
+            jQuery('#slider-vertical-' + this.factory.myInitId).height(this.displayrowscount * rowHeight);
             this.refreshView();
+        },
+        setupSlider: function () {
+            let model = this
+            let len = 0;
+            if (model.showFilteredInternal || !model.useFiltersInternal) {
+                len = model.factory.getModel().length
+            } else {
+                len = model.factory.getModelFiltered().length
+            }
+            console.error("slider!!!!")
+            console.error((len - model.displayrowscount))
+            jQuery('#slider-vertical-' + model.factory.myInitId).slider({
+                orientation: "vertical",
+                range: "min",
+                min: 0,
+                max: (len - model.displayrowscount),
+                value: len - model.displayrowscount - model.positionInternal,
+                slide: function (event, ui) {
+                    //max: model.lines.length,
+                    // var lineNum = parseInt(ui.value);
+                    // console.log("adding silder: " +lineNum )
+                    // model.jumpToPosition(lineNum, 0);
+                    //$( "#amount" ).val( ui.value );
+
+                    console.error("----------------slider")
+                    console.error(model.factory.getModel().length)
+                    console.error(model.factory.getModelFiltered().length)
+                    console.log("using len: " + len)
+                    // var lineNumPrecentage = parseInt(ui.value) / 100;
+                    // var lineNum = len - Math.floor(len * lineNumPrecentage)
+                    var lineNum = parseInt(ui.value);
+                    console.log("moving silder to: " + lineNum)
+                    model.jumpToPosition(len - model.displayrowscount - lineNum, 0);
+
+                }
+            });
         }
     },
     created() {
@@ -629,12 +642,10 @@ export default {
                 ////console.log("asdasdasdasdasdasdasdasdasd");
                 that.m = model.slice();
             }
-            that.setModelFiltered = function(model)
-            {
+            that.setModelFiltered = function (model) {
                 that.modelFiltered = model.slice();
             }
-            that.getModelFiltered = function(model)
-            {
+            that.getModelFiltered = function (model) {
                 return that.modelFiltered;
             }
             that.setOriginalModel = function (model) {
@@ -668,43 +679,43 @@ export default {
         //     //console.log('focusout');
         //     hasFocus = false;
         // });
-        $(function () {
-                //console.log(model.ident + " : !!!!!!!!!!!!!!!!!!!! ex--filters watch: " + val);
-                setTimeout(() => {
-                
-                    jQuery('#slider-vertical-'+model.factory.myInitId).slider({
-                        orientation: "vertical",
-                        range: "min",
-                        min: 0,
-                        max: 100,
-                        value: 100,
-                        slide: function (event, ui) {
-                            //max: model.lines.length,
-                            // var lineNum = parseInt(ui.value);
-                            // console.log("adding silder: " +lineNum )
-                            // model.jumpToPosition(lineNum, 0);
-                            //$( "#amount" ).val( ui.value );
-                            let len = 0;
-                            if(model.showFilteredInternal)
-                            {
-                                len = model.factory.getModel().length
-                            }
-                            else
-                            {
-                                len = model.factory.getModelFiltered().length
-                            }
-                            console.log("using len: " + len)
-                            var lineNumPrecentage = parseInt(ui.value)/100;
-                            var lineNum = len - Math.floor(len*lineNumPrecentage)
-                            //console.log("adding silder: " +lineNum )
-                            model.jumpToPosition(lineNum, 0);
-                            
-                        }
-                    });
-                    console.log("adding silder")
-                }, 300);
-                //$( "#amount" ).val( $( "#slider-vertical" ).slider( "value" ) );
-            });
+        // $(function () {
+        //     //console.log(model.ident + " : !!!!!!!!!!!!!!!!!!!! ex--filters watch: " + val);
+        //     setTimeout(() => {
+
+        //         jQuery('#slider-vertical-' + model.factory.myInitId).slider({
+        //             orientation: "vertical",
+        //             range: "min",
+        //             min: 0,
+        //             max: 100,
+        //             value: 100,
+        //             slide: function (event, ui) {
+        //                 //max: model.lines.length,
+        //                 // var lineNum = parseInt(ui.value);
+        //                 // console.log("adding silder: " +lineNum )
+        //                 // model.jumpToPosition(lineNum, 0);
+        //                 //$( "#amount" ).val( ui.value );
+        //                 let len = 0;
+        //                 if (model.showFilteredInternal) {
+        //                     len = model.factory.getModel().length
+        //                 } else {
+        //                     len = model.factory.getModelFiltered().length
+        //                 }
+        //                 console.error("----------------slider")
+        //                 console.error(model.factory.getModel().length)
+        //                 console.error(model.factory.getModelFiltered().length)
+        //                 console.log("using len: " + len)
+        //                 var lineNumPrecentage = parseInt(ui.value) / 100;
+        //                 var lineNum = len - Math.floor(len * lineNumPrecentage)
+        //                 //console.log("adding silder: " +lineNum )
+        //                 model.jumpToPosition(lineNum, 0);
+
+        //             }
+        //         });
+        //         console.log("adding silder")
+        //     }, 300);
+        //     //$( "#amount" ).val( $( "#slider-vertical" ).slider( "value" ) );
+        // });
 
         $(window).keydown(function (event) {
             if (!hasFocus) {
@@ -715,7 +726,7 @@ export default {
             if (event.keyCode == 40) {
                 //arrow up
                 var up = model.positionInternal + 1;
-                console.log("up",up)
+                console.log("up", up)
                 model.jumpToPosition(up);
             } else if (event.keyCode == 38) {
                 var down = model.positionInternal - 1;
@@ -727,7 +738,7 @@ export default {
                 model.jumpToPosition(pos);
             } else if (event.keyCode == 35) {
                 //End
-                var pos = model.showFilteredInternal ?  (model.factory.getModel().length-1) : (model.factory.getModelFiltered().length-1)
+                var pos = model.showFilteredInternal || !model.useFiltersInternal ? (model.factory.getModel().length - 1) : (model.factory.getModelFiltered().length - 1)
                 model.jumpToPosition(pos);
             } else if (event.keyCode == 33) {
                 //page up
@@ -739,17 +750,10 @@ export default {
                 model.jumpToPosition(down);
             }
         });
+
         model.container = document.getElementById('fast-text-view-' + model.factory.myInitId);
         //.log("model.parentid: " + model.parentid);
-        var parent;
-        var parentHTML;
-        if (!model.parentid) {
-            parent = $('#fast-text-view-' + model.factory.myInitId).parent();
-            parentHTML = document.getElementById('fast-text-view-' + model.factory.myInitId);
-        } else {
-            parent = $('#' + model.parentid);
-            parentHTML = document.getElementById(model.parentid);
-        }
+
         ////console.log("parent??: " + parent);
         ////console.log(parent);
         ////console.log("the height" + parent.height());
@@ -757,8 +761,29 @@ export default {
         let mainC = $('#fast-text-view-' + model.factory.myInitId);
 
         function onParentResize() {
-            //ole.log("onParentResize: " + parent.height());
-            let newHeight = parent.height();
+
+            var parent;
+            var parentH;
+            var parentHTML;
+            if (!model.parentid) {
+                parentH = document.documentElement.clientHeight - 64;
+                parentHTML = document.getElementById('fast-text-view-' + model.factory.myInitId);
+            } else {
+                parentH = $('#' + model.parentid).height();
+                parentHTML = document.getElementById(model.parentid);
+            }
+            console.log("model.container", model.container);
+            console.log("parent", parent);
+            console.log("parentHTML", parentHTML);
+            console.log("model.parentid", model.parentid);
+            console.error("onParentResize: " + parentH);
+            //console.error("onParentResize parent: ", );
+            console.log(parent);
+            let docH = document.documentElement.clientHeight;
+            let elemH = parentH;
+            let newHeight = parentH; //Math.min(docH,elemH); //document.documentElement.clientHeight-100;//$(document).height()-200;//this.currentHeight;
+            //let newHeight = $('.logx').height();//$('#fast-text-view-' + model.factory.myInitId).height();//parent.height();
+            console.error('newHeight', newHeight)
             if (prevHeight != newHeight) {
                 prevHeight = newHeight;
                 model.currentHeight = newHeight
@@ -790,8 +815,12 @@ export default {
 
             // }, 10);
             model.updateLinesModel(true);
+            model.setupSlider();
             //     //model.refreshView();
-            onParentResize();
+            setTimeout(() => {
+                onParentResize();
+            }, 0);
+
         });
         $(document).on("mousedown", function (event) {
             let found = $(".fast-text-view-class").has(event.target).length > 0;
@@ -811,7 +840,7 @@ export default {
             }
             clearTimeout(preEvent);
             preEvent = setTimeout(() => {
-                //console.log('onParentResize mouseup');
+                console.error('onParentResize mouseup');
                 onParentResize();
             }, 300);
         });
@@ -822,13 +851,16 @@ export default {
         // });
         window.addEventListener('resize', function (e) {
             e.preventDefault();
-            ////console.log("window resize");
+            console.log("window resize");
             clearTimeout(preEvent);
             preEvent = setTimeout(() => {
                 //console.log('onParentResize resize');
                 onParentResize();
             }, 300);
         });
+        setTimeout(() => {
+            onParentResize();
+        }, 350);
         // //console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!  register !!!!!!!!!!!!!!!!");//
         // document.getElementById('fast-text-view-'+ model.factory.myInitId).addEventListener('onmousedown', function(e){
         //    //e.preventDefault();
@@ -949,7 +981,7 @@ export default {
 }
 
 function getSelText() {
-    
+
     // get selected text
     var text = "";
     if (window.getSelection) {
@@ -1024,66 +1056,66 @@ function init(factory) {
 
 <style>
 .fast-text-view-class {
-  overflow-x: hidden;
-  overflow-y: hidden;
-  width: 100%;
-  height: 100%;
-  max-height: 100%;
-  margin: 0;
-  color: greenyellow;
-  font-size: 14px;
-  white-space: nowrap;
-  background-color: black;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    margin: 0;
+    color: greenyellow;
+    font-size: 14px;
+    white-space: nowrap;
+    background-color: black;
 }
 
 .unselectable {
-          user-select:      none;
+    user-select: none;
 
-   -khtml-user-select:      none;
-  -webkit-user-select:      none;
-     -moz-user-select: -moz-none;
-       -o-user-select:      none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: -moz-none;
+    -o-user-select: none;
 }
 
 .rownumber {
-  display: inline;
-  margin-right: 5px;
-  color: gray;
+    display: inline;
+    margin-right: 5px;
+    color: gray;
 }
 
 .rowIndex {
-  display: inline-block;
-  margin-right: 15px;
-  color: gray;
+    display: inline-block;
+    margin-right: 15px;
+    color: gray;
 }
 
 #rowdata {
-  display: inline-block;
-  display: inline-block;
-  color: greenyellow;
+    display: inline-block;
+    display: inline-block;
+    color: greenyellow;
 }
 
 #skipline {
-  display: inline-block;
-  display: inline-block;
-  color: grey;
+    display: inline-block;
+    display: inline-block;
+    color: grey;
 }
 
 .highlight1 {
-  /* Opera 10.5+, IE 9.0 */
-  color: black;
-  background-color: #fff34d;
-  /* Saf3.0+, Chrome */
-          box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
-  /* Saf3-4 */
-          border-radius: 3px;
-  /* FF1+ */
+    /* Opera 10.5+, IE 9.0 */
+    color: black;
+    background-color: #fff34d;
+    /* Saf3.0+, Chrome */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
+    /* Saf3-4 */
+    border-radius: 3px;
+    /* FF1+ */
 
-  -webkit-border-radius: 3px;
-     -moz-border-radius: 3px;
-  /* FF3.5+ */
-  -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
-  /* Opera 10.5, IE 9, Saf5, Chrome */
-     -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    /* FF3.5+ */
+    -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
+    /* Opera 10.5, IE 9, Saf5, Chrome */
+    -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
 }
 </style>

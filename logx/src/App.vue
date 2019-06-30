@@ -1,6 +1,6 @@
 <template>
-<div id="app">
-    <v-app id="inspire" dark>
+<div id="app" >
+    <v-app id="inspire" dark >
         <!-- ======= TOOLBAR ================================================= -->
         <v-toolbar color="black" dark fixed app clipped-right>
             <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
@@ -28,11 +28,11 @@
                 </v-flex>
             </v-layout>
             <v-expansion-panel v-model="panel" expand>
-               <v-layout row justify-center align-center class="ml-3">
-                        <v-combobox @input="onFilterPresetSelected" v-model="selectedPresetName" :items="filterPresets" label="Select a filter present or create new"></v-combobox>
-                        <v-btn v-on:click="savePresetClicked" flat icon color="white" :disabled="canSave == false">
-                            <v-icon>save</v-icon>
-                        </v-btn>
+                <v-layout row justify-center align-center class="ml-3">
+                    <v-combobox @input="onFilterPresetSelected" v-model="selectedPresetName" :items="filterPresets" label="Select a filter present or create new"></v-combobox>
+                    <v-btn v-on:click="savePresetClicked" flat icon color="white" :disabled="canSave == false">
+                        <v-icon>save</v-icon>
+                    </v-btn>
                 </v-layout>
                 <!-- ======= FILTERS ================================================= -->
                 <v-expansion-panel-content :value="panel[0]">
@@ -45,7 +45,7 @@
                             <v-icon dark>delete_outline</v-icon>
                         </v-btn>
                     </v-layout>
-                   
+
                     <v-layout class="ml-3 mr-3" row v-for="(item, index) in filters" :key="index">
                         <v-text-field class="mt-0 pt-0" ref="filterId" append-icon="color_lens" @click:append="colorFromFilter(index)" append-outer-icon="delete_outline" @click:append-outer="removeFilter(index)" v-model.lazy="item.value"></v-text-field>
                     </v-layout>
@@ -85,16 +85,19 @@
             </v-expansion-panel>
             <!-- ======= DRAWER ================================================= -->
         </v-navigation-drawer>
-        <v-content fill-height fluid grid-list-sm id="main-content">
-            <v-container id="main-container" fill-height fluid grid-list-sm>
-                <v-layout justify-left align-top style="padding-top:30px">
-                    <v-flex>
-                        <fast-text-view :lines="logLines" :position="position" :height="logsHeight" :highlights="highlights" :ident="'main-logger'" :filters="filters" :parentid="'main-container'" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered"></fast-text-view>
+        <!-- ======= Logs Viewer ================================================= -->
+        <v-content>
+           <v-container fluid fill-height pa-2>
+                <v-layout justify-left align-left>
+                    <v-flex xs12 >
+                        <fast-text-view :lines="logLines" :position="position" :highlights="highlights" :ident="'main-logger'" :filters="filters" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered"></fast-text-view>
                     </v-flex>
                 </v-layout>
             </v-container>
         </v-content>
+        <!-- ======= Right Nav DRAWER ================================================= -->
         <v-navigation-drawer right temporary v-model="right" fixed></v-navigation-drawer>
+        <!-- ======= Footer ================================================= -->
         <v-footer inset app fixed id="theFooter" height="30">
             <v-container fluid fill-height pa-0>
                 <v-layout justify-left align-left>
@@ -119,7 +122,7 @@
                             <v-tabs-items>
                                 <v-tab-item v-for="(s,index) in searchs" v-bind:key="index">
                                     <v-card flat>
-                                        <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :height="100" :highlights="highlights" :useExFilters="false" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'"></fast-text-view>
+                                        <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :highlights="highlights" :useExFilters="false" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'"></fast-text-view>
                                     </v-card>
                                 </v-tab-item>
                             </v-tabs-items>
@@ -705,6 +708,7 @@ export default {
     savePreset: function(presetName, filters, excludeFilters, highlights) {
       console.log('savePreset to storage for preset name: ' + presetName)
       appStorage.savePreset(presetName, filters, excludeFilters, highlights)
+      this.showMessage('saved')
     },
     loadPreset: function(presetName) {
       console.log('load preset: ' + presetName)
@@ -960,11 +964,11 @@ export default {
     onResize: function(www) {
       //console.log('onResize!!!!!!!!!!!!!!!!!!!!!!!!!!');
       //console.log(www);
-      document
-        .getElementById('main-container')
-        .setAttribute('style', 'max-width:' + www.innerWidth + 'px')
-      $('#main-content').css('padding-bottom', '30px')
-      $('#main-content').css('padding-top', '30px')
+      // document
+      //   .getElementById('main-container')
+      //   .setAttribute('style', 'max-width:' + www.innerWidth + 'px')
+      // $('#main-content').css('padding-bottom', '30px')
+      // $('#main-content').css('padding-top', '30px')
     },
     up: function(e) {
       //console.log("up");
