@@ -10,8 +10,12 @@
             <v-spacer></v-spacer>
             <v-toolbar-items class="hidden-sm-and-down">
                 <v-btn color="blue darken-1" flat @click.native="searchDialog = true">Find multiple</v-btn>
-                <v-btn class="ma-0 pa-0" color="blue darken-1" fab flat small @click="filesDialog = true"><v-icon class="ma-0 pa-0" small>attach_file</v-icon></v-btn>
-                <v-btn class="ma-0 pa-0" color="green" fab flat small @click.stop="jump(0)"><v-icon class="ma-0 pa-0" small>vertical_align_top</v-icon></v-btn>
+                <v-btn class="ma-0 pa-0" color="blue darken-1" fab flat small @click="filesDialog = true">
+                    <v-icon class="ma-0 pa-0" small>attach_file</v-icon>
+                </v-btn>
+                <v-btn class="ma-0 pa-0" color="green" fab flat small @click.stop="jump(0)">
+                    <v-icon class="ma-0 pa-0" small>vertical_align_top</v-icon>
+                </v-btn>
                 <!-- <v-btn color="blue darken-1" flat @click.stop="dialog = true">Settings</v-btn> -->
                 <!-- <v-toolbar-side-icon @click.stop="drawerRight = !drawerRight"></v-toolbar-side-icon> -->
             </v-toolbar-items>
@@ -24,20 +28,26 @@
                 </v-flex>
             </v-layout>
             <v-expansion-panel v-model="panel" expand>
+               <v-layout row justify-center align-center class="ml-3">
+                        <v-combobox @input="onFilterPresetSelected" v-model="selectedPresetName" :items="filterPresets" label="Select a filter present or create new"></v-combobox>
+                        <v-btn flat icon color="white">
+                            <v-icon>save</v-icon>
+                        </v-btn>
+                </v-layout>
                 <!-- ======= FILTERS ================================================= -->
                 <v-expansion-panel-content :value="panel[0]">
                     <div slot="header">Filters {{filters?'('+filters.length+')':""}}</div>
                     <v-layout row justify-center align-center>
-                        <v-switch class="mt-0 mb-0 pa-0 ml-3" :label="`${useFilters?'On':'Off'}`" v-model="useFilters"></v-switch>
-                        <v-btn class="mt-0 mr-0" v-on:click="addFilter" small dark>Add Filter<v-icon dark class="ml-1">playlist_add</v-icon>
+                        <v-switch class="mt-3 mb-0 pa-0 ml-3" :label="`${useFilters?'On':'Off'}`" v-model="useFilters"></v-switch>
+                        <v-btn class="mt-0 mb-0 mr-0" v-on:click="addFilter" small dark>Add Filter<v-icon dark class="ml-1">playlist_add</v-icon>
                         </v-btn>
                         <v-btn class="mt-0 ml-0" v-on:click="removeFilter(-1)" flat icon color='error'>
                             <v-icon dark>delete_outline</v-icon>
                         </v-btn>
                     </v-layout>
+                   
                     <v-layout class="ml-3 mr-3" row v-for="(item, index) in filters" :key="index">
                         <v-text-field class="mt-0 pt-0" append-icon="color_lens" @click:append="colorFromFilter(index)" append-outer-icon="delete_outline" @click:append-outer="removeFilter(index)" v-model.lazy="item.value"></v-text-field>
-
                     </v-layout>
                 </v-expansion-panel-content>
                 <!-- ======= COLORS ================================================= -->
@@ -234,18 +244,18 @@
             </v-card>
         </v-dialog>
         <!-- ======= FILES DIALOG ================================================= -->
-        <v-dialog v-model="filesDialog"  max-width="600px">
+        <v-dialog v-model="filesDialog" max-width="600px">
             <v-card>
                 <v-card-title class="pb-1">
                     <span class="headline">Dropped files</span>
                 </v-card-title>
-                <v-card-text v-if="filesList && filesList.length>0" >
-                        <v-layout class="ma-0 pa-0" wrap v-for="(f,index) in filesList" :key="index">
-                            <v-text-field class="ma-0 pa-0" :value="getFileName(index)" style="font-size: 1em" readonly solo color="grey" flat single-line hide-details append-outer-icon="delete_outline" @click:append-outer="removeFile(index)"></v-text-field>
-                        </v-layout>
+                <v-card-text v-if="filesList && filesList.length>0">
+                    <v-layout class="ma-0 pa-0" wrap v-for="(f,index) in filesList" :key="index">
+                        <v-text-field class="ma-0 pa-0" :value="getFileName(index)" style="font-size: 1em" readonly solo color="grey" flat single-line hide-details append-outer-icon="delete_outline" @click:append-outer="removeFile(index)"></v-text-field>
+                    </v-layout>
                 </v-card-text>
                 <v-card-text v-else>
-                  No Files
+                    No Files
                 </v-card-text>
                 <v-card-actions class="pt-0">
                     <v-spacer></v-spacer>
@@ -264,9 +274,7 @@
 </div>
 </template>
 
-
 <script>
-
 //////////////////////////////////////////////////////////////////
 //// JS //////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
@@ -370,7 +378,6 @@ function jqueryInit() {
   })
 
   document.addEventListener('drop', function(e) {
-
     onDrop(e)
   })
 
@@ -435,7 +442,13 @@ export default {
         //console.log("saving highlights");
         //console.error(val);
         let model = this
-        appStorage.saveHighlights(val)
+        //appStorage.saveHighlights(val)
+        model.savePreset(
+          model.selectedPresetName,
+          model.filters,
+          model.exfilters,
+          val
+        )
       },
       deep: true
     },
@@ -444,7 +457,14 @@ export default {
         //console.log("saving filters");
         //console.error(val);
         let model = this
-        appStorage.saveFilters(val)
+        //appStorage.saveFilters(val)
+
+        model.savePreset(
+          model.selectedPresetName,
+          val,
+          model.exfilters,
+          model.highlights
+        )
       },
       deep: true
     },
@@ -453,7 +473,14 @@ export default {
         //console.log("saving ex-filters");
         //console.error(val);
         let model = this
-        appStorage.saveExFilters(val)
+        //appStorage.saveExFilters(val)
+
+        model.savePreset(
+          model.selectedPresetName,
+          model.filters,
+          val,
+          model.highlights
+        )
       },
       deep: true
     }
@@ -463,6 +490,8 @@ export default {
   //////////////////////////////////////////////////////////////////
   data: function() {
     return {
+      filterPresets: [],
+      selectedPresetName: 'Debug',
       findMultiSearchTerms: [
         {
           value: ''
@@ -551,7 +580,7 @@ export default {
       searchReasultsContent: ['3', '5'],
       searchterm: '',
       searchs: [],
-      filesList:[]
+      filesList: []
     }
   },
   beforeCreate() {
@@ -563,21 +592,18 @@ export default {
   created() {
     //model.$forceUpdate();
     let model = this
-    let highlights = appStorage.loadLastHighlightsList()
-    if (highlights) {
-      highlights.forEach(function(h) {
-        model.AddToHighlights(h.value)
-      })
-    }
-    model.filters = appStorage.loadLastFiltersList()
-    model.exfilters = appStorage.loadLastExFiltersList()
+
+    model.filterPresets = appStorage.loadPresets().map(f => f.name)
+    model.selectedPresetName = appStorage.getLastPresetsName()
+    model.loadPreset(model.selectedPresetName)
+
     //console.log('Component Created');
     ipcRenderer.on('load-files-reply', (event, arg) => {
       //console.log("done");
       let lines = arg.split('\n')
       //document.getElementById('area').innerHTML = lines[0];
       model.logLines = lines
-      model.filesList = appStorage.loadLastFileList();
+      model.filesList = appStorage.loadLastFileList()
       //console.log(model);
       model.onResize(window)
     })
@@ -588,7 +614,7 @@ export default {
       let lines = arg.split('\n')
       //document.getElementById('area').innerHTML = lines[0];
       model.logLines = lines
-      model.filesList = appStorage.loadLastFileList();
+      model.filesList = appStorage.loadLastFileList()
       //console.log(model);
       model.onResize(window)
     })
@@ -649,7 +675,6 @@ export default {
       })
       jqueryInit()
       model.onResize(window)
-      model.loadSavedPreset()
     })
     //console.log("ready");
   },
@@ -657,19 +682,72 @@ export default {
   //// METHODS /////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////
   methods: {
-    removeFile : function(index){
-      if(!this.filesList || this.filesList.length<index){
-          return;
+    savePreset: function(presetName, filters, excludeFilters, highlights) {
+      console.log('savePreset to storage for preset name: ' + presetName)
+      appStorage.savePreset(
+        this.selectedPresetName,
+        filters,
+        excludeFilters,
+        highlights
+      )
+      appStorage.saveLastUsedPresetName(this.selectedPresetName)
+    },
+    loadPreset: function(presetName) {
+      console.log('load preset: ' + presetName)
+      let model = this
+      model.highlights = []
+      model.filters = []
+      model.exfilters = []
+      let highlights = model.highlightsForPresetName(presetName)
+      if (highlights) {
+        highlights.forEach(function(h) {
+          model.AddToHighlights(h.value)
+        })
       }
-      this.filesList.splice(index,1);
+      model.filters = model.filtersForPresetName(presetName)
+      model.exfilters = model.excludeFiltersForPresetName(presetName)
+    },
+    filtersForPresetName: function(presetName) {
+      var preset = appStorage.loadPresets().find(l => l.name === presetName)
+      var filters = preset ? preset.filters : []
+      return filters
+    },
+    excludeFiltersForPresetName: function(presetName) {
+      var preset = appStorage.loadPresets().find(l => l.name === presetName)
+      var exFilters = preset ? preset.excludeFilters : []
+      return exFilters
+    },
+    highlightsForPresetName: function(presetName) {
+      console.log('highlightsForPresetName')
+      var preset = appStorage.loadPresets().find(l => l.name === presetName)
+      console.log('preset', preset)
+      var highlights = preset
+        ? preset.highlights ? preset.highlights : []
+        : []
+      console.log('highlights', highlights)
+      return highlights
+    },
+    onFilterPresetSelected: function(selectedPresetName) {
+      console.log('New Preset Name: ' + selectedPresetName)
+      this.loadPreset(selectedPresetName)
+    },
+    removeFile: function(index) {
+      if (!this.filesList || this.filesList.length < index) {
+        return
+      }
+      this.filesList.splice(index, 1)
       appStorage.saveFileListForWindow(this.filesList)
       loadFilesOnServer(this.filesList)
     },
-    getFileName: function(index){
-        if(!this.filesList || this.filesList.length<index){
-          return "";
-        }
-        return this.filesList[index].split('\\').pop().split('/').pop();
+    getFileName: function(index) {
+      if (!this.filesList || this.filesList.length < index) {
+        return ''
+      }
+      return this.filesList[index]
+        .split('\\')
+        .pop()
+        .split('/')
+        .pop()
     },
     getFindTabText: function(texts, forTab) {
       if (!texts) {
@@ -751,9 +829,7 @@ export default {
     },
     AddToHighlights: function(text) {
       console.log(text)
-      if (!text) {
-        return
-      }
+
       let model = this
 
       let lowertext = text.toLowerCase()
@@ -860,10 +936,6 @@ export default {
       }
       this.highlights.splice(index, 1)
     },
-    loadSavedPreset: function() {
-      //console.log("loadFilters");
-      //this.filters = [];
-    },
     onResize: function(www) {
       //console.log('onResize!!!!!!!!!!!!!!!!!!!!!!!!!!');
       //console.log(www);
@@ -950,18 +1022,23 @@ export default {
   border-bottom: 1px solid black;
   cursor: row-resize;
 }
+
 .ui-slider-range-min {
   background-color: gray;
 }
+
 .ui-slider {
   background-color: #343436 !important;
 }
+
 .ui-state-default {
   background-color: gray !important;
 }
+
 .ui-widget-header {
   background: #343436 !important;
 }
+
 .ui-corner-all {
   border-top-right-radius: 9px !important;
   border-bottom-right-radius: 9px !important;

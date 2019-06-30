@@ -177,7 +177,7 @@ export default {
                 }
                 let model = this;
                 //console.log(model.ident + " : -------- highlights watch: " + val);
-                model.highlightsInternal = val;
+                model.highlightsInternal = val ? val : [];
                 model.refreshView();
             },
             deep: true
@@ -844,7 +844,7 @@ export default {
             this.factory.setModel(model.lines);
             this.factory.setOriginalModel(model.lines)
         }
-        model.highlightsInternal = model.highlights;
+        model.highlightsInternal = model.highlights ? model.highlights : [];
         ////console.log("--------------------------");
         ////console.log(model.filters);
         ////console.log("--------------------------");
