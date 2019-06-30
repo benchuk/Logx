@@ -24,7 +24,7 @@
         <v-navigation-drawer fixed v-model="drawer" app>
             <v-layout justify-center align-center>
                 <v-flex>
-                    <v-switch class="mt-3 pa-0 ml-3" :label="`${showFiltered?'Showing All Lines':'Showing Filtered Lines'}`" v-model="showFiltered"></v-switch>
+                    <v-switch class="mt-3 pa-0 ml-3" :label="`${showFiltered?'Showing All Lines':'Showing Filtered Lines'}`" v-model="showFiltered" ref="sw"></v-switch>
                 </v-flex>
             </v-layout>
             <v-expansion-panel v-model="panel" expand>
@@ -47,7 +47,7 @@
                     </v-layout>
                    
                     <v-layout class="ml-3 mr-3" row v-for="(item, index) in filters" :key="index">
-                        <v-text-field class="mt-0 pt-0" append-icon="color_lens" @click:append="colorFromFilter(index)" append-outer-icon="delete_outline" @click:append-outer="removeFilter(index)" v-model.lazy="item.value"></v-text-field>
+                        <v-text-field class="mt-0 pt-0" ref="filterId" append-icon="color_lens" @click:append="colorFromFilter(index)" append-outer-icon="delete_outline" @click:append-outer="removeFilter(index)" v-model.lazy="item.value"></v-text-field>
                     </v-layout>
                 </v-expansion-panel-content>
                 <!-- ======= COLORS ================================================= -->
@@ -63,7 +63,7 @@
                         </v-btn>
                     </v-layout>
                     <v-layout class="ml-3 mr-3" row v-for="(item, index) in highlights" :key="index">
-                        <v-text-field class="mt-0 pt-0" append-icon="call_made" @click:append="filterFromColor(index)" :background-color="stylesCache[index+1]" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model.lazy="item.value"></v-text-field>
+                        <v-text-field autofocus class="mt-0 pt-0" append-icon="call_made" @click:append="filterFromColor(index)" :background-color="stylesCache[index+1]" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model.lazy="item.value"></v-text-field>
                     </v-layout>
 
                 </v-expansion-panel-content>
@@ -914,9 +914,11 @@ export default {
       this.exfilters.splice(index, 1)
     },
     addFilter: function(event) {
+      console.log('addFilter')
       this.filters.unshift({
         value: ''
       })
+      this.$refs.filterId[0].focus()
     },
     removeFilter: function(index) {
       //console.log("removeFilter: ", index);
