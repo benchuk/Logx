@@ -10,7 +10,25 @@ export default {
     props: ['lines', 'func'],
     data: () => ({
       width: 2,
-      value: [0, 2, 5, 9, 5, 10, 3, 5, 0, 0, 1, 8, 2, 9, 0]
-    })
+      value: []
+    }),
+    created(){
+        var filter = new Function("line", this.func);
+
+        this.lines.forEach(function(line) {
+            try
+            {
+                let val = filter(line);
+                if(val){
+                    this.value.push(parseInt(val));
+                }
+            }
+            catch
+            {
+
+            }
+        }
+        )
+    }
 }
 </script>

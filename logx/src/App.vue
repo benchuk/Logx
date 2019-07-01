@@ -10,6 +10,7 @@
             <v-spacer></v-spacer>
             <v-toolbar-items class="hidden-sm-and-down">
                 <v-btn color="blue darken-1" flat @click.native="searchDialog = true">Find multiple</v-btn>
+                <v-btn color="blue darken-1" flat @click="addGraph">Add Graph</v-btn>
                 <v-btn class="ma-0 pa-0" color="blue darken-1" fab flat small @click="filesDialog = true">
                     <v-icon class="ma-0 pa-0" small>attach_file</v-icon>
                 </v-btn>
@@ -125,7 +126,7 @@
                                         <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :highlights="highlights" :useExFilters="false" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'"></fast-text-view>
                                     </v-card>
                                     <v-card v-else>
-                                        <graphFromText ></graphFromText>
+                                        <graphFromText :lines="logLines" :func="getGraphText()"></graphFromText>
                                     </v-card>
                                 </v-tab-item>
                             </v-tabs-items>
@@ -569,6 +570,23 @@ export default {
     })
   },
   methods: {
+    addGraph: function(){
+      this.active = this.searchs.length - 1
+      if ($('#theFooter').height() < 300) {
+        $('#theFooter').height(300)
+      }
+         this.searchs.push([
+        {
+          value: 'graph',
+          type: 'graph'
+        }
+      ])
+    },
+    getGraphText: function() {
+
+        return "console.log(line);";
+        //return "if(!line.contain('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+    },
     savePresetClicked: function() {
       console.log('save Preset Clicked')
       let model = this
