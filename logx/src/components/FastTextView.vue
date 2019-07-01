@@ -238,8 +238,7 @@ export default {
             if (shouldMoveFromFilteredToFull) {
                 //get position in full model
                 var lineData = model.factory.getModelFiltered()[this.positionInternal];
-                if(lineData !== undefined)
-                {
+                if (lineData !== undefined) {
                     this.positionInternal = lineData.rowid;
                     console.log("restore original position for rowid: " + this.positionInternal);
                     let pos2 = this.positionInternal;
@@ -251,9 +250,7 @@ export default {
                             });
                         });
                     }, 0);
-                }
-                else
-                {
+                } else {
                     this.positionInternal = 0;
                 }
             } else {
@@ -476,14 +473,18 @@ export default {
                             skipOrNotId = "skipline";
                         }
                     }
-                    var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='" + skipOrNotId + "' class='theline-" + this.factory.myInitId + "'>" + line.line + "</div></div>";
+                    let lineContentEscaped = line.line.replace(/[\u00A0-\u9999<>\&]/gim, function (i) {
+                        return '&#' + i.charCodeAt(0) + ';';
+                    });
+                    var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='" + skipOrNotId + "' class='theline-" + this.factory.myInitId + "'>" + lineContentEscaped + "</div></div>";
                     data += l;
                 }
                 POSITION++;
                 counter--;
             }
 
-            model.container.innerHTML = data;
+            //model.container.innerHTML = data;
+            document.getElementById('fast-text-view-' + model.factory.myInitId).innerHTML = data;
 
             var i = 1;
             if (this.useColors) {
@@ -516,7 +517,7 @@ export default {
         onParentResize: function () {
             console.log("onParentResize")
             let model = this
- 
+
             var parentH = 0;
             if (!model.parentid) {
                 parentH = document.documentElement.clientHeight - 64;
@@ -524,12 +525,12 @@ export default {
                 parentH = $('#' + model.parentid).height();
             }
 
-            let newHeight = parentH; 
+            let newHeight = parentH;
             if (model.prevHeight != newHeight) {
+                console.log("update height");
                 model.prevHeight = newHeight;
                 model.currentHeight = newHeight
                 model.matchHeight();
-                console.log("update height");
             }
         },
         matchHeight: function () {
@@ -769,7 +770,7 @@ export default {
             let newPosition = model.positionInternal + Math.round(delta * -1);
             model.jumpToPosition(newPosition);
         }
-         console.log("register mouse wheel");
+        console.log("register mouse wheel");
         document.getElementById('fast-text-view-' + model.factory.myInitId).addEventListener('mousewheel', mouseWheelEvent);
     }
 }
@@ -848,66 +849,66 @@ function init(factory) {
 
 <style>
 .fast-text-view-class {
-  overflow-x: hidden;
-  overflow-y: hidden;
-  width: 100%;
-  height: 100%;
-  max-height: 100%;
-  margin: 0;
-  color: greenyellow;
-  font-size: 14px;
-  white-space: nowrap;
-  background-color: black;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    margin: 0;
+    color: greenyellow;
+    font-size: 14px;
+    white-space: nowrap;
+    background-color: black;
 }
 
 .unselectable {
-          user-select:      none;
+    user-select: none;
 
-   -khtml-user-select:      none;
-  -webkit-user-select:      none;
-     -moz-user-select: -moz-none;
-       -o-user-select:      none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: -moz-none;
+    -o-user-select: none;
 }
 
 .rownumber {
-  display: inline;
-  margin-right: 5px;
-  color: gray;
+    display: inline;
+    margin-right: 5px;
+    color: gray;
 }
 
 .rowIndex {
-  display: inline-block;
-  margin-right: 15px;
-  color: gray;
+    display: inline-block;
+    margin-right: 15px;
+    color: gray;
 }
 
 #rowdata {
-  display: inline-block;
-  display: inline-block;
-  color: greenyellow;
+    display: inline-block;
+    display: inline-block;
+    color: greenyellow;
 }
 
 #skipline {
-  display: inline-block;
-  display: inline-block;
-  color: grey;
+    display: inline-block;
+    display: inline-block;
+    color: grey;
 }
 
 .highlight1 {
-  /* Opera 10.5+, IE 9.0 */
-  color: black;
-  background-color: #fff34d;
-  /* Saf3.0+, Chrome */
-          box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
-  /* Saf3-4 */
-          border-radius: 3px;
-  /* FF1+ */
+    /* Opera 10.5+, IE 9.0 */
+    color: black;
+    background-color: #fff34d;
+    /* Saf3.0+, Chrome */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
+    /* Saf3-4 */
+    border-radius: 3px;
+    /* FF1+ */
 
-  -webkit-border-radius: 3px;
-     -moz-border-radius: 3px;
-  /* FF3.5+ */
-  -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
-  /* Opera 10.5, IE 9, Saf5, Chrome */
-     -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    /* FF3.5+ */
+    -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
+    /* Opera 10.5, IE 9, Saf5, Chrome */
+    -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, .7);
 }
 </style>
