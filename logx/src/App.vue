@@ -10,7 +10,10 @@
             <v-spacer></v-spacer>
             <v-toolbar-items class="hidden-sm-and-down">
                 <v-btn color="blue darken-1" flat @click.native="searchDialog = true">Find multiple</v-btn>
-                <v-btn color="blue darken-1" flat @click="addGraph">Add Graph</v-btn>
+                <v-btn color="blue darken-1" flat @click="speedSensor">Speed Sensor</v-btn>
+                <v-btn color="blue darken-1" flat @click="speedGps">Speed Gps</v-btn>
+                
+                <v-btn color="blue darken-1" flat @click="addMap">Route</v-btn>
                 <v-btn class="ma-0 pa-0" color="blue darken-1" fab flat small @click="filesDialog = true">
                     <v-icon class="ma-0 pa-0" small>attach_file</v-icon>
                 </v-btn>
@@ -125,8 +128,23 @@
                                     <v-card flat v-if="s[0].type==='find'">
                                         <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :highlights="highlights" :useExFilters="false" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'"></fast-text-view>
                                     </v-card>
-                                    <v-card v-else>
-                                        <graphFromText :lines="logLines" :func="getGraphText()"></graphFromText>
+                                    <v-card v-else-if="s[0].type==='map'">
+                                        <mapFromText :lines="logLines" :func="getMapText()"></mapFromText>
+                                    </v-card>
+                                    <v-card v-else-if="s[0].type==='speed-sensor'">
+                                        <graphFromText :lines="logLines" :func="getSpeedGraphText()"></graphFromText>
+                                    </v-card>
+                                    <v-card v-else-if="s[0].type==='speed-gps'">
+                                        <graphFromText :lines="logLines" :func="getGpsSpeedGraphText()"></graphFromText>
+                                    </v-card>
+                                    <v-card v-else-if="s[0].type==='power'">
+                                        <graphFromText :lines="logLines" :func="getPowerGraphText()"></graphFromText>
+                                    </v-card>
+                                    <v-card v-else-if="s[0].type==='cadence'">
+                                        <graphFromText :lines="logLines" :func="getCadenceGraphText()"></graphFromText>
+                                    </v-card>
+                                    <v-card v-else-if="s[0].type==='hr'">
+                                        <graphFromText :lines="logLines" :func="getHrGraphText()"></graphFromText>
                                     </v-card>
                                 </v-tab-item>
                             </v-tabs-items>
@@ -284,6 +302,7 @@
 <script>
 import appStorage from './components/appStorage'
 import graphFromText from './components/graphFromText'
+import mapFromText from './components/mapFromText'
 import JQuery from 'jquery'
 let $ = JQuery
 import { ipcRenderer } from 'electron'
@@ -396,7 +415,8 @@ export default {
   name: 'logxmain-page',
   components: {
     FastTextView,
-    graphFromText
+    graphFromText,
+    mapFromText
   },
   computed: {
     canAddColor() {
@@ -570,22 +590,71 @@ export default {
     })
   },
   methods: {
-    addGraph: function() {
+    addMap: function() {
       this.active = this.searchs.length - 1
       if ($('#theFooter').height() < 300) {
         $('#theFooter').height(300)
       }
       this.searchs.push([
         {
-          value: 'graph',
-          type: 'graph'
+          value: 'map',
+          type: 'map'
         }
       ])
     },
-    getGraphText: function() {
+    speedGps: function() {
+      this.active = this.searchs.length - 1
+      if ($('#theFooter').height() < 300) {
+        $('#theFooter').height(300)
+      }
+      this.searchs.push([
+        {
+          value: 'speed-gps',
+          type: 'speed-gps'
+        }
+      ])
+    },
+    speedSensor: function() {
+      this.active = this.searchs.length - 1
+      if ($('#theFooter').height() < 300) {
+        $('#theFooter').height(300)
+      }
+      this.searchs.push([
+        {
+          value: 'speed',
+          type: 'speed-sensor'
+        }
+      ])
+    },
+    getHrGraphText: function() {
       //return "console.log(line);";
       //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
-      return "if(!line.toLowerCase().includes('onSpeedReceived: from device'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];"
+      return "if(!line.toLowerCase().includes('onHeartrateReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[7];"
+    },
+    getCadenceGraphText: function() {
+      //return "console.log(line);";
+      //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+      return "if(!line.toLowerCase().includes('onCadenceReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[7];"
+    },
+    getPowerGraphText: function() {
+      //return "console.log(line);";
+      //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+      return "if(!line.toLowerCase().includes('onPowerReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[7];"
+    },
+    getSpeedGraphText: function() {
+      //return "console.log(line);";
+      //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+      return "if(!line.toLowerCase().includes('onSpeedReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];"
+    },
+    getGpsSpeedGraphText: function() {
+      //return "console.log(line);";
+      //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+      return "if(!line.toLowerCase().includes('onSpeedFromGpsReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[5];"
+    },
+    getMapText: function() {
+      //return "console.log(line);";
+      //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+      return "if(!line.toLowerCase().includes('updateFusedLocation'.toLowerCase())) return null; return line.split(' ')[7];"
     },
     savePresetClicked: function() {
       console.log('save Preset Clicked')
