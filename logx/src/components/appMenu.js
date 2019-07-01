@@ -54,18 +54,18 @@ function init(win) {
             var last = 0
             while (index > -1) {
               var line = remaining.substring(last, index)
-              line = line.replace(/[\n\r\t]/g, '')
-              line = line.replace(/^\s+|\s+$/g, '')
-              line = line.trim()
+              // line = line.replace(/[\n\r\t]/g, '')
+              // line = line.replace(/^\s+|\s+$/g, '')
+              // line = line.trim()
               last = index + 1
               logLines.push(line)
               index = remaining.indexOf('\n', last)
             }
             remaining = remaining.substring(last)
             if (remaining.length > 0) {
-              remaining = remaining.replace(/[\n\r\t]/g, '')
-              remaining = remaining.replace(/^\s+|\s+$/g, '')
-              remaining = remaining.trim()
+              // remaining = remaining.replace(/[\n\r\t]/g, '')
+              // remaining = remaining.replace(/^\s+|\s+$/g, '')
+              // remaining = remaining.trim()
               logLines.push(remaining)
             }
             //console.log('paste:: ', logLines)
