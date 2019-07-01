@@ -5,6 +5,7 @@
 </template>
 
 <script>
+import { EventBus } from './event-bus.js'
 export default {
   name: 'graph-text',
   props: ['lines', 'func'],
@@ -100,6 +101,32 @@ export default {
       var polyline = L.polyline(dataLine, { color: 'green', weight: 10 }).addTo(
         map
       )
+
+      var onPolyClick = function(event) {
+        //callFancyboxIframe('flrs.html')
+        console.log(event)
+        console.log(event.latlng.lat)
+        console.log(event.latlng.lng)
+        var counter = 0
+
+        let find = Number(event.latlng.lat.toFixed(3))
+        console.log('start find of: ' + find)
+        model.lines.forEach(function(line) {
+          if (line.includes(find)) {
+            console.log('found line: ' + line + ' on line: ' + counter)
+            EventBus.$emit('jumpto', {
+              value: counter,
+              source: 1,
+              showFiltered: true
+            })
+            return
+          }
+          counter++
+        })
+      }
+
+      polyline.on('click', onPolyClick)
+
       console.log('loading map parse lines ended')
       //map.setView(new L.LatLng(dataLine[0][0], dataLine[0][1]), 7)
       map.fitBounds(polyline.getBounds())
