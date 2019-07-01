@@ -1,6 +1,6 @@
 <template>
-<div id="app" >
-    <v-app id="inspire" dark >
+<div id="app">
+    <v-app id="inspire" dark>
         <!-- ======= TOOLBAR ================================================= -->
         <v-toolbar color="black" dark fixed app clipped-right>
             <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
@@ -87,9 +87,9 @@
         </v-navigation-drawer>
         <!-- ======= Logs Viewer ================================================= -->
         <v-content>
-           <v-container fluid fill-height pa-2>
+            <v-container fluid fill-height pa-2>
                 <v-layout justify-left align-left>
-                    <v-flex xs12 >
+                    <v-flex xs12>
                         <fast-text-view :lines="logLines" :position="position" :highlights="highlights" :ident="'main-logger'" :filters="filters" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered"></fast-text-view>
                     </v-flex>
                 </v-layout>
@@ -278,15 +278,11 @@
 </template>
 
 <script>
-//////////////////////////////////////////////////////////////////
-//// JS //////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
 import appStorage from './components/appStorage'
 import JQuery from 'jquery'
 let $ = JQuery
 import { ipcRenderer } from 'electron'
 
-//console.log($);
 function loadFilesOnServer(filesPaths) {
   if (filesPaths == undefined) {
     return
@@ -300,7 +296,6 @@ function loadFilesOnServer(filesPaths) {
 
   var res = ipcRenderer.send('load-files', params)
 }
-//console.error("-------------------------------------------");
 var filesPaths = appStorage.loadLastFileList()
 loadFilesOnServer(filesPaths)
 
@@ -332,6 +327,7 @@ function random_rgba2(id) {
 }
 
 function jqueryInit() {
+  console.log('jqueryInit')
   var startPoint = 0
   var orgHeight = 0
 
@@ -341,7 +337,6 @@ function jqueryInit() {
     e.stopPropagation()
     var dt = e.dataTransfer || (e.originalEvent && e.originalEvent.dataTransfer)
     var files = e.target.files || (dt && dt.files)
-    //console.error(e);
     for (var i in files) {
       var p = e.dataTransfer.files[i].path
       if (p != undefined) {
@@ -349,35 +344,16 @@ function jqueryInit() {
       }
     }
     appStorage.saveFileListForWindow(filesPaths)
-    //windowLocalStorage["myFiles"] = filesPaths;
-    //saveLocalStorage();
     loadFilesOnServer(filesPaths)
-    //loadFileContent(filesPaths);
-  }
-
-  function loadFileContent(filesPaths) {
-    for (var f of filesPaths) {
-      var reader = new FileReader()
-      reader.onload = function(e) {
-        // get file content
-        var text = e.target.result
-        //console.log("start");
-        document.getElementById('area').innerHTML = text
-        //console.log("end");
-      }
-      reader.readAsText(f)
-    }
   }
 
   $('html').on('dragover', function(event) {
     event.preventDefault()
     event.stopPropagation()
-    //$(this).addClass('dragging');
   })
   $('html').on('dragleave', function(event) {
     event.preventDefault()
     event.stopPropagation()
-    //$(this).removeClass('dragging');
   })
 
   document.addEventListener('drop', function(e) {
@@ -385,18 +361,15 @@ function jqueryInit() {
   })
 
   function mousemove(e) {
-    //console.log(".");
     var res = orgHeight + (startPoint - e.pageY)
     $('#theFooter').height(res)
     if (e.stopPropagation) e.stopPropagation()
     if (e.preventDefault) e.preventDefault()
     e.cancelBubble = true
     e.returnValue = false
-    //$("#footer-container").height(res);
   }
 
   function mouseup(e) {
-    //console.log("mouseup");
     var res = orgHeight + (startPoint - e.pageY)
     $('#theFooter').height(res)
     $('body,html').off('mousemove', mousemove)
@@ -404,25 +377,14 @@ function jqueryInit() {
   }
 
   function mousedown(e) {
-    //console.log("mousedown!!!!!!!!!!!!!");
     $('body,html,#resizer').mouseup(mouseup)
     startPoint = e.pageY
     orgHeight = $('#theFooter').height()
-    //$("#resizer").off("mousedown", mousedown);
     $('body,html').mousemove(mousemove)
   }
   $('#resizer').mousedown(mousedown)
-  //$("#resizer").height(900);
 }
-// window.onload = function() {
-// if (window.jQuery) {
-//     // jQuery is loaded
-//     alert("Yeah!");
-// } else {
-//     // jQuery is not loaded
-//     alert("Doesn't Work");
-// }
-//}
+
 import { EventBus } from './components/event-bus'
 import FastTextView from './components/FastTextView'
 export default {
@@ -442,59 +404,26 @@ export default {
   watch: {
     highlights: {
       handler: function(val) {
-        console.log('highlights --------------')
-        //console.error(val);
         let model = this
-        //appStorage.saveHighlights(val)
         model.canSave = true
-        // model.savePreset(
-        //   model.selectedPresetName,
-        //   model.filters,
-        //   model.exfilters,
-        //   val
-        // )
       },
       deep: true
     },
     filters: {
       handler: function(val) {
-        console.log('filters --------------')
-        //console.log("saving filters");
-        //console.error(val);
         let model = this
         model.canSave = true
-        //appStorage.saveFilters(val)
-
-        // model.savePreset(
-        //   model.selectedPresetName,
-        //   val,
-        //   model.exfilters,
-        //   model.highlights
-        // )
       },
       deep: true
     },
     exfilters: {
       handler: function(val) {
-        console.error('exfilters --------------')
-        //console.log("saving ex-filters");
-        //console.error(val);
         let model = this
-        //appStorage.saveExFilters(val)
         model.canSave = true
-        // model.savePreset(
-        //   model.selectedPresetName,
-        //   model.filters,
-        //   val,
-        //   model.highlights
-        // )
       },
       deep: true
     }
   },
-  //////////////////////////////////////////////////////////////////
-  //// DATA ////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////
   data: function() {
     return {
       canSave: false,
@@ -545,7 +474,6 @@ export default {
       useColors: true,
       dialog: false,
       dialog3: false,
-      logsHeight: 10,
       highlights: [],
       logLines: [],
       originalH: 35,
@@ -553,102 +481,55 @@ export default {
       theView: undefined,
       drawer: true,
       panel: [true, true, false],
-      items: [
-        {
-          action: '15 min',
-          headline: 'Brunch this weekend?',
-          title: 'Ali Connors',
-          subtitle: '1'
-        },
-        {
-          action: '2 hr',
-          headline: 'Summer BBQ',
-          title: 'me, Scrott, Jennifer',
-          subtitle: '2'
-        },
-        {
-          action: '6 hr',
-          headline: 'Oui oui',
-          title: 'Sandra Adams',
-          subtitle: '3'
-        },
-        {
-          action: '12 hr',
-          headline: 'Birthday gift',
-          title: 'Trevor Hansen',
-          subtitle: '4'
-        },
-        {
-          action: '18hr',
-          headline: 'Recipe to try',
-          title: 'Britta Holt',
-          subtitle: 'asdasdasd'
-        }
-      ],
-      searchReasultsContent: ['3', '5'],
+      searchReasultsContent: [],
       searchterm: '',
       searchs: [],
-      filesList: []
+      filesList: [],
+      items: []
     }
   },
-  beforeCreate() {
-    //console.log('Nothing gets called before me!')
-  },
-  //////////////////////////////////////////////////////////////////
-  //// CREATED /////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////
   created() {
-    //model.$forceUpdate();
+    console.log('app created')
     let model = this
 
     model.filterPresets = appStorage.loadPresets().map(f => f.name)
     model.selectedPresetName = appStorage.getLastPresetsName()
     model.loadPreset(model.selectedPresetName)
-    //console.log('Component Created');
-    ipcRenderer.on('load-files-reply', (event, arg) => {
-      //console.log("done");
-      let lines = arg.split('\n')
-      //document.getElementById('area').innerHTML = lines[0];
-      model.logLines = lines
-      model.filesList = appStorage.loadLastFileList()
-      //console.log(model);
-      model.onResize(window)
-    })
-    ipcRenderer.on('paste-data-reply', (event, arg) => {
-      //console.log("done");
-      appStorage.saveFileListForWindow(null)
 
+    console.log('register load files replay event')
+    ipcRenderer.on('load-files-reply', (event, arg) => {
       let lines = arg.split('\n')
-      //document.getElementById('area').innerHTML = lines[0];
       model.logLines = lines
       model.filesList = appStorage.loadLastFileList()
-      //console.log(model);
-      model.onResize(window)
     })
+
+    console.log('register past data replay event')
+    ipcRenderer.on('paste-data-reply', (event, arg) => {
+      appStorage.saveFileListForWindow(null)
+      let lines = arg.split('\n')
+      model.logLines = lines
+      model.filesList = appStorage.loadLastFileList()
+    })
+
+    console.log('register text selection event')
     EventBus.$on('textSelection', text => {
-      //console.log("textSelection " + text);
+      console.log('text selection event occured')
       model.AddToHighlights(text)
-      //model.filters = [{value:"start"}];
-      // console.log("push!!!!!!!!");
-      // console.error(model.filters[1]);
     })
+    console.log('register show filtered event')
     EventBus.$on('showingFiltered', showingFiltered => {
-      //console.log("showingFiltered" + showingFiltered);
+      console.log('showFiltered event occured')
       model.showFiltered = showingFiltered
     })
+    console.log('register jump to event')
     EventBus.$on('jumpto', pos => {
-      //console.log("jumpto: " + pos.value);
+      console.log('jumpto event occured')
       model.position = pos
     })
+
+    console.log('register key down (find all shortcut)')
     let prevKey = -1
-    // document.addEventListener("keydown", function (e) {
-    //     if (e.which === 116) {
-    //       //location.reload();
-    //        console.error("!!!!!!!!!!!!!");
-    //     }
-    //  });
     $(window).keydown(function(event) {
-      //console.log("event.keyCode: " + event.keyCode);
       if ((event.ctrlKey || prevKey == 91) && event.keyCode == 70) {
         event.preventDefault()
         prevKey = -1
@@ -659,20 +540,14 @@ export default {
       prevKey = event.keyCode
     })
 
+    //hack for save button state
     setTimeout(() => {
       console.log('canSave -> false')
       model.canSave = false
     }, 0)
-
-    //  EventBus.$on('newPosition', newPosition => {
-    //   console.log("newPosition: " + newPosition);
-    //   model.newPosition = newPosition;
-    // });
   },
-  //////////////////////////////////////////////////////////////////
-  //// MOUNTED /////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////
   mounted: function() {
+    console.log('app mounted')
     let model = this
     model.logLines = []
     //console.log(model);
@@ -682,20 +557,15 @@ export default {
     // }
     this.$nextTick(function() {
       //console.log("register resize");
-      window.addEventListener('resize', function(e) {
-        e.preventDefault()
-        model.onResize(window)
-      })
+      // window.addEventListener('resize', function(e) {
+      //   e.preventDefault()
+      // })
       jqueryInit()
-      model.onResize(window)
     })
-    //console.log("ready");
   },
-  //////////////////////////////////////////////////////////////////
-  //// METHODS /////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////
   methods: {
     savePresetClicked: function() {
+      console.log('save Preset Clicked')
       let model = this
       model.canSave = false
       model.savePreset(
@@ -730,11 +600,13 @@ export default {
       }, 0)
     },
     filtersForPresetName: function(presetName) {
+      console.log('filtersForPresetName')
       var preset = appStorage.loadPresets().find(l => l.name === presetName)
       var filters = preset ? preset.filters : []
       return filters
     },
     excludeFiltersForPresetName: function(presetName) {
+      console.log('excludeFiltersForPresetName')
       var preset = appStorage.loadPresets().find(l => l.name === presetName)
       var exFilters = preset ? preset.excludeFilters : []
       return exFilters
@@ -755,6 +627,7 @@ export default {
       appStorage.saveLastUsedPresetName(selectedPresetName)
     },
     removeFile: function(index) {
+      console.log('removeFile')
       if (!this.filesList || this.filesList.length < index) {
         return
       }
@@ -763,6 +636,7 @@ export default {
       loadFilesOnServer(this.filesList)
     },
     getFileName: function(index) {
+      console.log('getFileName')
       if (!this.filesList || this.filesList.length < index) {
         return ''
       }
@@ -779,7 +653,6 @@ export default {
       if (forTab) {
         let str = texts[0].value
         if (texts.length > 1) {
-          //console.log(texts.filter(t=>t.value && t.value.trim().length>0))
           str = texts
             .filter(t => t.value && t.value.trim().length > 0)
             .map(x => `${x.value}`)
@@ -792,9 +665,9 @@ export default {
           .map(x => `${x.value}`)
           .join(',')
       }
-      //console.log('cccccc',str);
     },
     showMessage: function(text) {
+      console.log('showMessage ' + text)
       this.snackbarText = text.toLowerCase()
       this.snackbarVis = true
     },
@@ -814,15 +687,14 @@ export default {
       }
       this.searchDialog = false
       this.findMultiSearchTerms.forEach(s => (s.value = ''))
-
       this.searchs.push(searchTerms)
       this.active = (this.searchs.length - 1).toString()
-      //console.log("active: " + this.active);
       if ($('#theFooter').height() < 300) {
         $('#theFooter').height(300)
       }
     },
     jump: function(p) {
+      console.log('jump ' + p)
       this.position = {
         value: p,
         source: 'default',
@@ -842,7 +714,6 @@ export default {
         this.showMessage('Filter is Already Defined')
         return
       }
-
       this.filters.unshift({
         value: this.highlights[index].value
       })
@@ -851,8 +722,8 @@ export default {
       this.AddToHighlights(this.filters[index].value)
     },
     AddToHighlights: function(text) {
+      console.log('AddToHighlights')
       console.log(text)
-
       let model = this
 
       let lowertext = text.toLowerCase()
@@ -871,9 +742,7 @@ export default {
       model.highlights.push({
         value: '' + text
       })
-      //console.log(this.panel)
       this.panel[1] = true
-      //console.log(this.panel)
     },
     getColor: function(index) {
       return stylesCache[index]
@@ -884,12 +753,10 @@ export default {
     },
     removeSearch: function(s) {
       let index = this.searchs.indexOf(s)
-      //console.log("index: " + index + " len: " + this.searchs.length);
       var wasLast = false
       if (index == this.searchs.length - 1) {
         wasLast = true
       }
-      //console.log("index: " + index);
       this.searchs.splice(index, 1)
       setTimeout(() => {
         if (wasLast) {
@@ -925,11 +792,13 @@ export default {
       }
     },
     addExFilter: function(event) {
+      console.log('addExFilter')
       this.exfilters.unshift({
         value: ''
       })
     },
     removeExFilter: function(index) {
+      console.log('removeExFilter')
       if (index === -1) {
         this.exfilters = []
         return
@@ -944,7 +813,7 @@ export default {
       this.$refs.filterId[0].focus()
     },
     removeFilter: function(index) {
-      //console.log("removeFilter: ", index);
+      console.log('removeFilter')
       if (index === -1) {
         this.filters = []
         return
@@ -952,30 +821,21 @@ export default {
       this.filters.splice(index, 1)
     },
     addColor: function(event) {
+      console.log('addColor')
       this.AddToHighlights('')
     },
     removeColor: function(index) {
+      console.log('removeColor')
       if (index === -1) {
         this.highlights = []
         return
       }
       this.highlights.splice(index, 1)
     },
-    onResize: function(www) {
-      //console.log('onResize!!!!!!!!!!!!!!!!!!!!!!!!!!');
-      //console.log(www);
-      // document
-      //   .getElementById('main-container')
-      //   .setAttribute('style', 'max-width:' + www.innerWidth + 'px')
-      // $('#main-content').css('padding-bottom', '30px')
-      // $('#main-content').css('padding-top', '30px')
-    },
     up: function(e) {
-      //console.log("up");
       this.startPoint = -1
     },
     down: function(e) {
-      //console.log("start point - down: " + e.pageY);
       this.startPoint = e.pageY
       this.originalH = this.h
     },
@@ -983,15 +843,9 @@ export default {
       if (this.startPoint <= 0) {
         return
       }
-      //console.log(".")
-      //console.log(this.theView)
       let y = this.startPoint - e.pageY
       let x = this.originalH + this.startPoint - e.pageY
-      //console.log(x)
       this.theView.style.height = x + 'px'
-      //this.h = x;
-      //console.log(e.currentTarget)
-      //e.currentTarget.height = x;
       if (e.stopPropagation) e.stopPropagation()
       if (e.preventDefault) e.preventDefault()
       e.cancelBubble = true
@@ -999,7 +853,6 @@ export default {
     },
     addStyle: function(id) {
       if (this.stylesCache[id]) {
-        //console.log('skip');
         return
       }
       let backColor = random_rgba(id)
@@ -1033,9 +886,6 @@ export default {
 </script>
 
 <style>
-/* /////////////////////////////////////////////////////////////////
-  //// STYLES //////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////// */
 @import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro");
 
 #resizer {
