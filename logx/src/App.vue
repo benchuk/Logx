@@ -12,8 +12,8 @@
                 <v-btn color="blue darken-1" flat @click.native="searchDialog = true">Find multiple</v-btn>
                 <v-btn color="blue darken-1" flat @click="speedSensor">Speed Sensor</v-btn>
                 <v-btn color="blue darken-1" flat @click="speedGps">Speed Gps</v-btn>
-                
                 <v-btn color="blue darken-1" flat @click="addMap">Route</v-btn>
+                <v-btn color="blue darken-1" flat @click="addChart">Chart</v-btn>
                 <v-btn class="ma-0 pa-0" color="blue darken-1" fab flat small @click="filesDialog = true">
                     <v-icon class="ma-0 pa-0" small>attach_file</v-icon>
                 </v-btn>
@@ -145,6 +145,9 @@
                                     </v-card>
                                     <v-card v-else-if="s[0].type==='hr'">
                                         <graphFromText :lines="logLines" :func="getHrGraphText()"></graphFromText>
+                                    </v-card>
+                                    <v-card v-else-if="s[0].type==='chart'">
+                                        <chartFromText :lines="logLines" :func="getGpsSpeedGraphText()"></chartFromText>
                                     </v-card>
                                 </v-tab-item>
                             </v-tabs-items>
@@ -303,6 +306,7 @@
 import appStorage from './components/appStorage'
 import graphFromText from './components/graphFromText'
 import mapFromText from './components/mapFromText'
+import chartFromText from './components/chartFromText'
 import JQuery from 'jquery'
 let $ = JQuery
 import { ipcRenderer } from 'electron'
@@ -416,7 +420,8 @@ export default {
   components: {
     FastTextView,
     graphFromText,
-    mapFromText
+    mapFromText,
+    chartFromText
   },
   computed: {
     canAddColor() {
@@ -590,10 +595,21 @@ export default {
     })
   },
   methods: {
-    addMap: function() {
+    addChart: function() {
+      if ($('#theFooter').height() < 600) {
+        $('#theFooter').height(600)
+      }
+      this.searchs.push([
+        {
+          value: 'chart',
+          type: 'chart'
+        }
+      ])
       this.active = this.searchs.length - 1
-      if ($('#theFooter').height() < 300) {
-        $('#theFooter').height(300)
+    },
+    addMap: function() {
+      if ($('#theFooter').height() < 600) {
+        $('#theFooter').height(600)
       }
       this.searchs.push([
         {
@@ -601,11 +617,11 @@ export default {
           type: 'map'
         }
       ])
+      this.active = this.searchs.length - 1
     },
     speedGps: function() {
-      this.active = this.searchs.length - 1
-      if ($('#theFooter').height() < 300) {
-        $('#theFooter').height(300)
+      if ($('#theFooter').height() < 600) {
+        $('#theFooter').height(600)
       }
       this.searchs.push([
         {
@@ -613,11 +629,11 @@ export default {
           type: 'speed-gps'
         }
       ])
+      this.active = this.searchs.length - 1
     },
     speedSensor: function() {
-      this.active = this.searchs.length - 1
-      if ($('#theFooter').height() < 300) {
-        $('#theFooter').height(300)
+      if ($('#theFooter').height() < 600) {
+        $('#theFooter').height(600)
       }
       this.searchs.push([
         {
@@ -625,6 +641,7 @@ export default {
           type: 'speed-sensor'
         }
       ])
+      this.active = this.searchs.length - 1
     },
     getHrGraphText: function() {
       //return "console.log(line);";
@@ -649,7 +666,7 @@ export default {
     getGpsSpeedGraphText: function() {
       //return "console.log(line);";
       //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
-      return "if(!line.toLowerCase().includes('onSpeedFromGpsReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[5];"
+      return "if(!line.toLowerCase().includes('onSpeedFromGpsReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[6];"
     },
     getMapText: function() {
       //return "console.log(line);";
