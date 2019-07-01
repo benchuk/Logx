@@ -484,8 +484,8 @@ export default {
                 counter--;
             }
 
-            //model.container.innerHTML = data;
-            document.getElementById('fast-text-view-' + model.factory.myInitId).innerHTML = data;
+            model.container.innerHTML = data;
+            //document.getElementById('fast-text-view-' + model.factory.myInitId).innerHTML = data;
 
             var i = 1;
             if (this.useColors) {

@@ -570,12 +570,12 @@ export default {
     })
   },
   methods: {
-    addGraph: function(){
+    addGraph: function() {
       this.active = this.searchs.length - 1
       if ($('#theFooter').height() < 300) {
         $('#theFooter').height(300)
       }
-         this.searchs.push([
+      this.searchs.push([
         {
           value: 'graph',
           type: 'graph'
@@ -583,9 +583,9 @@ export default {
       ])
     },
     getGraphText: function() {
-
-        return "console.log(line);";
-        //return "if(!line.contain('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+      //return "console.log(line);";
+      //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+      return "if(!line.toLowerCase().includes('onSpeedReceived: from device'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];"
     },
     savePresetClicked: function() {
       console.log('save Preset Clicked')
