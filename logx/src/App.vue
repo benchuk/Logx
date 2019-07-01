@@ -121,8 +121,11 @@
                             </v-btn>
                             <v-tabs-items>
                                 <v-tab-item v-for="(s,index) in searchs" v-bind:key="index">
-                                    <v-card flat>
+                                    <v-card flat v-if="s[0].type==='find'">
                                         <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :highlights="highlights" :useExFilters="false" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'"></fast-text-view>
+                                    </v-card>
+                                    <v-card v-else>
+                                        <graphFromText ></graphFromText>
                                     </v-card>
                                 </v-tab-item>
                             </v-tabs-items>
@@ -279,6 +282,7 @@
 
 <script>
 import appStorage from './components/appStorage'
+import graphFromText from './components/graphFromText'
 import JQuery from 'jquery'
 let $ = JQuery
 import { ipcRenderer } from 'electron'
@@ -390,7 +394,8 @@ import FastTextView from './components/FastTextView'
 export default {
   name: 'logxmain-page',
   components: {
-    FastTextView
+    FastTextView,
+    graphFromText
   },
   computed: {
     canAddColor() {
@@ -678,7 +683,8 @@ export default {
           continue
         }
         searchTerms.push({
-          value: s.value
+          value: s.value,
+          type: 'find'
         })
       }
       if (searchTerms.length == 0) {
@@ -783,9 +789,11 @@ export default {
       }
       this.searchs.push([
         {
-          value: '' + searchterm
+          value: '' + searchterm,
+          type: 'find'
         }
       ])
+      console.log(this.searchs)
       this.active = this.searchs.length - 1
       if ($('#theFooter').height() < 300) {
         $('#theFooter').height(300)
