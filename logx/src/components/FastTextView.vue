@@ -601,7 +601,7 @@ export default {
         })();
     },
     mounted: function () {
-        console.log("fast text view mounted for id: " + model.factory.myInitId);
+        console.log("fast text view mounted for id: " + this.factory.myInitId);
         let model = this;
 
         $('#logx-progress' + model.factory.myInitId).height(0).css("visibility", "hidden").css("margin", "0px");
