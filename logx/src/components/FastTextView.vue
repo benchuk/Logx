@@ -46,19 +46,16 @@ export default {
         showFiltered(val, oldval) {
             let model = this;
             //console.log(" :  ^^^^ showFiltered watch: ", val);
-            //console.log(val);
-
             if (this.showFilteredInternal == val) {
                 console.log("ignore show filter logic");
                 return;
             }
 
             this.showFilteredInternal = val;
-            console.log("this.positionInternal", this.positionInternal);
+            //console.log("this.positionInternal", this.positionInternal);
             if (model.useFiltersInternal) {
                 this.handlePosition(val);
             }
-
             model.setupSlider();
             model.refreshView();
         },
@@ -100,12 +97,13 @@ export default {
             }
 
             if (val === undefined || val.length <= 0) {
+                console.error("invalid data lines ????");
                 //console.error(model.ident + " : ~~~~~~~~~~~~~~~~~ !invalid data lines watch: " + val);
                 model.factory.setModel(["no data 3"]);
                 model.factory.setModelFiltered(["no data 3"]);
                 model.factory.setOriginalModel(["no data 3"]);
             }
-            //TBD: set position to zero???
+
             model.positionInternal = 0;
             model.updateLinesModel(true);
             model.setupSlider();
@@ -115,11 +113,11 @@ export default {
         'useFilters': {
             handler: function (val) {
                 if (!this.ready) {
+                    console.error("skip... useFilters - model not ready");
                     return;
                 }
                 let model = this;
                 //console.log(model.ident + " : -------- useFilters watch: " + val);
-                //model.filtersInternal = model.filters;//val ? model.filters : [];
                 model.useFiltersInternal = val;
                 //should not handle position transition between models if we are on NONE-FILTERD model - in such a case this is only coloring issue
                 if (!this.showFilteredInternal) {
@@ -133,6 +131,7 @@ export default {
         'useExFilters': {
             handler: function (val) {
                 if (!this.ready) {
+                    console.error("skip... useExFilters - model not ready");
                     return;
                 }
                 let model = this;
@@ -146,6 +145,7 @@ export default {
         'useColors': {
             handler: function (val) {
                 if (!this.ready) {
+                    console.error("skip... useColors - model not ready");
                     return;
                 }
                 let model = this;
@@ -159,6 +159,7 @@ export default {
         'highlights': {
             handler: function (val) {
                 if (!this.ready) {
+                    console.error("skip... highlights - model not ready");
                     return;
                 }
                 let model = this;
@@ -175,12 +176,10 @@ export default {
                 exfiltersHandler = setTimeout(function () {
                     //console.log(model.ident + " : !!!!!!!!!!!!!!!!!!!! ex--filters watch: " + val);
                     if (val && val[val.length - 1] && (val[val.length - 1].value == undefined || val[val.length - 1].value.length <= 0)) {
-                        //console.log("skip... ex filter");
+                        console.error("skip... ex filter");
                         return;
                     }
-                    //this.currentPosition = 0;
                     model.exfiltersInternal = val;
-
                     model.updateLinesModel(true);
                     model.refreshView();
                 }, 500);
@@ -195,9 +194,8 @@ export default {
                 clearTimeout(model.filtersHandler);
                 model.filtersHandler = setTimeout(function () {
                     //console.log(model.ident + " : !!!!!!!!!!!!!!!!!!!! filters watch: " + val);
-                    //this.currentPosition = 0;
                     if (val && val[val.length - 1] && (val[val.length - 1].value == undefined || val[val.length - 1].value.length <= 0)) {
-                        //console.log("skip... filter");
+                        console.error("skip... filter");
                         return;
                     }
                     model.filtersInternal = val;
@@ -518,28 +516,15 @@ export default {
         onParentResize: function () {
             console.log("onParentResize")
             let model = this
-            var parent;
-            var parentH;
-            var parentHTML;
+ 
+            var parentH = 0;
             if (!model.parentid) {
                 parentH = document.documentElement.clientHeight - 64;
-                parentHTML = document.getElementById('fast-text-view-' + model.factory.myInitId);
             } else {
                 parentH = $('#' + model.parentid).height();
-                parentHTML = document.getElementById(model.parentid);
             }
-            //console.log("model.container", model.container);
-            //console.log("parent", parent);
-            //console.log("parentHTML", parentHTML);
-            //console.log("model.parentid", model.parentid);
-            //console.error("onParentResize: " + parentH);
-            //console.error("onParentResize parent: ", );
-            //console.log(parent);
-            let docH = document.documentElement.clientHeight;
-            let elemH = parentH;
-            let newHeight = parentH; //Math.min(docH,elemH); //document.documentElement.clientHeight-100;//$(document).height()-200;//this.currentHeight;
-            //let newHeight = $('.logx').height();//$('#fast-text-view-' + model.factory.myInitId).height();//parent.height();
-            //console.error('newHeight', newHeight)
+
+            let newHeight = parentH; 
             if (model.prevHeight != newHeight) {
                 model.prevHeight = newHeight;
                 model.currentHeight = newHeight
@@ -550,7 +535,6 @@ export default {
         matchHeight: function () {
             console.log("matchHeight")
             let reqHeight = this.currentHeight;
-            console.error("matchHeight");
 
             let rowElement = document.getElementById('rowdata');
             var v;
@@ -559,18 +543,11 @@ export default {
                 v = rowElement.clientHeight;
                 rowHeight = v > 0 ? v : 21;
             }
-            //console.log("reqHeight", reqHeight);
-            //console.log("document.documentElement.clientHeight", document.documentElement.clientHeight);
-            //console.log("reqHeight", reqHeight);
-            //console.log("rowHeight", rowHeight);
-            ////console.log(this.factory.myInitId + " reqHeight (parent height): " + reqHeight);
-            ////console.log(this.factory.myInitId + " rowHeight: " + rowHeight);
             this.displayrowscount = Math.round(reqHeight / rowHeight) - 4; //temp hack
             if (this.displayrowscount <= 0) {
                 this.displayrowscount = 10;
             }
-            console.log("this.displayrowscount", this.displayrowscount);
-            //console.log(this.factory.myInitId + " this.displayrowscount: " + this.displayrowscount);
+            console.log("Setting new displayrowscount", this.displayrowscount);
             jQuery('#slider-vertical-' + this.factory.myInitId).height(this.displayrowscount * rowHeight);
             this.refreshView();
         },
@@ -583,8 +560,6 @@ export default {
             } else {
                 len = model.factory.getModelFiltered().length
             }
-            //console.error("slider!!!!")
-            //console.error((len - model.displayrowscount))
             jQuery('#slider-vertical-' + model.factory.myInitId).slider({
                 orientation: "vertical",
                 range: "min",
@@ -592,31 +567,17 @@ export default {
                 max: (len - model.displayrowscount),
                 value: len - model.displayrowscount - model.positionInternal,
                 slide: function (event, ui) {
-                    //max: model.lines.length,
-                    // var lineNum = parseInt(ui.value);
-                    // console.log("adding silder: " +lineNum )
-                    // model.jumpToPosition(lineNum, 0);
-                    //$( "#amount" ).val( ui.value );
-
-                    //console.error("----------------slider")
-                    //console.error(model.factory.getModel().length)
-                    //console.error(model.factory.getModelFiltered().length)
-                    //console.log("using len: " + len)
-                    // var lineNumPrecentage = parseInt(ui.value) / 100;
-                    // var lineNum = len - Math.floor(len * lineNumPrecentage)
                     var lineNum = parseInt(ui.value);
-                    //console.log("moving silder to: " + lineNum)
                     model.jumpToPosition(len - model.displayrowscount - lineNum, 0);
-
                 }
             });
         }
     },
     created() {
-        //console.log('fast text view Created');
         this.factory = (function () {
             let that = {};
             that.myInitId = myID;
+            console.log('fast text view Created with id: ' + that.myInitId);
             myID++
             that.getModel = function () {
                 return that.m;
@@ -640,7 +601,7 @@ export default {
         })();
     },
     mounted: function () {
-        //console.log("fast text view mounted");
+        console.log("fast text view mounted for id: " + model.factory.myInitId);
         let model = this;
 
         $('#logx-progress' + model.factory.myInitId).height(0).css("visibility", "hidden").css("margin", "0px");
@@ -667,6 +628,7 @@ export default {
                 console.log("up", up)
                 model.jumpToPosition(up);
             } else if (event.keyCode == 38) {
+                //arrow down
                 var down = model.positionInternal - 1;
                 model.jumpToPosition(down);
             } else if (event.keyCode == 36) {
@@ -677,6 +639,7 @@ export default {
             } else if (event.keyCode == 35) {
                 //End
                 var pos = model.showFilteredInternal || !model.useFiltersInternal ? (model.factory.getModel().length - 1) : (model.factory.getModelFiltered().length - 1)
+                console.log("End clicked jump to: " + pos);
                 model.jumpToPosition(pos);
             } else if (event.keyCode == 33) {
                 //page up
@@ -689,12 +652,12 @@ export default {
             }
         });
 
+        //save reference to container to render all line to
         model.container = document.getElementById('fast-text-view-' + model.factory.myInitId);
-        
-        let mainC = $('#fast-text-view-' + model.factory.myInitId);
-
+        //let mainC = $('#fast-text-view-' + model.factory.myInitId);
         var preEvent;
         $(document).ready(function () {
+            console.log("TextView: html ready - Render");
             model.updateLinesModel(true);
             model.setupSlider();
             setTimeout(() => {
@@ -732,30 +695,33 @@ export default {
                 model.onParentResize();
             }, 300);
         });
-        setTimeout(() => {
-            model.onParentResize();
-        }, 350);
+        // setTimeout(() => {
+        //     model.onParentResize();
+        // }, 350);
 
         if (!model.lines || model.lines.length <= 0) {
-            this.factory.setModel(["no data 2"]);
+            model.factory.setModel(["no data 2"]);
             model.factory.setOriginalModel(["no data 2"]);
+            model.factory.setModelFiltered(["no data 2"]);
         } else {
-            this.factory.setModel(model.lines);
-            this.factory.setOriginalModel(model.lines)
+            model.factory.setModel(model.lines);
+            model.factory.setOriginalModel(model.lines)
+            model.factory.setModelFiltered(model.lines);
         }
         model.highlightsInternal = model.highlights ? model.highlights : [];
-        model.filtersInternal = model.filters;
-        model.exfiltersInternal = model.exfilters;
+        model.filtersInternal = model.filters ? model.filters : [];
+        model.exfiltersInternal = model.exfilters ? model.exfilters : [];
 
         this.$nextTick(function () {
             init(model.factory);
             model.ready = true;
-            //register double click to highlight color a word
+            console.log("register double click to highlight color a word");
             $('#fast-text-view-' + model.factory.myInitId).dblclick(function () {
                 var seltxt = getSelText();
                 EventBus.$emit('textSelection', seltxt);
             });
         })
+
         var prevDelta = 0;
         var lastEventTimestamp = 0;
 
@@ -803,6 +769,7 @@ export default {
             let newPosition = model.positionInternal + Math.round(delta * -1);
             model.jumpToPosition(newPosition);
         }
+         console.log("register mouse wheel");
         document.getElementById('fast-text-view-' + model.factory.myInitId).addEventListener('mousewheel', mouseWheelEvent);
     }
 }
@@ -818,7 +785,7 @@ function getSelText() {
 }
 
 function init(factory) {
-    //console.log("init highlight jquery");
+    console.log("init highlight jquery");
     global.jQuery.fn.removeHighlight = function () {
         function newNormalize(node) {
             for (var i = 0, children = node.childNodes, nodeCount = children.length; i < nodeCount; i++) {
