@@ -516,7 +516,7 @@ export default {
 
         },
         onParentResize: function () {
-            console.log("onParentResize")
+            //console.log("onParentResize")
             let model = this
 
             var parentH = 0;
