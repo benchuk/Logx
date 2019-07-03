@@ -21,7 +21,7 @@
             <v-card-actions class="pa-0 ma-1">
                 <v-btn :disabled="HasInvalidFilters" color="primary" flat @click="AddFilter">Add</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="HasInvalidFilters" color="primary" flat @click.stop="show=false">Close</v-btn>
+                <v-btn :disabled="HasInvalidFilters" color="primary" flat @click.stop="show=false">Save & Close</v-btn>
             </v-card-actions>
 
         </v-card>
@@ -30,62 +30,57 @@
 </template>
 
 <script>
-import jsTextFilter from './jsTextFilter';
+import jsTextFilter from './jsTextFilter'
 
 export default {
-    props: ['visible', 'jsTextFilters', 'types'],
-    components: {
-        jsTextFilter
-    },
-    data() {
-        return {
-            active: null
-        }
-    },
-
-    mounted() {
-
-    },
-    computed: {
-        show: {
-            get() {
-                return this.visible
-            },
-            set(value) {
-                if (!value) {
-                    this.$emit('close')
-                    //   in the parent: <jsTextFilterDialog :visible="showJsTextFilterDialog" @close="showJsTextFilterDialog=false" />
-                }
-            }
-        },
-        HasInvalidFilters() {
-            //console.log(this.jsTextFilters.find(x=>x.valid==false))
-            return this.jsTextFilters.find(x => x.valid == false) != undefined
-        },
-
-    },
-    methods: {
-        AddFilter: function () {
-            this.jsTextFilters.push({
-                name: '',
-                type: null,
-                text: '',
-                valid: false
-            })
-            this.active = this.jsTextFilters.length - 1;
-        },
-        RemoveFilter: function (index) {
-            this.jsTextFilters.splice(index, 1)
-        },
-        getTabText: function (text) {
-            if (!text || text.trim().length == 0) {
-                return '[New]'
-            }
-            let str = text.trim();
-            return str.length > 13 ? str.substring(0, 10) + '...' : str
-
-        }
-
+  props: ['visible', 'jsTextFilters', 'types'],
+  components: {
+    jsTextFilter
+  },
+  data() {
+    return {
+      active: null
     }
+  },
+
+  mounted() {},
+  computed: {
+    show: {
+      get() {
+        return this.visible
+      },
+      set(value) {
+        if (!value) {
+          this.$emit('close')
+          //   in the parent: <jsTextFilterDialog :visible="showJsTextFilterDialog" @close="showJsTextFilterDialog=false" />
+        }
+      }
+    },
+    HasInvalidFilters() {
+      //console.log(this.jsTextFilters.find(x=>x.valid==false))
+      return this.jsTextFilters.find(x => x.valid == false) != undefined
+    }
+  },
+  methods: {
+    AddFilter: function() {
+      this.jsTextFilters.push({
+        name: '',
+        type: null,
+        text: '',
+        valid: false
+      })
+      this.active = this.jsTextFilters.length - 1
+    },
+    RemoveFilter: function(index) {
+      this.jsTextFilters.splice(index, 1)
+    },
+    getTabText: function(text) {
+      if (!text || text.trim().length == 0) {
+        return '[New]'
+      }
+      let str = text.trim()
+      return str.length > 13 ? str.substring(0, 10) + '...' : str
+    }
+  }
 }
 </script>

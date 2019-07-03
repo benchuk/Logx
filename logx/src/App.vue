@@ -297,7 +297,7 @@
             </v-btn>
         </v-snackbar>
         <!-- ======= TOAST ================================================= -->
-        <jsTextFilterDialog :visible="jsTextFilterDialog" :jsTextFilters="jsTextFilters" :types="jsTextTypes" @close="jsTextFilterDialog=false" />
+        <jsTextFilterDialog :visible="jsTextFilterDialog" :jsTextFilters="jsTextFilters" :types="jsTextTypes" @close="saveAndCloseFiltersEditor" />
     </v-app>
 </div>
 </template>
@@ -309,692 +309,716 @@ import plotFromText from './components/plotFromText'
 import jsTextFilterDialog from './components/jsTextFilterDialog'
 import JQuery from 'jquery'
 let $ = JQuery
-import {
-    ipcRenderer
-} from 'electron'
+import { ipcRenderer } from 'electron'
 
 function loadFilesOnServer(filesPaths) {
-    if (filesPaths == undefined) {
-        return
-    }
-    var params = {
-        files: filesPaths
-    }
-    filesPaths.forEach(f => {
-        console.log('File: ', f)
-    })
+  if (filesPaths == undefined) {
+    return
+  }
+  var params = {
+    files: filesPaths
+  }
+  filesPaths.forEach(f => {
+    console.log('File: ', f)
+  })
 
-    var res = ipcRenderer.send('load-files', params)
+  var res = ipcRenderer.send('load-files', params)
 }
 var filesPaths = appStorage.loadLastFileList()
 loadFilesOnServer(filesPaths)
 
 function random_rgba() {
-    return (
-        'rgb(' +
-        Math.floor(Math.random() * 256) +
-        ',' +
-        Math.floor(Math.random() * 256) +
-        ',' +
-        Math.floor(Math.random() * 256) +
-        ')'
-    )
+  return (
+    'rgb(' +
+    Math.floor(Math.random() * 256) +
+    ',' +
+    Math.floor(Math.random() * 256) +
+    ',' +
+    Math.floor(Math.random() * 256) +
+    ')'
+  )
 }
 let calls = 1
 let arr = [10, 20, 50, 100, 155]
 
 function random_rgba2(id) {
-    let cell = id % 4
-    return (
-        'rgb(' +
-        Math.min(255, id) +
-        ',' +
-        Math.min(255, id * id) +
-        ',' +
-        Math.min(255, arr[cell]) +
-        ')'
-    )
+  let cell = id % 4
+  return (
+    'rgb(' +
+    Math.min(255, id) +
+    ',' +
+    Math.min(255, id * id) +
+    ',' +
+    Math.min(255, arr[cell]) +
+    ')'
+  )
 }
 
 function jqueryInit() {
-    console.log('jqueryInit')
-    var startPoint = 0
-    var orgHeight = 0
+  console.log('jqueryInit')
+  var startPoint = 0
+  var orgHeight = 0
 
-    function onDrop(e) {
-        filesPaths = []
-        e.preventDefault()
-        e.stopPropagation()
-        var dt = e.dataTransfer || (e.originalEvent && e.originalEvent.dataTransfer)
-        var files = e.target.files || (dt && dt.files)
-        for (var i in files) {
-            var p = e.dataTransfer.files[i].path
-            if (p != undefined) {
-                filesPaths.push(p)
-            }
-        }
-        appStorage.saveFileListForWindow(filesPaths)
-        loadFilesOnServer(filesPaths)
+  function onDrop(e) {
+    filesPaths = []
+    e.preventDefault()
+    e.stopPropagation()
+    var dt = e.dataTransfer || (e.originalEvent && e.originalEvent.dataTransfer)
+    var files = e.target.files || (dt && dt.files)
+    for (var i in files) {
+      var p = e.dataTransfer.files[i].path
+      if (p != undefined) {
+        filesPaths.push(p)
+      }
     }
+    appStorage.saveFileListForWindow(filesPaths)
+    loadFilesOnServer(filesPaths)
+  }
 
-    $('html').on('dragover', function (event) {
-        event.preventDefault()
-        event.stopPropagation()
-    })
-    $('html').on('dragleave', function (event) {
-        event.preventDefault()
-        event.stopPropagation()
-    })
+  $('html').on('dragover', function(event) {
+    event.preventDefault()
+    event.stopPropagation()
+  })
+  $('html').on('dragleave', function(event) {
+    event.preventDefault()
+    event.stopPropagation()
+  })
 
-    document.addEventListener('drop', function (e) {
-        onDrop(e)
-    })
+  document.addEventListener('drop', function(e) {
+    onDrop(e)
+  })
 
-    function mousemove(e) {
-        var res = orgHeight + (startPoint - e.pageY)
-        $('#theFooter').height(res)
-        if (e.stopPropagation) e.stopPropagation()
-        if (e.preventDefault) e.preventDefault()
-        e.cancelBubble = true
-        e.returnValue = false
-    }
+  function mousemove(e) {
+    var res = orgHeight + (startPoint - e.pageY)
+    $('#theFooter').height(res)
+    if (e.stopPropagation) e.stopPropagation()
+    if (e.preventDefault) e.preventDefault()
+    e.cancelBubble = true
+    e.returnValue = false
+  }
 
-    function mouseup(e) {
-        var res = orgHeight + (startPoint - e.pageY)
-        $('#theFooter').height(res)
-        $('body,html').off('mousemove', mousemove)
-        $('body,html,#resizer').off('mouseup', mouseup)
-    }
+  function mouseup(e) {
+    var res = orgHeight + (startPoint - e.pageY)
+    $('#theFooter').height(res)
+    $('body,html').off('mousemove', mousemove)
+    $('body,html,#resizer').off('mouseup', mouseup)
+  }
 
-    function mousedown(e) {
-        $('body,html,#resizer').mouseup(mouseup)
-        startPoint = e.pageY
-        orgHeight = $('#theFooter').height()
-        $('body,html').mousemove(mousemove)
-    }
-    $('#resizer').mousedown(mousedown)
+  function mousedown(e) {
+    $('body,html,#resizer').mouseup(mouseup)
+    startPoint = e.pageY
+    orgHeight = $('#theFooter').height()
+    $('body,html').mousemove(mousemove)
+  }
+  $('#resizer').mousedown(mousedown)
 }
 
-import {
-    EventBus
-} from './components/event-bus'
+import { EventBus } from './components/event-bus'
 import FastTextView from './components/FastTextView'
 export default {
-    name: 'logxmain-page',
-    components: {
-        FastTextView,
-        mapFromText,
-        plotFromText,
-        jsTextFilterDialog
-    },
-    computed: {
-        canAddColor() {
-            return (
-                this.highlights == null ||
-                this.highlights.length == 0 ||
-                this.highlights[this.highlights.length - 1].value.trim().length > 0
-            )
-        }
-    },
-    watch: {
-        highlights: {
-            handler: function (val) {
-                let model = this
-                model.canSave = true
-            },
-            deep: true
-        },
-        filters: {
-            handler: function (val) {
-                let model = this
-                model.canSave = true
-            },
-            deep: true
-        },
-        exfilters: {
-            handler: function (val) {
-                let model = this
-                model.canSave = true
-            },
-            deep: true
-        }
-    },
-    data: function () {
-        return {
-            canSave: false,
-            filterPresets: [],
-            selectedPresetName: '',
-            findMultiSearchTerms: [{
-                    value: ''
-                },
-                {
-                    value: ''
-                },
-                {
-                    value: ''
-                },
-                {
-                    value: ''
-                },
-                {
-                    value: ''
-                },
-                {
-                    value: ''
-                }
-            ],
-            snackbarVis: false,
-            snackbarText: '',
-            searchDialog: false,
-            filesDialog: false,
-            showFiltered: false,
-            position: {
-                value: 0,
-                source: 'default',
-                showFiltered: false
-            },
-            stylesCache: {},
-            active: 0,
-            drawerRight: false,
-            right: null,
-            left: null,
-            notifications: true,
-            sound: true,
-            widgets: true,
-            useFilters: true,
-            filters: [],
-            useExFilters: true,
-            exfilters: [],
-            useColors: true,
-            dialog: false,
-            dialog3: false,
-            highlights: [],
-            logLines: [],
-            originalH: 35,
-            startPoint: -1,
-            theView: undefined,
-            drawer: true,
-            panel: [true, true, false],
-            searchReasultsContent: [],
-            searchterm: '',
-            searchs: [],
-            filesList: [],
-            items: [],
-            jsTextFilterDialog: false,
-            jsTextFilters: [],
-            jsTextTypes: [{
-                    name: 'graph',
-                    desc: 'function(line){ // should return a number of null',
-                    icon: 'show_chart'
-                },
-                {
-                    name: 'timegraph',
-                    desc: 'function(line){ // should return {time:t,value:v} or null',
-                    icon: 'timer'
-                },
-                {
-                    name: 'map',
-                    desc: 'function(line){ // should return {lat:lt,lon:ln} or null',
-                    icon: 'place'
-                }
-            ]
-        }
-    },
-    created() {
-        console.log('app created')
+  name: 'logxmain-page',
+  components: {
+    FastTextView,
+    mapFromText,
+    plotFromText,
+    jsTextFilterDialog
+  },
+  computed: {
+    canAddColor() {
+      return (
+        this.highlights == null ||
+        this.highlights.length == 0 ||
+        this.highlights[this.highlights.length - 1].value.trim().length > 0
+      )
+    }
+  },
+  watch: {
+    highlights: {
+      handler: function(val) {
         let model = this
-
-        model.filterPresets = appStorage.loadPresets().map(f => f.name)
-        model.selectedPresetName = appStorage.getLastPresetsName()
-        model.loadPreset(model.selectedPresetName)
-
-        console.log('register load files replay event')
-        ipcRenderer.on('load-files-reply', (event, arg) => {
-            let lines = arg.split('\n')
-            model.logLines = lines
-            model.filesList = appStorage.loadLastFileList()
-        })
-
-        console.log('register past data replay event')
-        ipcRenderer.on('paste-data-reply', (event, arg) => {
-            appStorage.saveFileListForWindow(null)
-            let lines = arg.split('\n')
-            model.logLines = lines
-            model.filesList = appStorage.loadLastFileList()
-        })
-
-        console.log('register text selection event')
-        EventBus.$on('textSelection', text => {
-            console.log('text selection event occured')
-            model.AddToHighlights(text)
-        })
-        console.log('register show filtered event')
-        EventBus.$on('showingFiltered', showingFiltered => {
-            console.log('showFiltered event occured')
-            model.showFiltered = showingFiltered
-        })
-        console.log('register jump to event')
-        EventBus.$on('jumpto', pos => {
-            console.log('jumpto event occured')
-            model.position = pos
-        })
-
-        console.log('register key down (find all shortcut)')
-        let prevKey = -1
-        $(window).keydown(function (event) {
-            if ((event.ctrlKey || prevKey == 91) && event.keyCode == 70) {
-                event.preventDefault()
-                prevKey = -1
-                model.searchterm = ''
-                $('#findall').focus()
-                $('#findall').val('')
-            }
-            prevKey = event.keyCode
-        })
-
-        //hack for save button state
-        setTimeout(() => {
-            console.log('canSave -> false')
-            model.canSave = false
-        }, 0)
+        model.canSave = true
+      },
+      deep: true
     },
-    mounted: function () {
-        console.log('app mounted')
+    filters: {
+      handler: function(val) {
         let model = this
-        model.logLines = []
-        //console.log(model);
-        // for (var i = 0; i <= 200; i++) {
-        //     //console.log(i);
-        //     model.logLines.push("" + i);
-        // }
-        this.$nextTick(function () {
-            //console.log("register resize");
-            // window.addEventListener('resize', function(e) {
-            //   e.preventDefault()
-            // })
-            jqueryInit()
-        })
+        model.canSave = true
+      },
+      deep: true
     },
-    methods: {
-        AddTextFilter: function (filter) {
-            if ($('#theFooter').height() < 600) {
-                $('#theFooter').height(600)
-            }
-            this.searchs.push([{
-                value: filter.name,
-                type: filter.type.name,
-                code: filter.text
-            }])
-            this.active = this.searchs.length - 1
+    exfilters: {
+      handler: function(val) {
+        let model = this
+        model.canSave = true
+      },
+      deep: true
+    }
+  },
+  data: function() {
+    return {
+      canSave: false,
+      filterPresets: [],
+      selectedPresetName: '',
+      findMultiSearchTerms: [
+        {
+          value: ''
+        },
+        {
+          value: ''
+        },
+        {
+          value: ''
+        },
+        {
+          value: ''
+        },
+        {
+          value: ''
+        },
+        {
+          value: ''
+        }
+      ],
+      snackbarVis: false,
+      snackbarText: '',
+      searchDialog: false,
+      filesDialog: false,
+      showFiltered: false,
+      position: {
+        value: 0,
+        source: 'default',
+        showFiltered: false
+      },
+      stylesCache: {},
+      active: 0,
+      drawerRight: false,
+      right: null,
+      left: null,
+      notifications: true,
+      sound: true,
+      widgets: true,
+      useFilters: true,
+      filters: [],
+      useExFilters: true,
+      exfilters: [],
+      useColors: true,
+      dialog: false,
+      dialog3: false,
+      highlights: [],
+      logLines: [],
+      originalH: 35,
+      startPoint: -1,
+      theView: undefined,
+      drawer: true,
+      panel: [true, true, false],
+      searchReasultsContent: [],
+      searchterm: '',
+      searchs: [],
+      filesList: [],
+      items: [],
+      jsTextFilterDialog: false,
+      jsTextFilters: [],
+      jsTextTypes: [
+        {
+          name: 'graph',
+          desc: 'function(line){ // should return a number of null',
+          icon: 'show_chart'
+        },
+        {
+          name: 'timegraph',
+          desc: 'function(line){ // should return {time:t,value:v} or null',
+          icon: 'timer'
+        },
+        {
+          name: 'map',
+          desc: 'function(line){ // should return {lat:lt,lon:ln} or null',
+          icon: 'place'
+        }
+      ]
+    }
+  },
+  created() {
+    console.log('app created')
+    let model = this
 
-        },
-        addChart: function () {
-            if ($('#theFooter').height() < 600) {
-                $('#theFooter').height(600)
-            }
-            this.searchs.push([{
-                value: 'chart',
-                type: 'chart'
-            }])
-            this.active = this.searchs.length - 1
-        },
-        addMap: function () {
-            if ($('#theFooter').height() < 600) {
-                $('#theFooter').height(600)
-            }
-            this.searchs.push([{
-                value: 'map',
-                type: 'map'
-            }])
-            this.active = this.searchs.length - 1
-        },
-        speedGps: function () {
-            if ($('#theFooter').height() < 600) {
-                $('#theFooter').height(600)
-            }
-            this.searchs.push([{
-                value: 'speed-gps',
-                type: 'speed-gps'
-            }])
-            this.active = this.searchs.length - 1
-        },
-        speedSensor: function () {
-            if ($('#theFooter').height() < 600) {
-                $('#theFooter').height(600)
-            }
-            this.searchs.push([{
-                value: 'speed',
-                type: 'speed-sensor'
-            }])
-            this.active = this.searchs.length - 1
-        },
-        getHrGraphText: function () {
-            //return "console.log(line);";
-            //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
-            return "if(!line.toLowerCase().includes('onHeartrateReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[7];"
-        },
-        getCadenceGraphText: function () {
-            //return "console.log(line);";
-            //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
-            return "if(!line.toLowerCase().includes('onCadenceReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[7];"
-        },
-        getPowerGraphText: function () {
-            //return "console.log(line);";
-            //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
-            return "if(!line.toLowerCase().includes('onPowerReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[7];"
-        },
-        getSpeedGraphText: function () {
-            //return "console.log(line);";
-            //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
-            return "if(!line.toLowerCase().includes('onSpeedReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];"
-        },
-        getGpsSpeedGraphText: function () {
-            //return "console.log(line);";
-            //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
-            return "if(!line.toLowerCase().includes('onSpeedFromGpsReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[6];"
-        },
-        getMapText: function () {
-            //return "console.log(line);";
-            //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
-            return "if(!line.toLowerCase().includes('updateFusedLocation'.toLowerCase())) return null; return line.split(' ')[7];"
-        },
-        savePresetClicked: function () {
-            console.log('save Preset Clicked')
-            let model = this
-            model.canSave = false
-            model.savePreset(
-                model.selectedPresetName,
-                model.filters,
-                model.exfilters,
-                model.highlights
-            )
-        },
-        savePreset: function (presetName, filters, excludeFilters, highlights) {
-            console.log('savePreset to storage for preset name: ' + presetName)
-            appStorage.savePreset(presetName, filters, excludeFilters, highlights)
-            this.showMessage('saved')
-        },
-        loadPreset: function (presetName) {
-            console.log('load preset: ' + presetName)
-            let model = this
-            model.highlights = []
-            model.filters = []
-            model.exfilters = []
-            let highlights = model.highlightsForPresetName(presetName)
-            if (highlights) {
-                highlights.forEach(function (h) {
-                    model.AddToHighlights(h.value)
-                })
-            }
-            model.filters = model.filtersForPresetName(presetName)
-            model.exfilters = model.excludeFiltersForPresetName(presetName)
-            setTimeout(() => {
-                console.log('canSave -> false')
-                model.canSave = false
-            }, 0)
-        },
-        filtersForPresetName: function (presetName) {
-            console.log('filtersForPresetName')
-            var preset = appStorage.loadPresets().find(l => l.name === presetName)
-            var filters = preset ? preset.filters : []
-            return filters
-        },
-        excludeFiltersForPresetName: function (presetName) {
-            console.log('excludeFiltersForPresetName')
-            var preset = appStorage.loadPresets().find(l => l.name === presetName)
-            var exFilters = preset ? preset.excludeFilters : []
-            return exFilters
-        },
-        highlightsForPresetName: function (presetName) {
-            console.log('highlightsForPresetName')
-            var preset = appStorage.loadPresets().find(l => l.name === presetName)
-            console.log('preset', preset)
-            var highlights = preset ?
-                preset.highlights ? preset.highlights : [] : []
-            console.log('highlights', highlights)
-            return highlights
-        },
-        onFilterPresetSelected: function (selectedPresetName) {
-            console.log('New Preset Name: ' + selectedPresetName)
-            this.loadPreset(selectedPresetName)
-            appStorage.saveLastUsedPresetName(selectedPresetName)
-        },
-        removeFile: function (index) {
-            console.log('removeFile')
-            if (!this.filesList || this.filesList.length < index) {
-                return
-            }
-            this.filesList.splice(index, 1)
-            appStorage.saveFileListForWindow(this.filesList)
-            loadFilesOnServer(this.filesList)
-        },
-        getFileName: function (index) {
-            //console.log('getFileName')
-            if (!this.filesList || this.filesList.length < index) {
-                return ''
-            }
-            return this.filesList[index]
-                .split('\\')
-                .pop()
-                .split('/')
-                .pop()
-        },
-        getFindTabText: function (texts, forTab) {
-            if (!texts) {
-                return ''
-            }
-            if (forTab) {
-                let str = texts[0].value
-                if (texts.length > 1) {
-                    str = texts
-                        .filter(t => t.value && t.value.trim().length > 0)
-                        .map(x => `${x.value}`)
-                        .join(',')
-                }
-                return str.length > 13 ? str.substring(0, 10) + '...' : str
-            } else {
-                return texts
-                    .filter(t => t.value && t.value.trim().length > 0)
-                    .map(x => `${x.value}`)
-                    .join(',')
-            }
-        },
-        showMessage: function (text) {
-            console.log('showMessage ' + text)
-            this.snackbarText = text.toLowerCase()
-            this.snackbarVis = true
-        },
-        findMulti: function () {
-            var searchTerms = []
-            for (var s of this.findMultiSearchTerms.slice()) {
-                if (!s.value || s.value.trim().length <= 0) {
-                    continue
-                }
-                searchTerms.push({
-                    value: s.value,
-                    type: 'find'
-                })
-            }
-            if (searchTerms.length == 0) {
-                this.showMessage('no searches entered')
-                return
-            }
-            this.searchDialog = false
-            this.findMultiSearchTerms.forEach(s => (s.value = ''))
-            this.searchs.push(searchTerms)
-            this.active = (this.searchs.length - 1).toString()
-            if ($('#theFooter').height() < 300) {
-                $('#theFooter').height(300)
-            }
-        },
-        jump: function (p) {
-            console.log('jump ' + p)
-            this.position = {
-                value: p,
-                source: 'default',
-                showFiltered: false
-            }
-        },
-        filterFromColor: function (index) {
-            let text = this.highlights[index].value
-            if (text.trim().length == 0) {
-                return
-            }
-            let lowertext = text.toLowerCase()
-            let exists = this.filters.findIndex(
-                s => s.value.toLowerCase() === lowertext.toLowerCase()
-            )
-            if (exists >= 0) {
-                this.showMessage('Filter is Already Defined')
-                return
-            }
-            this.filters.unshift({
-                value: this.highlights[index].value
-            })
-        },
-        colorFromFilter: function (index) {
-            this.AddToHighlights(this.filters[index].value)
-        },
-        AddToHighlights: function (text) {
-            console.log('AddToHighlights')
-            console.log(text)
-            let model = this
+    this.jsTextFilters = appStorage.loadParsingFilterList()
+    model.filterPresets = appStorage.loadPresets().map(f => f.name)
+    model.selectedPresetName = appStorage.getLastPresetsName()
+    model.loadPreset(model.selectedPresetName)
 
-            let lowertext = text.toLowerCase()
-            let exists = model.highlights.findIndex(
-                s => s.value.toLowerCase() === lowertext.toLowerCase()
-            )
-            if (exists >= 0) {
-                this.showMessage('Highlight is Already Defined')
-                return
-            }
+    console.log('register load files replay event')
+    ipcRenderer.on('load-files-reply', (event, arg) => {
+      let lines = arg.split('\n')
+      model.logLines = lines
+      model.filesList = appStorage.loadLastFileList()
+    })
 
-            if (!this.canAddColor) {
-                this.removeColor(model.highlights.length - 1)
-            }
-            model.addStyle(model.highlights.length + 1)
-            model.highlights.push({
-                value: '' + text
-            })
-            this.panel[1] = true
-        },
-        getColor: function (index) {
-            return stylesCache[index]
-        },
-        clearSearches: function (s) {
-            this.searchs = []
-            $('#theFooter').height(35)
-        },
-        removeSearch: function (s) {
-            let index = this.searchs.indexOf(s)
-            var wasLast = false
-            if (index == this.searchs.length - 1) {
-                wasLast = true
-            }
-            this.searchs.splice(index, 1)
-            setTimeout(() => {
-                if (wasLast) {
-                    this.active = (this.searchs.length - 1).toString()
-                }
-                if (this.searchs.length <= 0) {
-                    $('#theFooter').height(35)
-                }
-            }, 10)
-        },
-        finall: function () {
-            let searchterm = this.searchterm.toLowerCase().trim()
-            if (searchterm.length == 0) {
-                return
-            }
-            this.searchterm = ''
-            let exists = this.searchs.findIndex(
-                s => s.length == 1 && s[0].value === searchterm
-            )
-            if (exists >= 0) {
-                this.active = exists
-                this.showMessage('Search is Already Defined')
-                return
-            }
-            this.searchs.push([{
-                value: '' + searchterm,
-                type: 'find'
-            }])
-            console.log(this.searchs)
-            this.active = this.searchs.length - 1
-            if ($('#theFooter').height() < 300) {
-                $('#theFooter').height(300)
-            }
-        },
-        addExFilter: function (event) {
-            console.log('addExFilter')
-            this.exfilters.unshift({
-                value: ''
-            })
-        },
-        removeExFilter: function (index) {
-            console.log('removeExFilter')
-            if (index === -1) {
-                this.exfilters = []
-                return
-            }
-            this.exfilters.splice(index, 1)
-        },
-        addFilter: function (event) {
-            console.log('addFilter')
-            this.filters.unshift({
-                value: ''
-            })
-            this.$refs.filterId[0].focus()
-        },
-        removeFilter: function (index) {
-            console.log('removeFilter')
-            if (index === -1) {
-                this.filters = []
-                return
-            }
-            this.filters.splice(index, 1)
-        },
-        addColor: function (event) {
-            console.log('addColor')
-            this.AddToHighlights('')
-        },
-        removeColor: function (index) {
-            console.log('removeColor')
-            if (index === -1) {
-                this.highlights = []
-                return
-            }
-            this.highlights.splice(index, 1)
-        },
-        up: function (e) {
-            this.startPoint = -1
-        },
-        down: function (e) {
-            this.startPoint = e.pageY
-            this.originalH = this.h
-        },
-        move: function (e) {
-            if (this.startPoint <= 0) {
-                return
-            }
-            let y = this.startPoint - e.pageY
-            let x = this.originalH + this.startPoint - e.pageY
-            this.theView.style.height = x + 'px'
-            if (e.stopPropagation) e.stopPropagation()
-            if (e.preventDefault) e.preventDefault()
-            e.cancelBubble = true
-            e.returnValue = false
-        },
-        addStyle: function (id) {
-            if (this.stylesCache[id]) {
-                return
-            }
-            let backColor = random_rgba(id)
-            this.stylesCache[id] = backColor
-            //let color = random_rgba();
-            var style = document.createElement('style')
-            style.type = 'text/css'
-            style.innerHTML = `.highlight${id} {
+    console.log('register past data replay event')
+    ipcRenderer.on('paste-data-reply', (event, arg) => {
+      appStorage.saveFileListForWindow(null)
+      let lines = arg.split('\n')
+      model.logLines = lines
+      model.filesList = appStorage.loadLastFileList()
+    })
+
+    console.log('register text selection event')
+    EventBus.$on('textSelection', text => {
+      console.log('text selection event occured')
+      model.AddToHighlights(text)
+    })
+    console.log('register show filtered event')
+    EventBus.$on('showingFiltered', showingFiltered => {
+      console.log('showFiltered event occured')
+      model.showFiltered = showingFiltered
+    })
+    console.log('register jump to event')
+    EventBus.$on('jumpto', pos => {
+      console.log('jumpto event occured')
+      model.position = pos
+    })
+
+    console.log('register key down (find all shortcut)')
+    let prevKey = -1
+    $(window).keydown(function(event) {
+      if ((event.ctrlKey || prevKey == 91) && event.keyCode == 70) {
+        event.preventDefault()
+        prevKey = -1
+        model.searchterm = ''
+        $('#findall').focus()
+        $('#findall').val('')
+      }
+      prevKey = event.keyCode
+    })
+
+    //hack for save button state
+    setTimeout(() => {
+      console.log('canSave -> false')
+      model.canSave = false
+    }, 0)
+  },
+  mounted: function() {
+    console.log('app mounted')
+    let model = this
+    model.logLines = []
+    //console.log(model);
+    // for (var i = 0; i <= 200; i++) {
+    //     //console.log(i);
+    //     model.logLines.push("" + i);
+    // }
+    this.$nextTick(function() {
+      //console.log("register resize");
+      // window.addEventListener('resize', function(e) {
+      //   e.preventDefault()
+      // })
+      jqueryInit()
+    })
+  },
+  methods: {
+    saveAndCloseFiltersEditor: function() {
+      let dataToSave = []
+      for (let filter of this.jsTextFilters) {
+        dataToSave.push({
+          name: filter.name,
+          text: filter.text,
+          type: filter.type,
+          valid: filter.valid
+        })
+      }
+      appStorage.saveParsingFilterList(dataToSave)
+      this.jsTextFilterDialog = false
+    },
+    AddTextFilter: function(filter) {
+      if ($('#theFooter').height() < 600) {
+        $('#theFooter').height(600)
+      }
+      this.searchs.push([
+        {
+          value: filter.name,
+          type: filter.type.name,
+          code: filter.text
+        }
+      ])
+      this.active = this.searchs.length - 1
+    },
+    addChart: function() {
+      if ($('#theFooter').height() < 600) {
+        $('#theFooter').height(600)
+      }
+      this.searchs.push([
+        {
+          value: 'chart',
+          type: 'chart'
+        }
+      ])
+      this.active = this.searchs.length - 1
+    },
+    addMap: function() {
+      if ($('#theFooter').height() < 600) {
+        $('#theFooter').height(600)
+      }
+      this.searchs.push([
+        {
+          value: 'map',
+          type: 'map'
+        }
+      ])
+      this.active = this.searchs.length - 1
+    },
+    speedGps: function() {
+      if ($('#theFooter').height() < 600) {
+        $('#theFooter').height(600)
+      }
+      this.searchs.push([
+        {
+          value: 'speed-gps',
+          type: 'speed-gps'
+        }
+      ])
+      this.active = this.searchs.length - 1
+    },
+    speedSensor: function() {
+      if ($('#theFooter').height() < 600) {
+        $('#theFooter').height(600)
+      }
+      this.searchs.push([
+        {
+          value: 'speed',
+          type: 'speed-sensor'
+        }
+      ])
+      this.active = this.searchs.length - 1
+    },
+    getHrGraphText: function() {
+      //return "console.log(line);";
+      //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+      return "if(!line.toLowerCase().includes('onHeartrateReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[7];"
+    },
+    getCadenceGraphText: function() {
+      //return "console.log(line);";
+      //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+      return "if(!line.toLowerCase().includes('onCadenceReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[7];"
+    },
+    getPowerGraphText: function() {
+      //return "console.log(line);";
+      //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+      return "if(!line.toLowerCase().includes('onPowerReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[7];"
+    },
+    getSpeedGraphText: function() {
+      //return "console.log(line);";
+      //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+      return "if(!line.toLowerCase().includes('onSpeedReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];"
+    },
+    getGpsSpeedGraphText: function() {
+      //return "console.log(line);";
+      //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+      return "if(!line.toLowerCase().includes('onSpeedFromGpsReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[6];"
+    },
+    getMapText: function() {
+      //return "console.log(line);";
+      //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+      return "if(!line.toLowerCase().includes('updateFusedLocation'.toLowerCase())) return null; return line.split(' ')[7];"
+    },
+    savePresetClicked: function() {
+      console.log('save Preset Clicked')
+      let model = this
+      model.canSave = false
+      model.savePreset(
+        model.selectedPresetName,
+        model.filters,
+        model.exfilters,
+        model.highlights
+      )
+    },
+    savePreset: function(presetName, filters, excludeFilters, highlights) {
+      console.log('savePreset to storage for preset name: ' + presetName)
+      appStorage.savePreset(presetName, filters, excludeFilters, highlights)
+      this.showMessage('saved')
+    },
+    loadPreset: function(presetName) {
+      console.log('load preset: ' + presetName)
+      let model = this
+      model.highlights = []
+      model.filters = []
+      model.exfilters = []
+      let highlights = model.highlightsForPresetName(presetName)
+      if (highlights) {
+        highlights.forEach(function(h) {
+          model.AddToHighlights(h.value)
+        })
+      }
+      model.filters = model.filtersForPresetName(presetName)
+      model.exfilters = model.excludeFiltersForPresetName(presetName)
+      setTimeout(() => {
+        console.log('canSave -> false')
+        model.canSave = false
+      }, 0)
+    },
+    filtersForPresetName: function(presetName) {
+      console.log('filtersForPresetName')
+      var preset = appStorage.loadPresets().find(l => l.name === presetName)
+      var filters = preset ? preset.filters : []
+      return filters
+    },
+    excludeFiltersForPresetName: function(presetName) {
+      console.log('excludeFiltersForPresetName')
+      var preset = appStorage.loadPresets().find(l => l.name === presetName)
+      var exFilters = preset ? preset.excludeFilters : []
+      return exFilters
+    },
+    highlightsForPresetName: function(presetName) {
+      console.log('highlightsForPresetName')
+      var preset = appStorage.loadPresets().find(l => l.name === presetName)
+      console.log('preset', preset)
+      var highlights = preset
+        ? preset.highlights ? preset.highlights : []
+        : []
+      console.log('highlights', highlights)
+      return highlights
+    },
+    onFilterPresetSelected: function(selectedPresetName) {
+      console.log('New Preset Name: ' + selectedPresetName)
+      this.loadPreset(selectedPresetName)
+      appStorage.saveLastUsedPresetName(selectedPresetName)
+    },
+    removeFile: function(index) {
+      console.log('removeFile')
+      if (!this.filesList || this.filesList.length < index) {
+        return
+      }
+      this.filesList.splice(index, 1)
+      appStorage.saveFileListForWindow(this.filesList)
+      loadFilesOnServer(this.filesList)
+    },
+    getFileName: function(index) {
+      //console.log('getFileName')
+      if (!this.filesList || this.filesList.length < index) {
+        return ''
+      }
+      return this.filesList[index]
+        .split('\\')
+        .pop()
+        .split('/')
+        .pop()
+    },
+    getFindTabText: function(texts, forTab) {
+      if (!texts) {
+        return ''
+      }
+      if (forTab) {
+        let str = texts[0].value
+        if (texts.length > 1) {
+          str = texts
+            .filter(t => t.value && t.value.trim().length > 0)
+            .map(x => `${x.value}`)
+            .join(',')
+        }
+        return str.length > 13 ? str.substring(0, 10) + '...' : str
+      } else {
+        return texts
+          .filter(t => t.value && t.value.trim().length > 0)
+          .map(x => `${x.value}`)
+          .join(',')
+      }
+    },
+    showMessage: function(text) {
+      console.log('showMessage ' + text)
+      this.snackbarText = text.toLowerCase()
+      this.snackbarVis = true
+    },
+    findMulti: function() {
+      var searchTerms = []
+      for (var s of this.findMultiSearchTerms.slice()) {
+        if (!s.value || s.value.trim().length <= 0) {
+          continue
+        }
+        searchTerms.push({
+          value: s.value,
+          type: 'find'
+        })
+      }
+      if (searchTerms.length == 0) {
+        this.showMessage('no searches entered')
+        return
+      }
+      this.searchDialog = false
+      this.findMultiSearchTerms.forEach(s => (s.value = ''))
+      this.searchs.push(searchTerms)
+      this.active = (this.searchs.length - 1).toString()
+      if ($('#theFooter').height() < 300) {
+        $('#theFooter').height(300)
+      }
+    },
+    jump: function(p) {
+      console.log('jump ' + p)
+      this.position = {
+        value: p,
+        source: 'default',
+        showFiltered: false
+      }
+    },
+    filterFromColor: function(index) {
+      let text = this.highlights[index].value
+      if (text.trim().length == 0) {
+        return
+      }
+      let lowertext = text.toLowerCase()
+      let exists = this.filters.findIndex(
+        s => s.value.toLowerCase() === lowertext.toLowerCase()
+      )
+      if (exists >= 0) {
+        this.showMessage('Filter is Already Defined')
+        return
+      }
+      this.filters.unshift({
+        value: this.highlights[index].value
+      })
+    },
+    colorFromFilter: function(index) {
+      this.AddToHighlights(this.filters[index].value)
+    },
+    AddToHighlights: function(text) {
+      console.log('AddToHighlights')
+      console.log(text)
+      let model = this
+
+      let lowertext = text.toLowerCase()
+      let exists = model.highlights.findIndex(
+        s => s.value.toLowerCase() === lowertext.toLowerCase()
+      )
+      if (exists >= 0) {
+        this.showMessage('Highlight is Already Defined')
+        return
+      }
+
+      if (!this.canAddColor) {
+        this.removeColor(model.highlights.length - 1)
+      }
+      model.addStyle(model.highlights.length + 1)
+      model.highlights.push({
+        value: '' + text
+      })
+      this.panel[1] = true
+    },
+    getColor: function(index) {
+      return stylesCache[index]
+    },
+    clearSearches: function(s) {
+      this.searchs = []
+      $('#theFooter').height(35)
+    },
+    removeSearch: function(s) {
+      let index = this.searchs.indexOf(s)
+      var wasLast = false
+      if (index == this.searchs.length - 1) {
+        wasLast = true
+      }
+      this.searchs.splice(index, 1)
+      setTimeout(() => {
+        if (wasLast) {
+          this.active = (this.searchs.length - 1).toString()
+        }
+        if (this.searchs.length <= 0) {
+          $('#theFooter').height(35)
+        }
+      }, 10)
+    },
+    finall: function() {
+      let searchterm = this.searchterm.toLowerCase().trim()
+      if (searchterm.length == 0) {
+        return
+      }
+      this.searchterm = ''
+      let exists = this.searchs.findIndex(
+        s => s.length == 1 && s[0].value === searchterm
+      )
+      if (exists >= 0) {
+        this.active = exists
+        this.showMessage('Search is Already Defined')
+        return
+      }
+      this.searchs.push([
+        {
+          value: '' + searchterm,
+          type: 'find'
+        }
+      ])
+      console.log(this.searchs)
+      this.active = this.searchs.length - 1
+      if ($('#theFooter').height() < 300) {
+        $('#theFooter').height(300)
+      }
+    },
+    addExFilter: function(event) {
+      console.log('addExFilter')
+      this.exfilters.unshift({
+        value: ''
+      })
+    },
+    removeExFilter: function(index) {
+      console.log('removeExFilter')
+      if (index === -1) {
+        this.exfilters = []
+        return
+      }
+      this.exfilters.splice(index, 1)
+    },
+    addFilter: function(event) {
+      console.log('addFilter')
+      this.filters.unshift({
+        value: ''
+      })
+      this.$refs.filterId[0].focus()
+    },
+    removeFilter: function(index) {
+      console.log('removeFilter')
+      if (index === -1) {
+        this.filters = []
+        return
+      }
+      this.filters.splice(index, 1)
+    },
+    addColor: function(event) {
+      console.log('addColor')
+      this.AddToHighlights('')
+    },
+    removeColor: function(index) {
+      console.log('removeColor')
+      if (index === -1) {
+        this.highlights = []
+        return
+      }
+      this.highlights.splice(index, 1)
+    },
+    up: function(e) {
+      this.startPoint = -1
+    },
+    down: function(e) {
+      this.startPoint = e.pageY
+      this.originalH = this.h
+    },
+    move: function(e) {
+      if (this.startPoint <= 0) {
+        return
+      }
+      let y = this.startPoint - e.pageY
+      let x = this.originalH + this.startPoint - e.pageY
+      this.theView.style.height = x + 'px'
+      if (e.stopPropagation) e.stopPropagation()
+      if (e.preventDefault) e.preventDefault()
+      e.cancelBubble = true
+      e.returnValue = false
+    },
+    addStyle: function(id) {
+      if (this.stylesCache[id]) {
+        return
+      }
+      let backColor = random_rgba(id)
+      this.stylesCache[id] = backColor
+      //let color = random_rgba();
+      var style = document.createElement('style')
+      style.type = 'text/css'
+      style.innerHTML = `.highlight${id} {
           background-color: ${backColor};
           -moz-border-radius: 3px;
           /* FF1+ */
@@ -1010,12 +1034,12 @@ export default {
           /* Opera 10.5+, IE 9.0 */
           color: white;
         }`
-            document.getElementsByTagName('head')[0].appendChild(style)
-        }
-    },
-    props: {
-        source: String
+      document.getElementsByTagName('head')[0].appendChild(style)
     }
+  },
+  props: {
+    source: String
+  }
 }
 </script>
 
@@ -1023,35 +1047,35 @@ export default {
 @import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro");
 
 #resizer {
-    position: relative;
-    z-index: 10;
-    height: 17px;
-    background: #343436;
-    box-shadow: 0 0 1px black;
-    border-bottom: 1px solid black;
-    cursor: row-resize;
+  position: relative;
+  z-index: 10;
+  height: 17px;
+  background: #343436;
+  box-shadow: 0 0 1px black;
+  border-bottom: 1px solid black;
+  cursor: row-resize;
 }
 
 .ui-slider-range-min {
-    background-color: gray;
+  background-color: gray;
 }
 
 .ui-slider {
-    background-color: #343436 !important;
+  background-color: #343436 !important;
 }
 
 .ui-state-default {
-    background-color: gray !important;
+  background-color: gray !important;
 }
 
 .ui-widget-header {
-    background: #343436 !important;
+  background: #343436 !important;
 }
 
 .ui-corner-all {
-    border-top-right-radius: 9px !important;
-    border-bottom-right-radius: 9px !important;
-    border-bottom-left-radius: 9px !important;
-    border-top-left-radius: 9px !important;
+  border-top-right-radius: 9px !important;
+  border-bottom-right-radius: 9px !important;
+  border-bottom-left-radius: 9px !important;
+  border-top-left-radius: 9px !important;
 }
 </style>

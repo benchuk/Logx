@@ -83,6 +83,15 @@ var appStorage = {
     getLocalStorage()['fileList'] = fileListData
     saveWindow()
   },
+  loadParsingFilterList() {
+    return getLocalStorage()['parsingFilterList']
+  },
+  saveParsingFilterList(list) {
+    console.log('saveParsingFilterList')
+    console.log(list)
+    getLocalStorage()['parsingFilterList'] = list
+    saveWindow()
+  },
   loadLastFileList() {
     let res = getLocalStorage()['fileList']
     return res ? res : []
