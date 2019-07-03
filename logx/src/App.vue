@@ -18,7 +18,7 @@
                     </template>
                     <v-list>
                         <v-list-tile v-for="(f, index) in jsTextFilters" :key="index" @click="AddTextFilter(f)">
-                            <v-list-tile-title>
+                            <v-list-tile-title v-if="f.valid && f.type">
                                 <v-icon class="mr-1">{{f.type.icon}}</v-icon>{{ f.name }} ({{f.type.name}})
                             </v-list-tile-title>
                         </v-list-tile>
@@ -625,6 +625,7 @@ export default {
                 type: filter.type.name,
                 code: filter.text
             }])
+            this.active = this.searchs.length - 1
 
         },
         addChart: function () {
