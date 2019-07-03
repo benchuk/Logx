@@ -10,12 +10,24 @@
             <v-spacer></v-spacer>
             <v-toolbar-items class="hidden-sm-and-down">
                 <v-btn color="blue darken-1" flat @click.native="searchDialog = true">Find multiple</v-btn>
-                <v-btn color="blue darken-1" flat @click="speedSensor">Speed Sensor</v-btn>
-                <v-btn color="blue darken-1" flat @click="speedGps">Speed Gps</v-btn>
-                <v-btn color="blue darken-1" flat @click="addMap">Route</v-btn>
-                <v-btn color="blue darken-1" flat @click="addChart">Chart</v-btn>
-                <v-btn color="blue darken-1" flat @click.stop="jsTextFilterDialog=true">?</v-btn>
-                <v-btn class="ma-0 pa-0" color="blue darken-1" fab flat small @click="filesDialog = true">
+                <v-menu offset-y v-if="jsTextFilters.length>0">
+                    <template v-slot:activator="{ on }">
+                        <v-btn fab flat small color="primary" dark v-on="on">
+                            <v-icon small class="ma-0 pa-0">playlist_add</v-icon>
+                        </v-btn>
+                    </template>
+                    <v-list>
+                        <v-list-tile v-for="(f, index) in jsTextFilters" :key="index" @click="AddTextFilter(f)">
+                            <v-list-tile-title>
+                                <v-icon class="mr-1">{{f.type.icon}}</v-icon>{{ f.name }} ({{f.type.name}})
+                            </v-list-tile-title>
+                        </v-list-tile>
+                    </v-list>
+                </v-menu>
+                <v-btn color="orange darken-1" fab flat small @click="jsTextFilterDialog=true">
+                    <v-icon small>brightness_auto</v-icon>
+                </v-btn>
+                <v-btn class="ma-0 pa-0" color="orange darken-1" fab flat small @click="filesDialog = true">
                     <v-icon class="ma-0 pa-0" small>attach_file</v-icon>
                 </v-btn>
                 <v-btn class="ma-0 pa-0" color="green" fab flat small @click.stop="jump(0)">
@@ -130,25 +142,10 @@
                                         <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :highlights="highlights" :useExFilters="false" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'"></fast-text-view>
                                     </v-card>
                                     <v-card v-else-if="s[0].type==='map'">
-                                        <mapFromText :lines="logLines" :func="getMapText()"></mapFromText>
+                                        <mapFromText :lines="logLines" :func="s[0].code"></mapFromText>
                                     </v-card>
-                                    <v-card v-else-if="s[0].type==='speed-sensor'">
-                                        <graphFromText :lines="logLines" :func="getSpeedGraphText()"></graphFromText>
-                                    </v-card>
-                                    <v-card v-else-if="s[0].type==='speed-gps'">
-                                        <graphFromText :lines="logLines" :func="getGpsSpeedGraphText()"></graphFromText>
-                                    </v-card>
-                                    <v-card v-else-if="s[0].type==='power'">
-                                        <graphFromText :lines="logLines" :func="getPowerGraphText()"></graphFromText>
-                                    </v-card>
-                                    <v-card v-else-if="s[0].type==='cadence'">
-                                        <graphFromText :lines="logLines" :func="getCadenceGraphText()"></graphFromText>
-                                    </v-card>
-                                    <v-card v-else-if="s[0].type==='hr'">
-                                        <graphFromText :lines="logLines" :func="getHrGraphText()"></graphFromText>
-                                    </v-card>
-                                    <v-card v-else-if="s[0].type==='chart'">
-                                        <chartFromText :lines="logLines" :func="getGpsSpeedGraphText()"></chartFromText>
+                                    <v-card v-else-if="s[0].type==='graph'">
+                                        <plotFromText :lines="logLines" :func="s[0].code"></plotFromText>
                                     </v-card>
                                 </v-tab-item>
                             </v-tabs-items>
@@ -307,9 +304,8 @@
 
 <script>
 import appStorage from './components/appStorage'
-import graphFromText from './components/graphFromText'
 import mapFromText from './components/mapFromText'
-import chartFromText from './components/chartFromText'
+import plotFromText from './components/plotFromText'
 import jsTextFilterDialog from './components/jsTextFilterDialog'
 import JQuery from 'jquery'
 let $ = JQuery
@@ -427,9 +423,8 @@ export default {
     name: 'logxmain-page',
     components: {
         FastTextView,
-        graphFromText,
         mapFromText,
-        chartFromText,
+        plotFromText,
         jsTextFilterDialog
     },
     computed: {
@@ -529,15 +524,18 @@ export default {
             jsTextFilters: [],
             jsTextTypes: [{
                     name: 'graph',
-                    desc: 'function(line){ // should return a number of null'
+                    desc: 'function(line){ // should return a number of null',
+                    icon: 'show_chart'
                 },
                 {
                     name: 'timegraph',
-                    desc: 'function(line){ // should return {time:t,value:v} or null'
+                    desc: 'function(line){ // should return {time:t,value:v} or null',
+                    icon: 'timer'
                 },
                 {
                     name: 'map',
-                    desc: 'function(line){ // should return {lat:lt,lon:ln} or null'
+                    desc: 'function(line){ // should return {lat:lt,lon:ln} or null',
+                    icon: 'place'
                 }
             ]
         }
@@ -618,7 +616,15 @@ export default {
         })
     },
     methods: {
-        showFiltersDialog: function () {
+        AddTextFilter: function (filter) {
+            if ($('#theFooter').height() < 600) {
+                $('#theFooter').height(600)
+            }
+            this.searchs.push([{
+                value: filter.name,
+                type: filter.type.name,
+                code: filter.text
+            }])
 
         },
         addChart: function () {
@@ -743,8 +749,7 @@ export default {
             var preset = appStorage.loadPresets().find(l => l.name === presetName)
             console.log('preset', preset)
             var highlights = preset ?
-                preset.highlights ? preset.highlights : [] :
-                []
+                preset.highlights ? preset.highlights : [] : []
             console.log('highlights', highlights)
             return highlights
         },
