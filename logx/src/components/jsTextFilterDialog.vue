@@ -57,7 +57,7 @@
                 </v-btn>
                 <v-spacer></v-spacer>
                 <v-btn :disabled="HasInvalidFilters" color="primary" flat @click.stop="show=false">
-                    <v-icon small dark color="primary">add</v-icon>Save & Close
+                    <v-icon small dark color="primary">save</v-icon>Save & Close
                 </v-btn>
             </v-card-actions>
 
