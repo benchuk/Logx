@@ -542,7 +542,7 @@ export default {
         console.log('app created')
         let model = this
 
-        this.S = appStorage.loadParsingFilterList()
+        this.jsTextFilters = appStorage.loadParsingFilterList()
         model.filterPresets = appStorage.loadPresets().map(f => f.name)
         model.selectedPresetName = appStorage.getLastPresetsName()
         model.loadPreset(model.selectedPresetName)

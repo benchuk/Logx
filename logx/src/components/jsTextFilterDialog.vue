@@ -1,6 +1,8 @@
 <template>
 <v-layout>
+
     <v-dialog v-model="show" max-width="70%" persistent>
+
         <v-card>
             <v-container v-if="jsTextFilters && jsTextFilters.length>0" class="ma-0 pa-0">
                 <v-tabs v-model="active" dark slider-color="yellow">
@@ -22,6 +24,12 @@
                 <v-btn :disabled="HasInvalidFilters" color="primary" flat @click="AddFilter">Add</v-btn>
                 <v-spacer></v-spacer>
                 <v-btn :disabled="HasInvalidFilters" color="primary" flat @click.stop="show=false">Save & Close</v-btn>
+                <v-btn class="ml-0 pl-0" fab flat small v-on:click="exportParsingFilters()">
+                    <v-icon dark color="white">import_export</v-icon>
+                </v-btn>
+                <v-btn class="ml-0 pl-0" fab flat small v-on:click="showLoadFileDialog()">
+                    <v-icon dark color="white">save</v-icon>
+                </v-btn>
             </v-card-actions>
 
         </v-card>
@@ -31,6 +39,11 @@
 
 <script>
 import jsTextFilter from './jsTextFilter'
+import appStorage from './appStorage'
+import Vue from 'vue'
+var fs = require('fs')
+var app = require('electron').remote
+var dialog = app.dialog
 
 export default {
   props: ['visible', 'jsTextFilters', 'types'],
@@ -58,13 +71,62 @@ export default {
     },
     HasInvalidFilters() {
       //console.log(this.jsTextFilters.find(x=>x.valid==false))
-      if(!this.jsTextFilters){
-          return false
+      if (!this.jsTextFilters) {
+        return false
       }
       return this.jsTextFilters.find(x => x.valid == false) != undefined
     }
   },
   methods: {
+    showLoadFileDialog: function() {
+      let model = this
+      dialog.showOpenDialog(fileNames => {
+        if (fileNames === undefined) {
+          console.log('No file selected')
+          return
+        }
+        console.log(fileNames)
+        fs.readFile(fileNames[0], 'utf-8', (err, data) => {
+          if (err) {
+            alert('An error ocurred reading the file :' + err.message)
+            return
+          }
+
+          let arr = JSON.parse(data)
+          while (model.jsTextFilters.length > 0) {
+            model.jsTextFilters.pop()
+          }
+
+          for (let a of arr) {
+            model.jsTextFilters.push(a)
+          }
+        })
+      })
+    },
+    exportParsingFilters: function() {
+      function download(content, fileName, contentType) {
+        var a = document.createElement('a')
+        var file = new Blob([content], {
+          type: contentType
+        })
+        a.href = URL.createObjectURL(file)
+        a.download = fileName
+        a.click()
+      }
+      let dataToSave = []
+      for (let filter of this.jsTextFilters) {
+        dataToSave.push({
+          name: filter.name,
+          text: filter.text,
+          type: filter.type,
+          valid: filter.valid,
+          sample: filter.sample
+        })
+      }
+      appStorage.saveParsingFilterList(dataToSave)
+      let jsonData = appStorage.loadParsingFilterList()
+      download(JSON.stringify(jsonData), 'filtersConfig.txt', 'text/plain')
+    },
     AddFilter: function() {
       this.jsTextFilters.push({
         name: '',
@@ -86,7 +148,6 @@ export default {
     }
   }
 }
-
 
 //   getHrGraphText: function() {
 //       //return "console.log(line);";
@@ -119,4 +180,3 @@ export default {
 //       return "if(!line.toLowerCase().includes('updateFusedLocation'.toLowerCase())) return null; return line.split(' ')[7];"
 //     },
 </script>
-
