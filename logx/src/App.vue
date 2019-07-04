@@ -10,7 +10,7 @@
             <v-spacer></v-spacer>
             <v-toolbar-items class="hidden-sm-and-down">
                 <v-btn color="blue darken-1" flat @click.native="searchDialog = true">Find multiple</v-btn>
-                <v-menu offset-y v-if="jsTextFilters.length>0">
+                <v-menu offset-y v-if="jsTextFilters && jsTextFilters.length>0">
                     <template v-slot:activator="{ on }">
                         <v-btn fab flat small color="primary" dark v-on="on">
                             <v-icon small class="ma-0 pa-0">playlist_add</v-icon>

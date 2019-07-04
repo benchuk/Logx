@@ -2,11 +2,11 @@
 <v-layout>
     <v-dialog v-model="show" max-width="70%" persistent>
         <v-card>
-            <v-container v-if="jsTextFilters.length>0" class="ma-0 pa-0">
+            <v-container v-if="jsTextFilters && jsTextFilters.length>0" class="ma-0 pa-0">
                 <v-tabs v-model="active" dark slider-color="yellow">
                     <v-tab v-for="(f,index) in jsTextFilters" :key="index" ripple>
                         <v-btn class="ml-0 pl-0" fab flat small v-on:click="RemoveFilter(index)">
-                            <v-icon dark color="grey">close</v-icon>
+                            <v-icon dark color="error">delete_outline</v-icon>
                         </v-btn>
                         {{ getTabText(f.name) }}
                     </v-tab>
@@ -58,6 +58,9 @@ export default {
     },
     HasInvalidFilters() {
       //console.log(this.jsTextFilters.find(x=>x.valid==false))
+      if(!this.jsTextFilters){
+          return false
+      }
       return this.jsTextFilters.find(x => x.valid == false) != undefined
     }
   },

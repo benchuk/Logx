@@ -84,7 +84,7 @@ var appStorage = {
     saveWindow()
   },
   loadParsingFilterList() {
-    return getLocalStorage()['parsingFilterList']
+    return getLocalStorage()['parsingFilterList'] || []
   },
   saveParsingFilterList(list) {
     console.log('saveParsingFilterList')
