@@ -10,6 +10,10 @@
 
         </div>
     </div>
+    <!-- ======== SCROLL TO TOP ======================================== -->
+    <v-btn v-if="showScrollToTop" color="green" absolute dark fab top right small @click.stop="jumpToPosition(0)">
+        <v-icon small>vertical_align_top</v-icon>
+    </v-btn>
 </div>
 </template>
 
@@ -42,6 +46,21 @@ var exfiltersHandler;
 export default {
     name: "fast-text-view",
     props: ['lines', 'position', 'height', 'highlights', 'filters', 'exfilters', 'ident', 'parentid', 'useFilters', 'useExFilters', 'useColors', 'showFiltered'],
+    computed: {
+        showScrollToTop: function() {
+            console.log('ssssss')
+            let model = this
+            if (!model.factory || !model.factory.getModel() || !model.factory.getModelFiltered()) {
+                return false
+            }
+            if (model.showFilteredInternal || !model.useFiltersInternal) {
+                return model.positionInternal / model.factory.getModel().length > 0.2
+            } else {
+                return model.positionInternal / model.factory.getModelFiltered().length > 0.2
+            }
+
+        }
+    },
     watch: {
         showFiltered(val, oldval) {
             let model = this;
@@ -207,8 +226,7 @@ export default {
             deep: true
         }
     },
-    data() {
-        return {
+    data: () => ({
             prevDisplayrowscount: -1,
             prevLower: -1,
             prevUpper: -1,
@@ -228,10 +246,11 @@ export default {
             exfiltersInternal: [],
             useFiltersInternal: true,
             useExFiltersInternal: true,
+            positionInternal : 0,
             prevHeight: -1
-        }
-    },
+        }),
     methods: {
+        
         handlePosition: function (shouldMoveFromFilteredToFull) {
             console.log("->handlePosition");
             let model = this;
@@ -405,23 +424,22 @@ export default {
 
             if (POSITION >= spaceToEnd || POSITION >= len) {
                 this.positionInternal = spaceToEnd;
-                console.log("Skip jump - nothing to render - reached end of files: " + POSITION);
+                //console.log("Skip jump - nothing to render - reached end of files: " + POSITION);
                 this.positionInternal = spaceToEnd;
                 POSITION = spaceToEnd;
             }
 
             if (POSITION < 0) {
-                console.log("invalid position - setting to zero");
+                //console.log("invalid position - setting to zero");
                 this.positionInternal = 0;
                 POSITION = 0;
             }
 
             if (POSITION == this.positionInternal) {
-                console.log("Skip jump - nothing to render - position is the same: " + POSITION);
+                //console.log("Skip jump - nothing to render - position is the same: " + POSITION);
             }
-
             this.positionInternal = POSITION;
-
+            //console.log("this.positionInternal",this.positionInternal);
             var modelLen = 0
             if (this.showFilteredInternal || !this.useFiltersInternal) {
                 modelLen = this.factory.getModel().length
@@ -445,16 +463,16 @@ export default {
                 this.positionInternal = 0;
                 POSITION = 0;
             }
-            console.log('refresh view new POSITION', POSITION);
+            //console.log('refresh view new POSITION', POSITION);
             //console.log('refresh view new');
 
             let showSkip = this.showFilteredInternal || !this.useFiltersInternal;
             let model = this;
             let lines = showSkip ? this.factory.getModel() : this.factory.getModelFiltered();
             let len = lines.length;
-            console.log("lines count", len);
+            //console.log("lines count", len);
             let spaceToEnd = len - this.displayrowscount;
-            console.log("this.displayrowscount", this.displayrowscount);
+            //console.log("this.displayrowscount", this.displayrowscount);
             //if havily filtered then the minimum display is 'displayrowscount'
             if (spaceToEnd < this.displayrowscount) {
                 spaceToEnd = this.displayrowscount

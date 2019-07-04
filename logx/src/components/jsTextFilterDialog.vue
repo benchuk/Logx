@@ -86,4 +86,37 @@ export default {
     }
   }
 }
+
+
+//   getHrGraphText: function() {
+//       //return "console.log(line);";
+//       //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+//       return "if(!line.toLowerCase().includes('onHeartrateReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[7];"
+//     },
+//     getCadenceGraphText: function() {
+//       //return "console.log(line);";
+//       //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+//       return "if(!line.toLowerCase().includes('onCadenceReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[7];"
+//     },
+//     getPowerGraphText: function() {
+//       //return "console.log(line);";
+//       //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+//       return "if(!line.toLowerCase().includes('onPowerReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[7];"
+//     },
+//     getSpeedGraphText: function() {
+//       //return "console.log(line);";
+//       //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+//       return "if(!line.toLowerCase().includes('onSpeedReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];"
+//     },
+//     getGpsSpeedGraphText: function() {
+//       //return "console.log(line);";
+//       //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+//       return "if(!line.toLowerCase().includes('onSpeedFromGpsReceived'.toLowerCase())) return null; let l = line.split(' ').length; return line.split(' ')[6];"
+//     },
+//     getMapText: function() {
+//       //return "console.log(line);";
+//       //return "if(!line.includes('onSpeedReceived: from device')) return null; let l = line.split(' ').length; return line.split(' ')[l - 1];";
+//       return "if(!line.toLowerCase().includes('updateFusedLocation'.toLowerCase())) return null; return line.split(' ')[7];"
+//     },
 </script>
+

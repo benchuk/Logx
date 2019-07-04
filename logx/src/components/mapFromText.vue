@@ -8,7 +8,7 @@
 import { EventBus } from './event-bus.js'
 export default {
   name: 'graph-text',
-  props: ['lines', 'func'],
+  props: ['lines', 'filter'],
   data: () => ({
     width: 0.5,
     value: []
@@ -71,7 +71,7 @@ export default {
       //map.setView(new L.LatLng(31.6, 34.7), 7)
       map.addLayer(osm)
 
-      var filter = new Function('line', this.func)
+      var filter = new Function('line', this.filter.text)
       console.log('started')
 
       console.log('loading map parse lines')

@@ -14,7 +14,7 @@
         </v-layout>
         <v-textarea :error-messages="validationText" class="mb-1 pa-0" :readonly="!editable" v-model="filter.text" box color="success" no-resize :label="getTextLabel" rows="15"></v-textarea>
         <v-layout row v-if="editable" align-center justify-center>
-            <v-text-field class="ma-0 pa-0" label="enter your sample input line here" :messages="testMessage" box v-model="sampleLine"></v-text-field>
+            <v-text-field class="ma-0 pa-0" label="enter your sample input line here" :messages="testMessage" box v-model="filter.sample"></v-text-field>
             <v-btn small outline class="ma-0 pa-0" @click="Validate">Validate</v-btn>
         </v-layout>
     </v-container>
@@ -32,7 +32,6 @@ export default {
         },
         selectedType: null,
         validationText: "",
-        sampleLine: "",
         testMessage: ""
     }),
     mounted() {
@@ -85,9 +84,9 @@ export default {
             }
             try {
                 let f = new Function('line', this.filter.text);
-                let res = f(this.sampleLine)
+                let res = f(this.filter.sample)
                 this.filter.valid = true
-                this.testMessage = "OK, the result is: " + res
+                this.testMessage = "OK, the result is: " + JSON.stringify(res)
                 setTimeout(() => this.testMessage = [], 2000)
             } catch (e) {
                 this.validationText = "failed compiling your code: [" + e.message + ']'

@@ -1,6 +1,6 @@
 <template>
 <v-container fluid>
-    <div id="myPlot"></div>
+    <div :id="divId"></div>
 </v-container>
 </template>
 
@@ -13,30 +13,16 @@ import {
 } from 'timers';
 export default {
     name: 'chart-text',
-    props: ['lines', 'func'],
+    props: ['lines', 'filter'],
     data: () => ({
         width: 0.5,
-        value: []
+        value: [],
+        divId: ''
     }),
     created() {
         let model = this
-
-        var css = function (url, callback) {
-            var head = document.getElementsByTagName('head')[0]
-            var cssnode = document.createElement('link')
-
-            cssnode.type = 'text/css'
-            cssnode.rel = 'stylesheet'
-            cssnode.href = url
-
-            cssnode.onreadystatechange = callback
-            cssnode.onload = callback
-
-            head.appendChild(cssnode)
-        }
-        // css('https://unpkg.com/leaflet@1.5.1/dist/leaflet.css', function() {
-        //   console.log('style loaded')
-        // })
+        model.divId = Math.random().toString(36).substring(7);
+        console.log('new graph with id ' + model.divId)
 
         function loadScript(url, callback) {
             // adding the script tag to the head as suggested before
@@ -54,54 +40,67 @@ export default {
             head.appendChild(script)
         }
 
-        // loadScript(
-        //   'https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.js',
-        //   function() {
-        //     console.log('map script loaded')
-        //   }
-        // )
-
-            var trace1 = {
-                x: [],
-                y: [],
-                type: 'scatter',
-            };
-        var filter = new Function('line', this.func)
+        var trace1 = {
+            x: [],
+            y: [],
+            type: 'scatter',
+        };
+        var func = new Function('line', this.filter.text)
         console.log('started')
-        let that = this
-        let counter = 1
-        this.lines.forEach(function (line) {
-            try {
-                let val = filter(line)
-                if (val) {
-                    let number = parseFloat(val)
+        let title = ''
+        if (model.filter.type.name == 'graph') {
+            title = 'samples'
+            let counter = 1
+            this.lines.forEach(function (line) {
+                try {
+                    let val = func(line)
+                    if (val) {
+                        let number = parseFloat(val)
+                        if (!isNaN(number)) {
+                            trace1.x.push(counter);
+                            counter++
+                            trace1.y.push(number);
+                        }
+                    }
+                } catch {}
+            })
+        } else {
+            title = 'time'
+            this.lines.forEach(function (line) {
+                try {
+                    let val = func(line)
+                    if (!val) {
+                        return
+                    }
+                    if(!val.time || !val.value){
+                        return
+                    }
+                    let number = parseFloat(val.value)
                     if (!isNaN(number)) {
-                        trace1.x.push(counter);
-                        counter++
+                        trace1.x.push(val.time);
                         trace1.y.push(number);
                     }
-                }
-            } catch {}
-        })
+                } catch {}
+            })
+        }
 
         loadScript('https://cdn.plot.ly/plotly-latest.min.js', function () {
             console.log('plot script loaded 1')
-           
 
             var data = [trace1];
 
-var layout = {
-    plot_bgcolor:"white",
-    paper_bgcolor:"white",
-  title: 'Title of the Graph',
-  xaxis: {
-    title: 'x-axis title'
-  },
-  yaxis: {
-    title: 'y-axis title'
-  }
-};
-            Plotly.newPlot('myPlot', data, layout, {
+            var layout = {
+                plot_bgcolor: "white",
+                paper_bgcolor: "white",
+                title: model.filter.name + ' graph',
+                yaxis: {
+                    title: model.filter.name
+                },
+                xaxis: {
+                    title: title
+                }
+            };
+            Plotly.newPlot(model.divId, data, layout, {
                 showSendToCloud: false
             });
         })
