@@ -55,6 +55,9 @@
                 <v-btn :disabled="HasInvalidFilters" color="primary" flat @click="AddFilter">
                     <v-icon small dark color="primary">add</v-icon>Add Filter
                 </v-btn>
+                <v-btn v-if="jsTextFilters && jsTextFilters.length>0" :disabled="HasInvalidFilters" color="primary" flat @click="DuplicateFilter">
+                    <v-icon small dark color="primary">library_add</v-icon>Duplicate Current Filter
+                </v-btn>
                 <v-spacer></v-spacer>
                 <v-btn :disabled="HasInvalidFilters" color="primary" flat @click.stop="show=false">
                     <v-icon small dark color="primary">save</v-icon>Save & Close
@@ -122,6 +125,7 @@ export default {
                     }
 
                     let arr = JSON.parse(data)
+                    this.active=0
                     while (model.jsTextFilters.length > 0) {
                         model.jsTextFilters.pop()
                     }
@@ -156,6 +160,12 @@ export default {
             let jsonData = appStorage.loadParsingFilterList()
             download(JSON.stringify(jsonData), 'filtersConfig.txt', 'text/plain')
         },
+        DuplicateFilter: function () {
+            let newF = {...this.jsTextFilters[this.active]}
+            newF.name = newF.name + '(Dup)'
+            this.jsTextFilters.push(newF);
+            this.active = this.jsTextFilters.length - 1
+        },
         AddFilter: function () {
             this.jsTextFilters.push({
                 name: '',
@@ -166,6 +176,7 @@ export default {
             this.active = this.jsTextFilters.length - 1
         },
         RemoveFilter: function (index) {
+            
             this.jsTextFilters.splice(index, 1)
         },
         getTabText: function (text) {

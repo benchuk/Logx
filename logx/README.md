@@ -1,4 +1,4 @@
-# loggi
+# log(x)
 
 ## Project setup
 

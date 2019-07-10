@@ -77,7 +77,7 @@
                         </v-btn>
                     </v-layout>
                     <v-layout class="ml-3 mr-3" row v-for="(item, index) in highlights" :key="index">
-                        <v-text-field autofocus class="mt-0 pt-0" append-icon="call_made" @click:append="filterFromColor(index)" :background-color="stylesCache[index+1]" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model.lazy="item.value"></v-text-field>
+                        <v-text-field autofocus class="mt-0 pt-0" append-icon="call_made" @click:append="filterFromColor(index)" :background-color="stylesCache[index+1]" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model="item.value"></v-text-field>
                     </v-layout>
 
                 </v-expansion-panel-content>
