@@ -104,7 +104,7 @@
             <v-container fluid fill-height pa-2>
                 <v-layout justify-left align-left>
                     <v-flex xs12>
-                        <fast-text-view :lines="logLines" :position="position" :highlights="highlights" :ident="'main-logger'" :filters="filters" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered"></fast-text-view>
+                        <fast-text-view  :lines="logLines" :position="position" :highlights="highlights" :ident="'main-logger'" :filters="filters" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered"></fast-text-view>
                     </v-flex>
                 </v-layout>
             </v-container>
@@ -136,7 +136,7 @@
                             <v-tabs-items>
                                 <v-tab-item v-for="(s,index) in searchs" v-bind:key="index">
                                     <v-card flat v-if="s[0].type==='find'">
-                                        <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :highlights="highlights" :useExFilters="false" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'"></fast-text-view>
+                                        <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :highlights="highlights" :useExFilters="false" :useColors="useColors" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'"></fast-text-view>
                                     </v-card>
                                     <v-card v-else-if="s[0].type==='map'">
                                         <mapFromText :lines="logLines" :filter="s[0].filter"></mapFromText>
