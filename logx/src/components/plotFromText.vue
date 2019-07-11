@@ -32,8 +32,10 @@ export default {
         width: 0.5,
         value: [],
         divId: '',
-        graphs:[],
-        layout:{}
+        graphs: [],
+        layout: {},
+        timeFunc: null,
+        minY:undefined
     }),
     methods: {
         AddMarker: function (item) {
@@ -45,24 +47,24 @@ export default {
                 type: 'scatter',
                 name: item.value
             };
-             var func = new Function('line', 'returnTimeOnly', this.filter.text)
+
             this.lines.forEach(function (line) {
                 try {
                     if (!line.toLowerCase().includes(item.value.toLowerCase())) {
                         return;
                     }
-                    
-                    let time = func(line,true);
+
+                    let retVal = model.timeFunc(line, true);
                     //console.log(time)
-                    trace2.x.push(time.time);
-                    trace2.y.push(10.0);
+                    trace2.x.push(retVal.time);
+                    trace2.y.push(model.minY);
                 } catch {}
             })
 
             //model.graphs.push(trace2);
             //console.log(trace2)
             Plotly.addTraces(model.divId, trace2);
-            Plotly.relayout(model.divId,{});
+            Plotly.relayout(model.divId, {});
 
         }
     },
@@ -95,7 +97,8 @@ export default {
         };
 
         var func = new Function('line', 'returnTimeOnly', this.filter.text)
-        console.log('started')
+        model.timeFunc = new Function('line', 'returnTimeOnly', this.filter.text)
+        //console.log('started')
         let title = ''
         if (model.filter.type.name == 'graph') {
             title = 'samples'
@@ -105,7 +108,9 @@ export default {
                     let val = func(line)
                     if (val) {
                         let number = parseFloat(val)
+                        
                         if (!isNaN(number)) {
+                            if(model.minY == undefined || number<model.minY) model.minY = number
                             trace1.x.push(counter);
                             counter++
                             trace1.y.push(number);
@@ -117,7 +122,7 @@ export default {
             title = 'time'
             this.lines.forEach(function (line) {
                 try {
-                    let val = func(line,false)
+                    let val = func(line, false)
                     if (!val) {
                         return
                     }
@@ -126,6 +131,7 @@ export default {
                     }
                     let number = parseFloat(val.value)
                     if (!isNaN(number)) {
+                        if(model.minY == undefined || number<model.minY) model.minY = number
                         trace1.x.push(val.time);
                         trace1.y.push(number);
                     }
@@ -154,6 +160,36 @@ export default {
             Plotly.newPlot(model.divId, model.graphs, model.layout, {
                 showSendToCloud: false
             });
+
+            if (model.filter.type.name == 'timegraph') {
+                var myPlot = document.getElementById(model.divId);
+                myPlot.on('plotly_click', function (data) {
+                    var counter = 0
+                    if (data.points.length == 0) {
+                        return
+                    }
+
+                    let find = new Date(data.points[0].x);
+                    console.log('start find of: ',find,data.points[0].x)
+                    //find.setMilliseconds(0)
+                    model.lines.forEach(function (line) {
+                        let retVal = model.timeFunc(line, true);
+                       
+                        
+                        if (retVal != null && retVal.time.getTime() === find.getTime()) {
+                            //console.log('found line: ' + line + ' on line: ' + counter)
+                            console.log('jump from graph',retVal.time)
+                            EventBus.$emit('jumpto', {
+                                value: counter,
+                                source: 1,
+                                showFiltered: true
+                            })
+                            return
+                        }
+                        counter++
+                    })
+                })
+            }
         })
 
     }

@@ -5,7 +5,7 @@
 
         <v-card>
             <v-container v-if="jsTextFilters && jsTextFilters.length>0" class="ma-0 pa-0">
-                <v-tabs v-model="active" dark slider-color="yellow">
+                <v-tabs show-arrows v-model="active" dark slider-color="yellow">
                     <v-tab v-for="(f,index) in jsTextFilters" :key="index" ripple>
                         <v-btn class="ml-0 pl-0" fab flat small v-on:click="RemoveFilter(index)">
                             <v-icon dark color="error">delete_outline</v-icon>
