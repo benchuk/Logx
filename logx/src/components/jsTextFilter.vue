@@ -83,10 +83,15 @@ export default {
                 return
             }
             try {
-                let f = new Function('line', this.filter.text);
-                let res = f(this.filter.sample)
+                let f = new Function('line', 'returnTimeOnly', this.filter.text);
+                let res = f(this.filter.sample, false)
+                if (this.filter.type.name == 'timegraph') {
+                    let res2 = f(this.filter.sample, true)
+                    this.testMessage = "OK, the result is: " + JSON.stringify(res) + "," + JSON.stringify(res2)
+                } else {
+                    this.testMessage = "OK, the result is: " + JSON.stringify(res)
+                }
                 this.filter.valid = true
-                this.testMessage = "OK, the result is: " + JSON.stringify(res)
                 setTimeout(() => this.testMessage = [], 2000)
             } catch (e) {
                 this.validationText = "failed compiling your code: [" + e.message + ']'

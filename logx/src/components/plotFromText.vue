@@ -1,5 +1,19 @@
 <template>
-<v-container fluid>
+<v-container class='pa-1 ma-0'>
+    <v-layout row v-if="filter.type.name=='timegraph'">
+        <v-menu offset-y>
+            <template v-slot:activator="{ on }">
+                <v-btn :disabled="filterList.length==0" color="primary" dark v-on="on">
+                    <v-icon small>add</v-icon>
+                </v-btn>
+            </template>
+            <v-list>
+                <v-list-tile class="ma-0 pa-0" v-for="(item, index) in filterList" :key="index" @click="AddMarker(item)">
+                    <v-list-tile-title class="ma-0 pa-0">{{ item.value }}</v-list-tile-title>
+                </v-list-tile>
+            </v-list>
+        </v-menu>
+    </v-layout>
     <div :id="divId"></div>
 </v-container>
 </template>
@@ -13,12 +27,45 @@ import {
 } from 'timers';
 export default {
     name: 'chart-text',
-    props: ['lines', 'filter'],
+    props: ['lines', 'filter', 'filterList'],
     data: () => ({
         width: 0.5,
         value: [],
-        divId: ''
+        divId: '',
+        graphs:[],
+        layout:{}
     }),
+    methods: {
+        AddMarker: function (item) {
+            let model = this
+            var trace2 = {
+                x: [],
+                y: [],
+                mode: 'markers',
+                type: 'scatter',
+                name: item.value
+            };
+             var func = new Function('line', 'returnTimeOnly', this.filter.text)
+            this.lines.forEach(function (line) {
+                try {
+                    if (!line.toLowerCase().includes(item.value.toLowerCase())) {
+                        return;
+                    }
+                    
+                    let time = func(line,true);
+                    //console.log(time)
+                    trace2.x.push(time.time);
+                    trace2.y.push(10.0);
+                } catch {}
+            })
+
+            //model.graphs.push(trace2);
+            //console.log(trace2)
+            Plotly.addTraces(model.divId, trace2);
+            Plotly.relayout(model.divId,{});
+
+        }
+    },
     created() {
         let model = this
         model.divId = Math.random().toString(36).substring(7);
@@ -44,8 +91,10 @@ export default {
             x: [],
             y: [],
             type: 'scatter',
+            name: model.filter.name
         };
-        var func = new Function('line', this.filter.text)
+
+        var func = new Function('line', 'returnTimeOnly', this.filter.text)
         console.log('started')
         let title = ''
         if (model.filter.type.name == 'graph') {
@@ -68,11 +117,11 @@ export default {
             title = 'time'
             this.lines.forEach(function (line) {
                 try {
-                    let val = func(line)
+                    let val = func(line,false)
                     if (!val) {
                         return
                     }
-                    if(!val.time || !val.value){
+                    if (!val.time || !val.value) {
                         return
                     }
                     let number = parseFloat(val.value)
@@ -89,7 +138,7 @@ export default {
 
             var data = [trace1];
 
-            var layout = {
+            model.layout = {
                 plot_bgcolor: "white",
                 paper_bgcolor: "white",
                 title: model.filter.name + ' graph',
@@ -100,7 +149,9 @@ export default {
                     title: title
                 }
             };
-            Plotly.newPlot(model.divId, data, layout, {
+            //console.log(trace1)
+            model.graphs = data;
+            Plotly.newPlot(model.divId, model.graphs, model.layout, {
                 showSendToCloud: false
             });
         })

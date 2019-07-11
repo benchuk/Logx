@@ -142,7 +142,7 @@
                                         <mapFromText :lines="logLines" :filter="s[0].filter"></mapFromText>
                                     </v-card>
                                     <v-card v-else-if="s[0].type==='graph' || s[0].type==='timegraph'">
-                                        <plotFromText :lines="logLines" :filter="s[0].filter"></plotFromText>
+                                        <plotFromText :lines="logLines" :filter="s[0].filter" :filterList='filters'></plotFromText>
                                     </v-card>
                                 </v-tab-item>
                             </v-tabs-items>
@@ -525,7 +525,7 @@ export default {
         },
         {
           name: 'timegraph',
-          desc: 'function(line){ // should return {time:t,value:v} or null',
+          desc: 'function(line,returnTimeOnly){ // should return {time:t,value:v} or time:t or null (depands on returnTimeOnly)',
           icon: 'timer'
         },
         {
