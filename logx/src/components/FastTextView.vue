@@ -494,7 +494,9 @@ export default {
                     let lineContentEscaped = line.line.replace(/[\u00A0-\u9999<>\&]/gim, function (i) {
                         return '&#' + i.charCodeAt(0) + ';';
                     });
-                    lineContentEscaped = lineContentEscaped.replace(/ /g, '\u00a0');
+                    
+                    //lineContentEscaped = lineContentEscaped.replace(/ /g, '\u00a0');
+                    //lineContentEscaped = lineContentEscaped.replace(/^\s+|\s+$/g, '\u00a0');
                     var l = "<div id='" + line.rowid + "'>" + "<div class='rowIndex unselectable'> [" + line.rowid + "] </div><div id='" + skipOrNotId + "' class='theline-" + this.factory.myInitId + "'>" + lineContentEscaped + "</div></div>";
                     data += l;
                 }
