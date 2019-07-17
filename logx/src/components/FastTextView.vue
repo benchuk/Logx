@@ -18,8 +18,7 @@
 </template>
 
 <script>
-var $ = global.jQuery = require('jquery');
-var jQuery = require('jquery')
+window.$ = window.jQuery = require('jquery');
 require('jquery-ui-dist/jquery-ui')
 
 var myID = 0;
@@ -808,7 +807,7 @@ function getSelText() {
 
 function init(factory) {
     console.log("init highlight jquery");
-    global.jQuery.fn.removeHighlight = function () {
+    jQuery.fn.removeHighlight = function () {
         function newNormalize(node) {
             for (var i = 0, children = node.childNodes, nodeCount = children.length; i < nodeCount; i++) {
                 var child = children[i];
