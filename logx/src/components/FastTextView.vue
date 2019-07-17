@@ -1,7 +1,8 @@
 <template>
 <div>
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <link rel="stylesheet" href="/resources/demos/style.css">
+    
+    <!-- <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="/resources/demos/style.css"> -->
     <div v-bind:id="'slider-vertical-'+ factory.myInitId" style="position: absolute; right: 4px;"></div>
     <v-progress-linear v-bind:id="'logx-progress' + factory.myInitId" :indeterminate="true" style="height:2px"></v-progress-linear>
     <div v-bind:id="'fast-text-view-' + factory.myInitId" class="fast-text-view-class">
@@ -20,6 +21,9 @@
 <script>
 window.$ = window.jQuery = require('jquery');
 require('jquery-ui-dist/jquery-ui')
+require("jquery-ui-dist/jquery-ui.css");
+require("jquery-ui-dist/jquery-ui.theme.css");
+//window.$ = $.extend(require('jquery-ui'));
 
 var myID = 0;
 
