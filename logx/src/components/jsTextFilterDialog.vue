@@ -73,9 +73,24 @@
 import jsTextFilter from './jsTextFilter'
 import appStorage from './appStorage'
 import Vue from 'vue'
-var fs = require('fs')
-var app = require('electron').remote
-var dialog = app.dialog
+
+// Conditionally import Electron modules (only available in Electron, not browser)
+let fs = null
+let dialog = null
+const isElectron = typeof window !== 'undefined' && 
+  ((window.process && window.process.versions && window.process.versions.electron) ||
+   (typeof require !== 'undefined'))
+
+if (isElectron) {
+  try {
+    const electronRequire = typeof require !== 'undefined' ? require : window.require
+    fs = electronRequire('fs')
+    const electron = electronRequire('electron')
+    dialog = electron.remote ? electron.remote.dialog : null
+  } catch (e) {
+    console.warn('Electron modules not available:', e)
+  }
+}
 
 export default {
     props: ['visible', 'jsTextFilters', 'types'],
@@ -111,6 +126,10 @@ export default {
     },
     methods: {
         showLoadFileDialog: function () {
+            if (!dialog || !fs) {
+                alert('File dialog is only available in Electron app. Please use the Electron version.')
+                return
+            }
             let model = this
             dialog.showOpenDialog(fileNames => {
                 if (fileNames === undefined) {

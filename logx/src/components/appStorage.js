@@ -100,7 +100,6 @@ var appStorage = {
     windowID = id
   },
   timeParsersSetAndSave(timeParser) {
-    windowLocalStorage[key] = valueObj
     localStorage.setItem('timeParsers', JSON.stringify(timeParser))
   }
 }

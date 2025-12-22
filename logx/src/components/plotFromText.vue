@@ -22,9 +22,6 @@
 import {
     EventBus
 } from './event-bus.js'
-import {
-    setTimeout
-} from 'timers';
 export default {
     name: 'chart-text',
     props: ['lines', 'filter', 'filterList'],
@@ -58,7 +55,9 @@ export default {
                     //console.log(time)
                     trace2.x.push(retVal.time);
                     trace2.y.push(model.minY);
-                } catch {}
+                } catch (e) {
+                    // Ignore parsing errors
+                }
             })
 
             //model.graphs.push(trace2);
@@ -116,7 +115,9 @@ export default {
                             trace1.y.push(number);
                         }
                     }
-                } catch {}
+                } catch (e) {
+                    // Ignore parsing errors
+                }
             })
         } else {
             title = 'time'
@@ -135,7 +136,9 @@ export default {
                         trace1.x.push(val.time);
                         trace1.y.push(number);
                     }
-                } catch {}
+                } catch (e) {
+                    // Ignore parsing errors
+                }
             })
         }
 

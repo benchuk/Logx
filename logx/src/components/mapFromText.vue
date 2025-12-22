@@ -90,7 +90,9 @@ export default {
             // var marker = L.marker([lat, lon]).addTo(map)
             // map.setView(new L.LatLng(coords[0], coords[1]), 7)
           }
-        } catch {}
+        } catch (e) {
+          // Ignore parsing errors
+        }
       })
 
       //var polygon = L.polygon(dataLine).addTo(map)

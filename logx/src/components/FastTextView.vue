@@ -15,6 +15,10 @@
     <v-btn v-if="showScrollToTop" color="green" absolute dark fab top right small @click.stop="jumpToPosition(0)">
         <v-icon small>vertical_align_top</v-icon>
     </v-btn>
+    <!-- ======== SCROLL TO BOTTOM (Auto-Scroll) ======================================== -->
+    <v-btn v-if="!autoScroll" color="blue" absolute dark fab bottom right small style="bottom: 40px; right: 30px;" @click.stop="scrollToBottom">
+        <v-icon small>arrow_downward</v-icon>
+    </v-btn>
 </div>
 </template>
 
@@ -111,7 +115,6 @@ export default {
             model.jumpToPosition(parsedPosition);
         },
         lines(val, oldval) {
-            console.log("new lines data")
             let model = this;
             if (!model.ready) {
                 console.error("update lines model before ready")
@@ -120,17 +123,56 @@ export default {
 
             if (val === undefined || val.length <= 0) {
                 console.error("invalid data lines ????");
-                //console.error(model.ident + " : ~~~~~~~~~~~~~~~~~ !invalid data lines watch: " + val);
                 model.factory.setModel(["no data 3"]);
                 model.factory.setModelFiltered(["no data 3"]);
                 model.factory.setOriginalModel(["no data 3"]);
+                model.prevLineCount = 0;
+                return;
             }
 
-            model.positionInternal = 0;
-            model.updateLinesModel(true);
-            model.setupSlider();
-            model.onParentResize();
-            model.refreshView();
+            // Vue 2 gotcha: When array is mutated, oldval and val are the same reference
+            // So we track previous length ourselves
+            const currentLen = val.length;
+            const prevLen = model.prevLineCount || 0;
+            const isAppend = prevLen > 0 && currentLen > prevLen;
+            
+            // Update tracked length
+            model.prevLineCount = currentLen;
+            
+            if (isAppend && model.autoScroll) {
+                // STREAMING + AUTO-SCROLL: Throttle updates to prevent jumping
+                if (model.streamUpdateTimer) {
+                    clearTimeout(model.streamUpdateTimer);
+                }
+                model.streamUpdateTimer = setTimeout(() => {
+                    model.updateLinesModel(true);
+                    let lines = (model.showFilteredInternal || !model.useFiltersInternal) ? model.factory.getModel() : model.factory.getModelFiltered();
+                    let len = lines ? lines.length : 0;
+                    model.positionInternal = Math.max(0, len - model.displayrowscount);
+                    model.refreshView();
+                }, 50);
+            } else if (isAppend && !model.autoScroll) {
+                // STREAMING + PAUSED: Keep current position
+                if (model.streamUpdateTimer) {
+                    clearTimeout(model.streamUpdateTimer);
+                }
+                model.streamUpdateTimer = setTimeout(() => {
+                    model.updateLinesModel(true);
+                    let lines = (model.showFilteredInternal || !model.useFiltersInternal) ? model.factory.getModel() : model.factory.getModelFiltered();
+                    let len = lines ? lines.length : 0;
+                    let newMax = Math.max(0, len - model.displayrowscount);
+                    let slider = jQuery('#slider-vertical-' + model.factory.myInitId);
+                    slider.slider("option", "max", newMax);
+                    model.refreshView();
+                }, 100);
+            } else {
+                // FULL RELOAD: Reset position and setup slider from scratch
+                model.updateLinesModel(true);
+                model.positionInternal = 0;
+                model.setupSlider();
+                model.onParentResize();
+                model.refreshView();
+            }
         },
         'useFilters': {
             handler: function (val) {
@@ -250,7 +292,10 @@ export default {
             useFiltersInternal: true,
             useExFiltersInternal: true,
             positionInternal : 0,
-            prevHeight: -1
+            prevHeight: -1,
+            autoScroll: true,
+            streamUpdateTimer: null,
+            prevLineCount: 0
         }),
     methods: {
         
@@ -596,6 +641,45 @@ export default {
                     model.jumpToPosition(len - model.displayrowscount - lineNum, 0);
                 }
             });
+        },
+        updateSliderForStream: function() {
+            // Incrementally update slider for streaming without full re-initialization
+            let model = this;
+            let len = 0;
+            if (model.showFilteredInternal || !model.useFiltersInternal) {
+                len = model.factory.getModel().length
+            } else {
+                len = model.factory.getModelFiltered().length
+            }
+            let newMax = Math.max(0, len - model.displayrowscount);
+            
+            // If auto-scroll is enabled, just update position to stay at bottom
+            // Don't touch the slider at all to prevent visual jumping
+            if (model.autoScroll) {
+                model.positionInternal = newMax;
+                // Only update slider max silently, without changing value visually
+                let slider = jQuery('#slider-vertical-' + model.factory.myInitId);
+                slider.slider("option", "max", newMax);
+                // Keep slider handle at bottom (value 0 in inverted logic)
+                slider.slider("option", "value", 0);
+            } else {
+                // User is scrolling manually - keep their position stable
+                // Update max but recalculate value to keep same visual position
+                let slider = jQuery('#slider-vertical-' + model.factory.myInitId);
+                slider.slider("option", "max", newMax);
+                // The visual position of the slider should stay where the user left it
+                // positionInternal stays the same, so the value should reflect that
+                let newValue = Math.max(0, newMax - model.positionInternal);
+                slider.slider("option", "value", newValue);
+            }
+        },
+        scrollToBottom: function() {
+            let model = this;
+            model.autoScroll = true;
+            let lines = (model.showFilteredInternal || !model.useFiltersInternal) ? model.factory.getModel() : model.factory.getModelFiltered();
+            let len = lines ? lines.length : 0;
+            let targetPos = Math.max(0, len - model.displayrowscount);
+            model.jumpToPosition(targetPos);
         }
     },
     created() {
@@ -792,6 +876,20 @@ export default {
             //console.log(" delta: " + delta);
             //delta+=prevDelta;
             let newPosition = model.positionInternal + Math.round(delta * -1);
+            
+            // Pause auto-scroll when user scrolls up
+            if (delta > 0) { // Scrolling up
+                model.autoScroll = false;
+            } else { // Scrolling down
+                // Check if we reached the bottom
+                let lines = (model.showFilteredInternal || !model.useFiltersInternal) ? model.factory.getModel() : model.factory.getModelFiltered();
+                let len = lines ? lines.length : 0;
+                let bottomPos = Math.max(0, len - model.displayrowscount);
+                if (newPosition >= bottomPos) {
+                    model.autoScroll = true;
+                }
+            }
+            
             model.jumpToPosition(newPosition);
         }
         console.log("register mouse wheel");
@@ -827,7 +925,7 @@ function init(factory) {
                     continue;
                 }
                 var combined_text = child.nodeValue + next.nodeValue;
-                new_node = node.ownerDocument.createTextNode(combined_text);
+                var new_node = node.ownerDocument.createTextNode(combined_text);
                 node.insertBefore(new_node, child);
                 node.removeChild(child);
                 node.removeChild(next);
@@ -851,7 +949,7 @@ function init(factory) {
                     var spannode = document.createElement('span');
                     spannode.className = cName; //'highlight';
                     var middlebit = node.splitText(pos);
-                    var endbit = middlebit.splitText(pat.length);
+                    middlebit.splitText(pat.length);
                     var middleclone = middlebit.cloneNode(true);
                     spannode.appendChild(middleclone);
                     middlebit.parentNode.replaceChild(spannode, middlebit);

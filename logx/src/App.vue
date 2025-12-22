@@ -39,6 +39,7 @@
             <v-layout justify-center align-center>
                 <v-flex>
                     <v-switch class="mt-3 pa-0 ml-3" :label="`${showFiltered?'Showing All Lines':'Showing Filtered Lines'}`" v-model="showFiltered" ref="sw"></v-switch>
+                    <v-switch class="mt-0 pa-0 ml-3" :label="`${streamEnabled?'Streaming On':'Streaming Off'}`" v-model="streamEnabled"></v-switch>
                 </v-flex>
             </v-layout>
             <v-expansion-panel v-model="panel" expand>
@@ -184,7 +185,7 @@
                             <v-icon>more_vert</v-icon>
                         </v-btn>
                         <v-list>
-                            <v-list-tile v-for="(item, i) in items" :key="i" @click>
+                            <v-list-tile v-for="(item, i) in items" :key="i" @click.native="dialog = false">
                                 <v-list-tile-title>{{ item.title }}</v-list-tile-title>
                             </v-list-tile>
                         </v-list>
@@ -307,10 +308,29 @@ import plotFromText from './components/plotFromText'
 import jsTextFilterDialog from './components/jsTextFilterDialog'
 import JQuery from 'jquery'
 let $ = JQuery
-import { ipcRenderer } from 'electron'
+
+// Conditionally import Electron modules (only available in Electron, not browser)
+let ipcRenderer = null
+const isElectron = typeof window !== 'undefined' && 
+  ((window.process && window.process.versions && window.process.versions.electron) ||
+   (typeof require !== 'undefined'))
+
+if (isElectron) {
+  try {
+    const electronRequire = typeof require !== 'undefined' ? require : window.require
+    const electron = electronRequire('electron')
+    ipcRenderer = electron.ipcRenderer
+  } catch (e) {
+    console.warn('Electron ipcRenderer not available:', e)
+  }
+}
 
 function loadFilesOnServer(filesPaths) {
   if (filesPaths == undefined) {
+    return
+  }
+  if (!ipcRenderer) {
+    console.warn('ipcRenderer not available - running in browser mode')
     return
   }
   var params = {
@@ -451,6 +471,50 @@ export default {
         model.canSave = true
       },
       deep: true
+    },
+    streamEnabled: function(val) {
+      let model = this
+      if (val) {
+        console.log('Connecting to Log Stream Bridge...')
+        try {
+            model.ws = new WebSocket('ws://localhost:9021')
+            
+            model.ws.onopen = function() {
+                console.log('WebSocket Connected')
+                model.showMessage('Connected to Log Stream')
+            }
+            
+            model.ws.onmessage = function(event) {
+                let lines = event.data.split('\n')
+                lines.forEach(line => {
+                    if (line && line.length > 0)
+                        model.logLines.push(line)
+                })
+            }
+            
+            model.ws.onclose = function() {
+                console.log('WebSocket Disconnected')
+                if (model.streamEnabled) {
+                     model.showMessage('Stream Disconnected')
+                     model.streamEnabled = false
+                }
+            }
+            
+            model.ws.onerror = function(error) {
+                console.log('WebSocket Error: ' + error)
+            }
+            
+        } catch (e) {
+            console.error(e)
+            model.streamEnabled = false
+            model.showMessage('Connection Failed')
+        }
+      } else {
+        if (model.ws) {
+            model.ws.close()
+            model.ws = null
+        }
+      }
     }
   },
   data: function() {
@@ -483,6 +547,8 @@ export default {
       searchDialog: false,
       filesDialog: false,
       showFiltered: false,
+      streamEnabled: false,
+      ws: null,
       position: {
         value: 0,
         source: 'default',
@@ -546,19 +612,39 @@ export default {
     model.loadPreset(model.selectedPresetName)
 
     console.log('register load files replay event')
-    ipcRenderer.on('load-files-reply', (event, arg) => {
-      let lines = arg.split('\n')
-      model.logLines = lines
-      model.filesList = appStorage.loadLastFileList()
-    })
+    if (ipcRenderer) {
+      ipcRenderer.on('load-files-reply', (event, arg) => {
+        let lines = arg.split('\n')
+        model.logLines = lines
+        model.filesList = appStorage.loadLastFileList()
+      })
 
-    console.log('register past data replay event')
-    ipcRenderer.on('paste-data-reply', (event, arg) => {
-      appStorage.saveFileListForWindow(null)
-      let lines = arg.split('\n')
-      model.logLines = lines
-      model.filesList = appStorage.loadLastFileList()
-    })
+      console.log('register past data replay event')
+      ipcRenderer.on('paste-data-reply', (event, arg) => {
+        appStorage.saveFileListForWindow(null)
+        let lines = arg.split('\n')
+        model.logLines = lines
+        model.filesList = appStorage.loadLastFileList()
+      })
+      ipcRenderer.on('paste-data-reply', (event, arg) => {
+        appStorage.saveFileListForWindow(null)
+        let lines = arg.split('\n')
+        model.logLines = lines
+        model.filesList = appStorage.loadLastFileList()
+      })
+      
+      console.log('register stream data event')
+      ipcRenderer.on('stream-data', (event, arg) => {
+          let lines = arg.split('\n')
+          // Filter out empty lines if necessary, or just push
+          lines.forEach(line => {
+             if(line && line.length > 0)
+                model.logLines.push(line)
+          })
+          
+          // Auto-scroll if at bottom? For now just push data.
+      })
+    }
 
     console.log('register text selection event')
     EventBus.$on('textSelection', text => {
@@ -826,7 +912,7 @@ export default {
       this.panel[1] = true
     },
     getColor: function(index) {
-      return stylesCache[index]
+      return this.stylesCache[index]
     },
     clearSearches: function(s) {
       this.searchs = []
