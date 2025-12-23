@@ -60,12 +60,24 @@
     flex-direction: column !important;
 }
 
+/* Force Font Globally */
+* {
+    font-family: var(--glass-font);
+}
+
 body,
 #app {
     background-color: #050505 !important;
     color: var(--text-primary) !important;
     /* Assuming --glass-text refers to --text-primary */
     font-family: var(--glass-font) !important;
+}
+
+.fast-text-view-class,
+.fast-text-view-class * {
+    font-family: var(--glass-font-mono) !important;
+    font-size: 13px !important;
+    letter-spacing: 0.5px;
 }
 
 .v-application,
@@ -142,9 +154,8 @@ body,
     border-top: var(--glass-border) !important;
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5) !important;
     justify-content: flex-start !important;
-    /* Force left alignment of children */
-    z-index: 4 !important;
-    /* Ensure it's above some elements but below modal overlaps if any, standard drawer is usually 5-6 */
+    z-index: 3 !important;
+    /* Lower than sidebar (usually 5-6) so footer goes under */
 }
 
 .glass-footer .v-tabs {
@@ -161,28 +172,39 @@ body,
 .glass-tabs-left {
     margin-left: 0 !important;
     margin-right: auto !important;
-    text-align: left !important;
-    width: 100% !important;
-    display: block !important;
+    width: auto !important;
+    max-width: 100% !important;
 }
 
 .glass-tabs-left .v-tabs__bar {
     justify-content: flex-start !important;
     text-align: left !important;
     background: transparent !important;
-}
-
-.glass-tabs-left .v-tabs__container {
-    justify-content: flex-start !important;
+    width: auto !important;
+    max-width: 100% !important;
 }
 
 .glass-tabs-left .v-tabs__wrapper {
     overflow: visible !important;
     justify-content: flex-start !important;
+    margin-left: 0 !important;
+    text-align: left !important;
+    width: auto !important;
+    display: inline-block !important;
 }
 
+.glass-tabs-left .v-tabs__container {
+    justify-content: flex-start !important;
+    margin-left: 0 !important;
+    width: auto !important;
+    display: inline-flex !important;
+    flex-wrap: nowrap !important;
+}
+
+.glass-tabs-left .v-tabs__div,
 .glass-tabs-left .v-tab {
     margin-left: 0 !important;
+    justify-content: flex-start !important;
 }
 
 /* Fix for auto-scroll arrow hiding behind footer */

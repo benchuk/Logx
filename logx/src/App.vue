@@ -6,7 +6,7 @@
             <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
             <v-toolbar-title class="neon-text font-weight-bold">log(x)</v-toolbar-title>
             <v-spacer></v-spacer>
-            <v-text-field ref="findall" @click:append="finall" solo-inverted class="glass-search" id="findall" placeholder="Search logs..." single-line append-icon="search" v-model="searchterm" color="cyan" @keyup.enter="finall" hide-details></v-text-field>
+            <v-text-field ref="findall" @click:append="finall" solo-inverted class="glass-search glass-input-rounded" id="findall" placeholder="Search logs..." single-line append-icon="search" v-model="searchterm" color="cyan" @keyup.enter="finall" hide-details></v-text-field>
             <v-spacer></v-spacer>
             <v-toolbar-items class="hidden-sm-and-down">
                 <v-btn color="blue darken-1" flat @click.native="searchDialog = true">Find multiple</v-btn>
@@ -85,7 +85,7 @@
                                 <v-btn class="success ma-0" v-on:click="addFilter" small dark>Add Filter<v-icon dark small class="ml-1">playlist_add</v-icon></v-btn>
                                 <v-btn v-on:click="removeFilter(-1)" flat icon color='error' class="ma-0"><v-icon small>delete_outline</v-icon></v-btn>
                             </v-layout>
-                            <v-layout class="px-1" row v-for="(item, index) in filters" :key="index">
+                            <v-layout class="px-1 mb-2" row v-for="(item, index) in filters" :key="index">
                                 <v-text-field class="mt-0 pt-0 glass-input-rounded" append-icon="color_lens" @click:append="colorFromFilter(index)" append-outer-icon="delete_outline" @click:append-outer="removeFilter(index)" v-model.lazy="item.value" hide-details solo flat></v-text-field>
                             </v-layout>
                         </v-layout>
@@ -102,7 +102,7 @@
                                 <v-btn :disabled="!canAddColor" class="success ma-0" v-on:click="addColor" small dark>Add Color<v-icon dark small class="ml-1">playlist_add</v-icon></v-btn>
                                 <v-btn v-on:click="removeColor(-1)" flat icon color='error' class="ma-0"><v-icon small>delete_outline</v-icon></v-btn>
                             </v-layout>
-                            <v-layout class="px-1" row v-for="(item, index) in highlights" :key="index" align-center>
+                            <v-layout class="px-1 mb-2" row v-for="(item, index) in highlights" :key="index" align-center>
                                 <v-text-field autofocus class="mt-0 pt-0 custom-highlight-input glass-input-rounded highlight-no-bg" append-icon="call_made" @click:append="filterFromColor(index)" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model="item.value" hide-details solo flat></v-text-field>
                                 <input type="color" v-model="item.color" @input="updateHighlightColor(index)" style="width: 20px; height: 20px; border: none; background: none; cursor: pointer; margin-left: 8px; border-radius: 50%;">
                             </v-layout>
@@ -166,12 +166,11 @@
         <!-- ======= Right Nav DRAWER ================================================= -->
         <v-navigation-drawer right temporary v-model="right" fixed></v-navigation-drawer>
         <!-- ======= Footer ================================================= -->
-        <v-footer v-if="searchs && searchs.length > 0" app fixed id="theFooter" :height="footerHeight" class="glass-footer" :style="{ paddingLeft: drawer ? '380px' : '0', zIndex: 5 }">
+        <v-footer v-if="searchs && searchs.length > 0" app fixed id="theFooter" :height="footerHeight" class="glass-footer" style="left: 0; z-index: 3;">
             <div id="resizer"></div>
-            <div style="width: 100%; display: flex; justify-content: flex-start; align-items: center;">
+            <div :style="{ paddingLeft: drawer ? '380px' : '0', width: '100%', textAlign: 'left' }">
                 <!-- ======= SEARCHES ================================================= -->
-                <v-tabs show-arrows dark slider-color="yellow" v-model="active" style="flex: 0 1 auto; margin-right: auto;">
-                    <!-- <v-tabs-slider color="yellow"></v-tabs-slider> -->
+                <v-tabs show-arrows dark slider-color="yellow" v-model="active" style="width: auto; display: inline-block;">
                     <v-tooltip top debounce=1000 v-for="(s,index) in searchs" ripple v-bind:key="index">
                         <template v-slot:activator="{ on } ">
                             <v-tab v-on="on" class="glass-tab">
@@ -1356,12 +1355,13 @@ export default {
 @import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro");
 
 #resizer {
-  position: relative;
-  z-index: 10;
-  height: 17px;
-  background: #343436;
-  box-shadow: 0 0 1px black;
-  border-bottom: 1px solid black;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 101;
+  height: 6px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
   cursor: row-resize;
 }
 
