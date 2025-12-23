@@ -79,7 +79,7 @@
                         </v-btn>
                     </v-layout>
                     <v-layout class="ml-3 mr-3" row v-for="(item, index) in highlights" :key="index" align-center>
-                        <v-text-field autofocus class="mt-0 pt-0" append-icon="call_made" @click:append="filterFromColor(index)" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model="item.value"></v-text-field>
+                        <v-text-field autofocus class="mt-0 pt-0 custom-highlight-input" append-icon="call_made" @click:append="filterFromColor(index)" :background-color="item.color" :style="{ '--text-color': getContrastColor(item.color) }" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model="item.value"></v-text-field>
                         <input type="color" v-model="item.color" @input="updateHighlightColor(index)" style="width: 30px; height: 30px; border: none; background: none; cursor: pointer; margin-bottom: 20px;">
                     </v-layout>
 
@@ -356,7 +356,7 @@ function loadFilesOnServer(filesPaths) {
 var filesPaths = appStorage.loadLastFileList()
 loadFilesOnServer(filesPaths)
 
-function random_rgba() {
+const random_rgba = function() {
   const letters = '0123456789ABCDEF'
   let color = '#'
   for (let i = 0; i < 6; i++) {
@@ -365,7 +365,36 @@ function random_rgba() {
   return color
 }
 
-function rgbToHex(rgb) {
+const getContrastColor = function(hexcolor) {
+  if (!hexcolor) return 'white'
+  // If rgba string, parse it
+  if (hexcolor.startsWith('rgb')) {
+    const parts = hexcolor.match(/\d+/g)
+    if (parts) {
+      const r = parseInt(parts[0])
+      const g = parseInt(parts[1])
+      const b = parseInt(parts[2])
+      const yiq = (r * 299 + g * 587 + b * 114) / 1000
+      return yiq >= 128 ? 'black' : 'white'
+    }
+  }
+  // If hex string
+  if (hexcolor.slice(0, 1) === '#') {
+    hexcolor = hexcolor.slice(1)
+  }
+  if (hexcolor.length === 3) {
+    hexcolor = hexcolor.split('').map(function (hex) {
+      return hex + hex
+    }).join('')
+  }
+  var r = parseInt(hexcolor.substr(0, 2), 16)
+  var g = parseInt(hexcolor.substr(2, 2), 16)
+  var b = parseInt(hexcolor.substr(4, 2), 16)
+  var yiq = (r * 299 + g * 587 + b * 114) / 1000
+  return yiq >= 128 ? 'black' : 'white'
+}
+
+const rgbToHex = function(rgb) {
   if (!rgb || !rgb.startsWith('rgb')) return rgb
   const parts = rgb.match(/\d+/g)
   if (!parts) return rgb
@@ -373,21 +402,6 @@ function rgbToHex(rgb) {
   const g = parseInt(parts[1])
   const b = parseInt(parts[2])
   return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)
-}
-let calls = 1
-let arr = [10, 20, 50, 100, 155]
-
-function random_rgba2(id) {
-  let cell = id % 4
-  return (
-    'rgb(' +
-    Math.min(255, id) +
-    ',' +
-    Math.min(255, id * id) +
-    ',' +
-    Math.min(255, arr[cell]) +
-    ')'
-  )
 }
 
 function jqueryInit() {
@@ -456,34 +470,6 @@ function jqueryInit() {
   $('#resizer').mousedown(mousedown)
 }
 
-function getContrastColor(hexcolor) {
-  if (!hexcolor) return 'white'
-  // If rgba string, parse it
-  if (hexcolor.startsWith('rgb')) {
-    const parts = hexcolor.match(/\d+/g)
-    if (parts) {
-      const r = parseInt(parts[0])
-      const g = parseInt(parts[1])
-      const b = parseInt(parts[2])
-      const yiq = (r * 299 + g * 587 + b * 114) / 1000
-      return yiq >= 128 ? 'black' : 'white'
-    }
-  }
-  // If hex string
-  if (hexcolor.slice(0, 1) === '#') {
-    hexcolor = hexcolor.slice(1)
-  }
-  if (hexcolor.length === 3) {
-    hexcolor = hexcolor.split('').map(function (hex) {
-      return hex + hex
-    }).join('')
-  }
-  var r = parseInt(hexcolor.substr(0, 2), 16)
-  var g = parseInt(hexcolor.substr(2, 2), 16)
-  var b = parseInt(hexcolor.substr(4, 2), 16)
-  var yiq = (r * 299 + g * 587 + b * 114) / 1000
-  return yiq >= 128 ? 'black' : 'white'
-}
 
 import { EventBus } from './components/event-bus'
 import FastTextView from './components/FastTextView'
@@ -770,31 +756,40 @@ export default {
       model.position = pos
     })
 
-    console.log('register key down (find all shortcut)')
+    console.log('register key down shortcuts')
     let prevKey = -1
-    $(window).keydown(function(event) {
-      if ((event.ctrlKey || prevKey == 91) && event.keyCode == 70) {
+    $(window).off('keydown.logx').on('keydown.logx', function(event) {
+      const isCmdOrCtrl = event.ctrlKey || event.metaKey || prevKey == 91;
+      
+      // Cmd/Ctrl + F (Find)
+      if (isCmdOrCtrl && event.keyCode == 70) {
         event.preventDefault()
         prevKey = -1
         model.searchterm = ''
         $('#findall').focus()
         $('#findall').val('')
+        return;
       }
+      
       prevKey = event.keyCode
     })
 
-    // Register global paste listener
-    window.addEventListener('paste', (e) => {
-        // Don't intercept if we're in an input/textarea
-        if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+    // Register namespaced paste listener
+    $(window).off('paste.logx').on('paste.logx', (e) => {
+        const target = e.target || document.activeElement;
+        const tag = target.tagName;
+        const isInput = ['INPUT', 'TEXTAREA'].includes(tag) || target.isContentEditable;
         
-        const text = e.clipboardData.getData('text');
+        if (isInput) return;
+        
+        const text = (e.originalEvent.clipboardData || window.clipboardData).getData('text');
         if (text) {
-            console.log('Global paste detected, loading logs...');
-            model.logLines = text.split('\n');
+            console.log('Global paste detected (standard event), loading lines:', text.length);
+            const lines = text.split('\n');
+            model.logLines = [...lines]; // Fresh array for reactivity
             appStorage.saveFileListForWindow(null);
             model.filesList = [];
-            model.showMessage('Pasted logs from clipboard');
+            model.showMessage('Pasted ' + lines.length + ' lines');
         }
     });
 
@@ -807,7 +802,7 @@ export default {
   mounted: function() {
     console.log('app mounted')
     let model = this
-    model.logLines = []
+    // model.logLines = [] // Removed: was clearing logs loaded on startup or early paste
     //console.log(model);
     // for (var i = 0; i <= 200; i++) {
     //     //console.log(i);
@@ -875,27 +870,17 @@ export default {
       model.highlights = []
       model.filters = []
       model.exfilters = []
+      
       let highlights = model.highlightsForPresetName(presetName)
       if (highlights) {
         highlights.forEach(function(h) {
-          model.AddToHighlights(h.value)
+          // Pass the whole object if it exists (includes color)
+          model.AddToHighlights(h)
         })
       }
       model.filters = model.filtersForPresetName(presetName)
       model.exfilters = model.excludeFiltersForPresetName(presetName)
       
-      // Re-apply styles for highlights
-      model.highlights.forEach((h, index) => {
-        if (!h.color && model.stylesCache[index + 1]) {
-           h.color = rgbToHex(model.stylesCache[index+1])
-        } else if (!h.color) {
-           h.color = random_rgba()
-        } else {
-           h.color = rgbToHex(h.color)
-        }
-        model.addStyle(index + 1, h.color, true)
-      })
-
       setTimeout(() => {
         console.log('canSave -> false')
         model.canSave = false
@@ -1025,28 +1010,42 @@ export default {
       this.AddToHighlights(this.filters[index].value)
     },
     AddToHighlights: function(text) {
-      console.log('AddToHighlights')
-      console.log(text)
+      console.log('AddToHighlights', text)
       let model = this
+      
+      const val = typeof text === 'string' ? text : text.value || ''
+      const color = typeof text === 'string' ? undefined : text.color
 
-      let lowertext = text.toLowerCase()
-      let exists = model.highlights.findIndex(
-        s => s.value.toLowerCase() === lowertext.toLowerCase()
-      )
-      if (exists >= 0) {
-        this.showMessage('Highlight is Already Defined')
-        return
+      if (val) {
+        let lowertext = val.toLowerCase()
+        let exists = model.highlights.findIndex(
+           s => s.value.toLowerCase() === lowertext
+        )
+        if (exists >= 0) {
+           this.showMessage('Highlight is Already Defined')
+           return
+        }
       }
 
-      if (!this.canAddColor) {
-        this.removeColor(model.highlights.length - 1)
+      // If we are adding an empty highlight and one already exists, ignore
+      if (!val && !model.canAddColor) {
+         console.log('Ignore add color - already empty row exists')
+         return
       }
-      model.addStyle(model.highlights.length + 1, text.color)
+
+      const id = model.highlights.length + 1
+      const finalColor = color || model.stylesCache[id] || random_rgba()
+      
       model.highlights.push({
-        value: '' + text,
-        color: text.color || model.stylesCache[model.highlights.length + 1] || random_rgba(model.highlights.length + 1)
+        value: val,
+        color: finalColor
       })
+      
+      model.addStyle(id, finalColor, true)
       this.panel[1] = true
+      
+      // Force refresh of the view
+      EventBus.$emit('jumpto', this.position)
     },
     updateHighlightColor: function(index) {
       const id = index + 1
@@ -1198,7 +1197,9 @@ export default {
           /* Opera 10.5+, IE 9.0 */
           color: ${textColor} !important;
         }`
-    }
+    },
+    getContrastColor: getContrastColor,
+    rgbToHex: rgbToHex
   },
   props: {
     source: String
@@ -1240,5 +1241,9 @@ export default {
   border-bottom-right-radius: 9px !important;
   border-bottom-left-radius: 9px !important;
   border-top-left-radius: 9px !important;
+}
+
+.custom-highlight-input input {
+  color: var(--text-color) !important;
 }
 </style>

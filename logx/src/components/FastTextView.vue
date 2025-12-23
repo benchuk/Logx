@@ -170,7 +170,7 @@ export default {
                 }, 100);
             } else {
                 // FULL RELOAD: Reset position and setup slider from scratch
-                model.updateLinesModel(true);
+                model.updateLinesModel(false);
                 model.positionInternal = 0;
                 model.setupSlider();
                 model.onParentResize();
@@ -568,19 +568,16 @@ export default {
             model.container.innerHTML = data;
             //document.getElementById('fast-text-view-' + model.factory.myInitId).innerHTML = data;
 
-            var i = 1;
             if (this.useColors) {
-                for (var f of this.highlightsInternal) {
+                this.highlightsInternal.forEach((f, idx) => {
                     if (f == undefined || f.value == undefined || f.value == "") {
-                        continue;
+                        return;
                     }
-                    //console.log('start');
+                    const highlightId = idx + 1;
                     $('.theline-' + this.factory.myInitId).each(function (index) {
-                        //console.log('refresh..?');
-                        $(this).highlight(f.value, "highlight" + i);
+                        $(this).highlight(f.value, "highlight" + highlightId);
                     });
-                    i++;
-                }
+                });
             }
             //after render register for line click //todo unregister prev clicks - not sure needed.
             setTimeout(() => {
@@ -833,6 +830,11 @@ export default {
         model.highlightsInternal = model.highlights ? model.highlights : [];
         model.filtersInternal = model.filters ? model.filters : [];
         model.exfiltersInternal = model.exfilters ? model.exfilters : [];
+        model.showFilteredInternal = model.showFiltered !== undefined ? model.showFiltered : false;
+        model.useFiltersInternal = model.useFilters !== undefined ? model.useFilters : false;
+        model.useExFiltersInternal = model.useExFilters !== undefined ? model.useExFilters : true;
+        model.useColorsInternal = model.useColors !== undefined ? model.useColors : true;
+        model.wrapInternal = model.wrap !== undefined ? model.wrap : false;
 
         this.$nextTick(function () {
             init(model.factory);
