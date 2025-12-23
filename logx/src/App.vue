@@ -627,6 +627,9 @@ export default {
       if (val) {
           this.logLines = []
           this.isCommandRunning = false
+      } else {
+          this.stopCommand()
+          this.isCommandRunning = false
       }
       appStorage.savePreference('runInTerminal', val)
     },
