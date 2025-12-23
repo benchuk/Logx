@@ -3,9 +3,16 @@
 :root {
     --bg-dark: #0d0e12;
     --glass-bg: rgba(18, 19, 26, 0.85);
-    --glass-accent: rgba(255, 255, 255, 0.03);
+    --glass-text-secondary: rgba(255, 255, 255, 0.7);
+    /* New variable */
+    --glass-accent: rgba(255, 255, 255, 0.2);
+    /* Updated value */
     --glass-border: 1px solid rgba(255, 255, 255, 0.08);
     --glass-blur: blur(20px);
+    --glass-font: 'Inter', sans-serif;
+    /* New variable */
+    --glass-font-mono: 'JetBrains Mono', monospace;
+    /* New variable */
     --neon-blue: #00e5ff;
     --neon-green: #00ff88;
     --neon-purple: #9d00ff;
@@ -53,21 +60,18 @@
     flex-direction: column !important;
 }
 
-body {
-    background-color: var(--bg-dark) !important;
-    font-family: 'Inter', sans-serif !important;
-    -webkit-font-smoothing: antialiased;
+body,
+#app {
+    background-color: #050505 !important;
+    color: var(--text-primary) !important;
+    /* Assuming --glass-text refers to --text-primary */
+    font-family: var(--glass-font) !important;
 }
 
-#app,
 .v-application,
 .v-content,
 .v-content__wrap {
     background: var(--bg-dark) !important;
-}
-
-#app {
-    background-color: var(--bg-dark) !important;
 }
 
 /* Glassmorphism Containers */
@@ -137,6 +141,10 @@ body {
     backdrop-filter: var(--glass-blur) !important;
     border-top: var(--glass-border) !important;
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5) !important;
+    justify-content: flex-start !important;
+    /* Force left alignment of children */
+    z-index: 4 !important;
+    /* Ensure it's above some elements but below modal overlaps if any, standard drawer is usually 5-6 */
 }
 
 .glass-footer .v-tabs {
@@ -144,8 +152,10 @@ body {
 }
 
 .glass-footer .v-tabs__bar {
-    background: rgba(255, 255, 255, 0.03) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: transparent !important;
+    /* Cleaned up */
+    border-bottom: none !important;
+    /* Cleaned up */
 }
 
 .glass-tabs-left {
@@ -190,12 +200,20 @@ body {
     background: rgba(255, 255, 255, 0.05) !important;
     border: none !important;
     height: 4px !important;
-    margin: 6px 30% !important;
-    border-radius: 10px !important;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    width: 100% !important;
+    /* Full width */
+    margin: 0 !important;
+    /* Remove centering margin */
+    border-radius: 0 !important;
+    /* Rectangular handle area */
+    box-shadow: none;
     cursor: row-resize;
-    position: relative;
-    z-index: 100;
+    position: absolute;
+    /* Take out of flow */
+    top: 0;
+    left: 0;
+    z-index: 101;
+    /* Above footer content */
 }
 
 #resizer:hover {
@@ -318,6 +336,33 @@ body {
 .glass-input:hover .v-input__slot {
     background: rgba(255, 255, 255, 0.04) !important;
     border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Rounded Inputs (pills) for Filters/Colors */
+.glass-input-rounded .v-input__slot {
+    border-radius: 50px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 0 16px !important;
+    transition: all 0.3s ease;
+}
+
+.glass-input-rounded .v-input__slot:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.glass-input-rounded.v-input--is-focused .v-input__slot {
+    border-color: var(--neon-blue) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.15);
+}
+
+.glass-input-rounded input {
+    color: var(--text-primary) !important;
+    /* Assuming --glass-text refers to --text-primary */
+    font-family: var(--glass-font) !important;
+    font-weight: 500;
 }
 
 .custom-highlight-input input,

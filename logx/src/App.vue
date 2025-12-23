@@ -86,7 +86,7 @@
                                 <v-btn v-on:click="removeFilter(-1)" flat icon color='error' class="ma-0"><v-icon small>delete_outline</v-icon></v-btn>
                             </v-layout>
                             <v-layout class="px-1" row v-for="(item, index) in filters" :key="index">
-                                <v-text-field class="mt-0 pt-0 glass-input" append-icon="color_lens" @click:append="colorFromFilter(index)" append-outer-icon="delete_outline" @click:append-outer="removeFilter(index)" v-model.lazy="item.value" hide-details solo flat></v-text-field>
+                                <v-text-field class="mt-0 pt-0 glass-input-rounded" append-icon="color_lens" @click:append="colorFromFilter(index)" append-outer-icon="delete_outline" @click:append-outer="removeFilter(index)" v-model.lazy="item.value" hide-details solo flat></v-text-field>
                             </v-layout>
                         </v-layout>
                     </v-expansion-panel-content>
@@ -103,7 +103,7 @@
                                 <v-btn v-on:click="removeColor(-1)" flat icon color='error' class="ma-0"><v-icon small>delete_outline</v-icon></v-btn>
                             </v-layout>
                             <v-layout class="px-1" row v-for="(item, index) in highlights" :key="index" align-center>
-                                <v-text-field autofocus class="mt-0 pt-0 custom-highlight-input glass-input highlight-no-bg" append-icon="call_made" @click:append="filterFromColor(index)" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model="item.value" hide-details solo flat></v-text-field>
+                                <v-text-field autofocus class="mt-0 pt-0 custom-highlight-input glass-input-rounded highlight-no-bg" append-icon="call_made" @click:append="filterFromColor(index)" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model="item.value" hide-details solo flat></v-text-field>
                                 <input type="color" v-model="item.color" @input="updateHighlightColor(index)" style="width: 20px; height: 20px; border: none; background: none; cursor: pointer; margin-left: 8px; border-radius: 50%;">
                             </v-layout>
                         </v-layout>
@@ -166,38 +166,40 @@
         <!-- ======= Right Nav DRAWER ================================================= -->
         <v-navigation-drawer right temporary v-model="right" fixed></v-navigation-drawer>
         <!-- ======= Footer ================================================= -->
-        <v-footer v-if="searchs && searchs.length > 0" inset app fixed id="theFooter" :height="footerHeight" class="glass-footer">
+        <v-footer v-if="searchs && searchs.length > 0" app fixed id="theFooter" :height="footerHeight" class="glass-footer" :style="{ paddingLeft: drawer ? '380px' : '0', zIndex: 5 }">
             <div id="resizer"></div>
-            <!-- ======= SEARCHES ================================================= -->
-            <v-tabs show-arrows dark slider-color="yellow" v-model="active" class="glass-tabs-left">
-                <!-- <v-tabs-slider color="yellow"></v-tabs-slider> -->
-                <v-tooltip top debounce=1000 v-for="(s,index) in searchs" ripple v-bind:key="index">
-                    <template v-slot:activator="{ on } ">
-                        <v-tab v-on="on">
-                            <v-btn class="ml-0 pl-0" fab flat small v-on:click="removeSearch(s)">
-                                <v-icon dark color="grey">close</v-icon>
-                            </v-btn>{{ getFindTabText(s,true)}}
-                        </v-tab>
-                    </template>
-                    <span>{{ getFindTabText(s,false)}}</span>
-                </v-tooltip>
-                <v-btn v-if="searchs.length>1" @click="clearSearches" flat icon color="error">
-                    <v-icon small>delete_outline</v-icon>
-                </v-btn>
-                <v-tabs-items>
-                    <v-tab-item v-for="(s,index) in searchs" v-bind:key="index">
-                        <v-card flat v-if="s[0].type==='find'">
-                            <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :highlights="highlights" :useExFilters="false" :useColors="useColors" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'" :wrap="wrapLines"></fast-text-view>
-                        </v-card>
-                        <v-card v-else-if="s[0].type==='map'">
-                            <mapFromText :lines="logLines" :filter="s[0].filter"></mapFromText>
-                        </v-card>
-                        <v-card v-else-if="s[0].type==='graph' || s[0].type==='timegraph'">
-                            <plotFromText :lines="logLines" :filter="s[0].filter" :filterList='filters'></plotFromText>
-                        </v-card>
-                    </v-tab-item>
-                </v-tabs-items>
-            </v-tabs>
+            <div style="width: 100%; display: flex; justify-content: flex-start; align-items: center;">
+                <!-- ======= SEARCHES ================================================= -->
+                <v-tabs show-arrows dark slider-color="yellow" v-model="active" style="flex: 0 1 auto; margin-right: auto;">
+                    <!-- <v-tabs-slider color="yellow"></v-tabs-slider> -->
+                    <v-tooltip top debounce=1000 v-for="(s,index) in searchs" ripple v-bind:key="index">
+                        <template v-slot:activator="{ on } ">
+                            <v-tab v-on="on" class="glass-tab">
+                                <v-btn class="ml-0 pl-0" fab flat small v-on:click="removeSearch(s)">
+                                    <v-icon dark color="grey">close</v-icon>
+                                </v-btn>{{ getFindTabText(s,true)}}
+                            </v-tab>
+                        </template>
+                        <span>{{ getFindTabText(s,false)}}</span>
+                    </v-tooltip>
+                    <v-btn v-if="searchs.length>1" @click="clearSearches" flat icon color="error">
+                        <v-icon small>delete_outline</v-icon>
+                    </v-btn>
+                    <v-tabs-items>
+                        <v-tab-item v-for="(s,index) in searchs" v-bind:key="index">
+                            <v-card flat v-if="s[0].type==='find'">
+                                <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :highlights="highlights" :useExFilters="false" :useColors="useColors" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'" :wrap="wrapLines"></fast-text-view>
+                            </v-card>
+                            <v-card v-else-if="s[0].type==='map'">
+                                <mapFromText :lines="logLines" :filter="s[0].filter"></mapFromText>
+                            </v-card>
+                            <v-card v-else-if="s[0].type==='graph' || s[0].type==='timegraph'">
+                                <plotFromText :lines="logLines" :filter="s[0].filter" :filterList='filters'></plotFromText>
+                            </v-card>
+                        </v-tab-item>
+                    </v-tabs-items>
+                </v-tabs>
+            </div>
         </v-footer>
 
         <!-- <v-dialog v-model="dialog3" scrollable max-width="80%" max-height="80%">
