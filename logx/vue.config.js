@@ -1,6 +1,6 @@
 const webpack = require('webpack')
 module.exports = {
-    configureWebpack: {
+  configureWebpack: {
     plugins: [
       new webpack.ProvidePlugin({
         $: 'jquery',
@@ -10,4 +10,13 @@ module.exports = {
       })
     ]
   },
+  pluginOptions: {
+    electronBuilder: {
+      builderOptions: {
+        mac: {
+          target: ['zip', 'dir']  // Skip DMG to avoid python dependency
+        }
+      }
+    }
+  }
 }

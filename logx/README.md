@@ -48,6 +48,7 @@ Build the Electron application for your current platform:
 
 ```bash
 npm run electron_build
+CSC_IDENTITY_AUTO_DISCOVERY=false npm run electron_build
 ```
 
 This will create platform-specific installers in the `dist_electron/` directory:
