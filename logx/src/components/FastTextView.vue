@@ -678,21 +678,30 @@ export default {
                 parentH = document.documentElement.clientHeight - 64;
             } else {
                 let parentEl = $('#' + model.parentid);
-                parentH = parentEl.height();
-                
-                // If the parent is the footer, we need to subtract space for tabs and resizer
-                if (model.parentid === 'theFooter') {
-                    parentH -= 65; // Approximate height for tabs header + resizer
+                if (parentEl.length > 0) {
+                    parentH = parentEl.height() || 0;
+                    
+                    // If the parent is the footer, we need to subtract space for tabs and resizer
+                    if (model.parentid === 'theFooter') {
+                        parentH -= 65; // Approximate height for tabs header + resizer
+                    }
+                } else {
+                    console.log("WARN - parent element not found:", model.parentid);
+                    parentH = 0;
                 }
                 
                 // Fallback: If measured parent height is suspiciously low but component is in DOM
-                if (parentH < 100 && model.$el && model.$el.parentElement) {
+                if ((!parentH || parentH < 100) && model.$el && model.$el.parentElement) {
                     let localH = model.$el.parentElement.clientHeight;
                     if (localH > parentH) {
                         console.log("DEBUG - using local parent height:", localH, "instead of", parentH);
                         parentH = localH;
                     }
                 }
+                
+                // Final safety
+                if (isNaN(parentH) || parentH < 0) parentH = 0;
+                
                 console.log("DEBUG - parentid:", model.parentid, "calculated parentH:", parentH);
             }
 
@@ -706,6 +715,10 @@ export default {
         },
         matchHeight: function () {
             let reqHeight = this.currentHeight;
+            if (isNaN(reqHeight) || reqHeight <= 0) {
+                console.log("matchHeight - invalid reqHeight:", reqHeight);
+                reqHeight = 300; // Fallback height
+            }
 
             let rowElement = document.getElementById('rowdata-' + this.factory.myInitId);
             var v;
@@ -823,23 +836,56 @@ export default {
             return that;
         })();
     },
+    beforeDestroy() {
+        console.log("fast text view beforeDestroy for id: " + this.factory.myInitId);
+        let model = this;
+        
+        // Unregister EventBus listeners
+        EventBus.$off('footer-resized', this.onFooterResizedEvent);
+        
+        // Unregister jQuery document listeners
+        $(document).off("mousedown", this.onDocumentMouseDown);
+        $(document).off("mouseup", this.onDocumentMouseUp);
+        
+        const myEl = $('#fast-text-view-' + model.factory.myInitId);
+        myEl.off('mouseover', this.onMouseOver);
+        myEl.off('mouseout', this.onMouseOut);
+        myEl.off('dblclick', this.onDoubleClick);
+        
+        // Unregister window listeners
+        window.removeEventListener('resize', this.onWindowResize);
+        $(window).off("keydown", this.onWindowKeyDown);
+        
+        // Unregister element wheel listener
+        const scrollEl = document.getElementById('fast-text-view-' + model.factory.myInitId);
+        if (scrollEl) {
+            scrollEl.removeEventListener('wheel', this.onMouseWheel);
+        }
+        
+        // Clear any pending timers
+        if (this.streamUpdateTimer) clearTimeout(this.streamUpdateTimer);
+        if (this.filtersHandler) clearTimeout(this.filtersHandler);
+        if (this.syncScrollTimer) clearTimeout(this.syncScrollTimer);
+    },
     mounted: function () {
         console.log("fast text view mounted for id: " + this.factory.myInitId);
         let model = this;
 
         $('#logx-progress' + model.factory.myInitId).height(0).css("visibility", "hidden").css("margin", "0px");
         var hasFocus = false;
-        $('#fast-text-view-' + model.factory.myInitId).mouseover(function () {
+        this.onMouseOver = function () {
             //console.log('mouseover');
             hasFocus = true;
-        });
+        };
+        $('#fast-text-view-' + model.factory.myInitId).on('mouseover', this.onMouseOver);
 
-        $('#fast-text-view-' + model.factory.myInitId).mouseout(function () {
+        this.onMouseOut = function () {
             //console.log('mouseout');
             hasFocus = false;
-        });
+        };
+        $('#fast-text-view-' + model.factory.myInitId).on('mouseout', this.onMouseOut);
 
-        $(window).keydown(function (event) {
+        this.onWindowKeyDown = function (event) {
             if (!hasFocus) {
                 //console.log('skip key');
                 return;
@@ -873,7 +919,8 @@ export default {
                 var down = model.positionInternal + model.displayrowscount;
                 model.jumpToPosition(down);
             }
-        });
+        };
+        $(window).on("keydown", this.onWindowKeyDown);
 
         //save reference to container to render all line to
         model.container = document.getElementById('fast-text-view-' + model.factory.myInitId);
@@ -887,7 +934,9 @@ export default {
                 model.onParentResize();
             }, 0);
         });
-        $(document).on("mousedown", function (event) {
+
+        // Use named methods for listeners to allow cleanup
+        this.onDocumentMouseDown = (event) => {
             let found = $(".fast-text-view-class").has(event.target).length > 0;
             if (found) {
                 return;
@@ -897,8 +946,10 @@ export default {
                 //console.log('onParentResize mousedown');
                 model.onParentResize();
             }, 300);
-        });
-        $(document).on("mouseup", function (event) {
+        };
+        $(document).on("mousedown", this.onDocumentMouseDown);
+
+        this.onDocumentMouseUp = (event) => {
             let found = $(".fast-text-view-class").has(event.target).length > 0;
             if (found) {
                 return;
@@ -908,8 +959,10 @@ export default {
                 //console.error('onParentResize mouseup');
                 model.onParentResize();
             }, 300);
-        });
-        window.addEventListener('resize', function (e) {
+        };
+        $(document).on("mouseup", this.onDocumentMouseUp);
+
+        this.onWindowResize = (e) => {
             e.preventDefault();
             console.log("window resize");
             clearTimeout(preEvent);
@@ -917,11 +970,17 @@ export default {
                 //console.log('onParentResize resize');
                 model.onParentResize();
             }, 300);
-        });
-        // setTimeout(() => {
-        //     model.onParentResize();
-        // }, 350);
+        };
+        window.addEventListener('resize', this.onWindowResize);
 
+        this.onFooterResizedEvent = (newHeight) => {
+            console.log("FastTextView received footer-resized event for ID:", model.factory.myInitId, "Height:", newHeight);
+            model.currentHeight = newHeight;
+            model.onParentResize();
+        };
+        EventBus.$on('footer-resized', this.onFooterResizedEvent);
+
+        // Initial model setup
         if (!model.lines || model.lines.length <= 0) {
             model.factory.setModel(["no data 2"]);
             model.factory.setOriginalModel(["no data 2"]);
@@ -955,32 +1014,26 @@ export default {
             }, 100);
             
             console.log("register double click to highlight color a word");
-            $('#fast-text-view-' + model.factory.myInitId).dblclick(function () {
+            this.onDoubleClick = function () {
                 var seltxt = getSelText();
                 EventBus.$emit('textSelection', seltxt);
-            });
+            };
+            $('#fast-text-view-' + model.factory.myInitId).on('dblclick', this.onDoubleClick);
 
             console.log("register wheel event");
             const scrollEl = document.getElementById('fast-text-view-' + model.factory.myInitId);
             if (scrollEl) {
-                // Remove any previous listener to avoid duplicates
-                scrollEl.removeEventListener('wheel', mouseWheelEvent);
-                scrollEl.addEventListener('wheel', mouseWheelEvent, {
+                // Ensure we use the named function for removal support
+                scrollEl.addEventListener('wheel', this.onMouseWheel, {
                     passive: false
                 });
             }
-        })
-
-        EventBus.$on('footer-resized', (newHeight) => {
-            console.log("FastTextView received footer-resized event:", newHeight);
-            model.currentHeight = newHeight;
-            model.onParentResize();
         });
 
         var prevDelta = 0;
         var lastEventTimestamp = 0;
 
-        function mouseWheelEvent(e) {
+        this.onMouseWheel = function (e) {
             // Prevent default browser scroll behavior immediately to stop bubbling
             e.preventDefault();
             e.stopPropagation();
