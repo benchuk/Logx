@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="fast-text-view-wrapper" style="position: relative; height: 100%; width: 100%; overflow: hidden;">
     
     <!-- <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="/resources/demos/style.css"> -->
@@ -16,7 +16,7 @@
         <v-icon small>vertical_align_top</v-icon>
     </v-btn>
     <!-- ======== SCROLL TO BOTTOM (Auto-Scroll) ======================================== -->
-    <v-btn v-if="!autoScroll" color="blue" absolute dark fab bottom right small style="bottom: 40px; right: 30px;" @click.stop="scrollToBottom">
+    <v-btn v-if="!autoScroll" color="blue" absolute dark fab bottom right small style="bottom: 40px; right: 30px; z-index: 1;" @click.stop="scrollToBottom">
         <v-icon small>arrow_downward</v-icon>
     </v-btn>
 </div>
@@ -103,19 +103,45 @@ export default {
 
             this.showFilteredInternal = true;
 
-            let parsedPosition = parseInt(val.value);
-            setTimeout(() => {
-                console.log("anim 1 for src id: " + this.factory.myInitId);
-                $("#" + parsedPosition).fadeOut("slow", function () {
-                    $("#" + parsedPosition).fadeIn("slow", function () {
-                        // Animation complete   
-                    });
-                });
-            }, 0);
-            model.targetJump = parsedPosition;
-            // model.positionInternal = parsedPosition;
-            // model.handlePosition()
-            model.jumpToPosition(parsedPosition);
+            let parsedRowId = parseInt(val.value);
+            
+            // Find the index of this rowId in the current model
+            let lines = (this.showFilteredInternal || !this.useFiltersInternal) ? this.factory.getModel() : this.factory.getModelFiltered();
+            let targetIndex = -1;
+            
+            // Optimization: if we are in main logger and it's not filtered, index == rowid
+            if (this.ident === 'main-logger' && !this.useFiltersInternal) {
+                targetIndex = parsedRowId;
+            } else {
+                // Find index by rowid
+                targetIndex = lines.findIndex(l => l.rowid === parsedRowId);
+                
+                // If not found (e.g. search tab doesn't have this exact line), 
+                // find the NEAREST visible line to keep sync
+                if (targetIndex === -1 && val.sync) {
+                    for (let i = 0; i < lines.length; i++) {
+                        if (lines[i].rowid >= parsedRowId) {
+                            targetIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (targetIndex !== -1) {
+                if (!val.sync) {
+                    setTimeout(() => {
+                        console.log("anim 1 for src id: " + this.factory.myInitId);
+                        $("#" + parsedRowId).fadeOut("slow", function () {
+                            $("#" + parsedRowId).fadeIn("slow", function () {
+                                // Animation complete   
+                            });
+                        });
+                    }, 0);
+                }
+                model.targetJump = parsedRowId;
+                model.jumpToPosition(targetIndex);
+            }
         },
         lines(val, oldval) {
             let model = this;
@@ -486,7 +512,6 @@ export default {
             let POSITION = parseInt(newPosition);
 
             if (POSITION >= spaceToEnd || POSITION >= len) {
-                this.positionInternal = spaceToEnd;
                 //console.log("Skip jump - nothing to render - reached end of files: " + POSITION);
                 this.positionInternal = spaceToEnd;
                 POSITION = spaceToEnd;
@@ -502,6 +527,31 @@ export default {
                 //console.log("Skip jump - nothing to render - position is the same: " + POSITION);
             }
             this.positionInternal = POSITION;
+            
+            this.positionInternal = POSITION;
+            
+            // Sync with other views REMOVED as per user request (independent scrolling)
+            /*
+            if (this.syncScrollTimer) {
+                clearTimeout(this.syncScrollTimer);
+            }
+            this.syncScrollTimer = setTimeout(() => {
+                let lines = (this.showFilteredInternal || !this.useFiltersInternal) ? this.factory.getModel() : this.factory.getModelFiltered();
+                let topLine = lines[this.positionInternal];
+                if (topLine && topLine.rowid !== undefined) {
+                    EventBus.$emit('jumpto', {
+                        'value': topLine.rowid,
+                        'source': this.factory.myInitId,
+                        'sourceIdent': this.ident,
+                        'showFiltered': true,
+                        'sync': true // Flag to skip animation
+                    });
+                }
+            }, 50);
+            */
+
+            //console.log("this.positionInternal",this.positionInternal);
+
             //console.log("this.positionInternal",this.positionInternal);
             var modelLen = 0
             if (this.showFilteredInternal || !this.useFiltersInternal) {
@@ -603,19 +653,34 @@ export default {
             if (!model.parentid) {
                 parentH = document.documentElement.clientHeight - 64;
             } else {
-                parentH = $('#' + model.parentid).height();
+                let parentEl = $('#' + model.parentid);
+                parentH = parentEl.height();
+                
+                // If the parent is the footer, we need to subtract space for tabs and resizer
+                if (model.parentid === 'theFooter') {
+                    parentH -= 65; // Approximate height for tabs header + resizer
+                }
+                
+                // Fallback: If measured parent height is suspiciously low but component is in DOM
+                if (parentH < 100 && model.$el && model.$el.parentElement) {
+                    let localH = model.$el.parentElement.clientHeight;
+                    if (localH > parentH) {
+                        console.log("DEBUG - using local parent height:", localH, "instead of", parentH);
+                        parentH = localH;
+                    }
+                }
+                console.log("DEBUG - parentid:", model.parentid, "calculated parentH:", parentH);
             }
 
             let newHeight = parentH;
-            if (model.prevHeight != newHeight) {
-                console.log("update height");
+            if (model.prevHeight != newHeight || newHeight == 0) {
+                console.log("update height to:", newHeight);
                 model.prevHeight = newHeight;
                 model.currentHeight = newHeight
                 model.matchHeight();
             }
         },
         matchHeight: function () {
-            console.log("matchHeight")
             let reqHeight = this.currentHeight;
 
             let rowElement = document.getElementById('rowdata-' + this.factory.myInitId);
@@ -624,14 +689,27 @@ export default {
             if (rowElement) {
                 v = rowElement.clientHeight;
                 rowHeight = v > 0 ? v : 21;
+            } else {
+                // If we don't have rows yet, try to find ANY row to guess height
+                let anyRow = document.querySelector('[id^="rowdata-"]');
+                if (anyRow) rowHeight = anyRow.clientHeight || 21;
             }
-            this.displayrowscount = Math.round(reqHeight / rowHeight) - 4; //temp hack
+            
+            this.displayrowscount = Math.round(reqHeight / rowHeight) - 2; 
             if (this.displayrowscount <= 0) {
                 this.displayrowscount = 10;
             }
-            console.log("Setting new displayrowscount", this.displayrowscount);
+            console.log("matchHeight - reqHeight:", reqHeight, "rowHeight:", rowHeight, "count:", this.displayrowscount);
             jQuery('#slider-vertical-' + this.factory.myInitId).height(this.displayrowscount * rowHeight);
             this.refreshView();
+            
+            // If we guessed the row height (rowElement was null), re-match after render
+            if (!rowElement && !this.reMatchAttempted) {
+                this.reMatchAttempted = true;
+                setTimeout(() => {
+                    this.matchHeight();
+                }, 200);
+            }
         },
         setupSlider: function () {
             console.info("update Slider");
@@ -857,59 +935,65 @@ export default {
                 var seltxt = getSelText();
                 EventBus.$emit('textSelection', seltxt);
             });
+
+            console.log("register wheel event");
+            const scrollEl = document.getElementById('fast-text-view-' + model.factory.myInitId);
+            if (scrollEl) {
+                // Remove any previous listener to avoid duplicates
+                scrollEl.removeEventListener('wheel', mouseWheelEvent);
+                scrollEl.addEventListener('wheel', mouseWheelEvent, {
+                    passive: false
+                });
+            }
         })
+
+        EventBus.$on('footer-resized', (newHeight) => {
+            console.log("FastTextView received footer-resized event:", newHeight);
+            model.currentHeight = newHeight;
+            model.onParentResize();
+        });
 
         var prevDelta = 0;
         var lastEventTimestamp = 0;
 
         function mouseWheelEvent(e) {
-            ////console.log("wheel");
+            // Prevent default browser scroll behavior immediately to stop bubbling
+            e.preventDefault();
+            e.stopPropagation();
+
             var currentTimestamp = Date.now();
-            if (currentTimestamp - lastEventTimestamp < 50) {
-                ////console.log(" skip: " + (currentTimestamp - lastEventTimestamp));
+            if (currentTimestamp - lastEventTimestamp < 30) {
                 return;
             }
+
             var inrowEvents = (currentTimestamp - lastEventTimestamp < 100);
             if (!inrowEvents) {
                 prevDelta = 0;
             }
             lastEventTimestamp = currentTimestamp;
-            //console.log("====================================");
-            //console.log(" -e.detail: " + -e.detail);
-            //console.log(" -e.wheelDelta: " + -e.wheelDelta);
-            //console.log(" event.deltaX: " + event.deltaX);
-            //console.log(" event.deltaY: " + event.deltaY);
-            //console.log(" event.deltaMode: " + event.deltaMode);
-            //var delta = e.wheelDelta ? e.wheelDelta : -e.detail;
-            var delta = -event.deltaY;
+            
+            var delta = -e.deltaY;
             let direction = delta > 0 ? -1 : 1;
-            //console.log("delta: " + delta);
-            //console.log("direction: " + model.direction);
+            
             if ((prevDelta + delta) > 5 || (prevDelta + delta) < -5) {
-                //console.log(" event.deltaMode: " + event.deltaMode);
                 delta = prevDelta + delta;
                 prevDelta = 0;
             }
             if (delta >= 0 && delta <= 5) {
                 prevDelta += delta;
-                //console.log(" prevDelta: " + prevDelta);
                 return;
             }
             if (delta <= 0 && delta >= -5) {
                 prevDelta += delta;
-                //console.log(" prevDelta: " + prevDelta);
                 return;
             }
             delta = Math.round(delta / 3.0);
-            //console.log(" delta: " + delta);
-            //delta+=prevDelta;
             let newPosition = model.positionInternal + Math.round(delta * -1);
             
             // Pause auto-scroll when user scrolls up
             if (delta > 0) { // Scrolling up
                 model.autoScroll = false;
             } else { // Scrolling down
-                // Check if we reached the bottom
                 let lines = (model.showFilteredInternal || !model.useFiltersInternal) ? model.factory.getModel() : model.factory.getModelFiltered();
                 let len = lines ? lines.length : 0;
                 let bottomPos = Math.max(0, len - model.displayrowscount);
@@ -920,8 +1004,8 @@ export default {
             
             model.jumpToPosition(newPosition);
         }
-        console.log("register mouse wheel");
-        document.getElementById('fast-text-view-' + model.factory.myInitId).addEventListener('mousewheel', mouseWheelEvent);
+        
+        // Removed: Registration now happens in $nextTick above for better reliability
     }
 }
 

@@ -142,7 +142,7 @@
         <!-- ======= Right Nav DRAWER ================================================= -->
         <v-navigation-drawer right temporary v-model="right" fixed></v-navigation-drawer>
         <!-- ======= Footer ================================================= -->
-        <v-footer inset app fixed id="theFooter" height="30">
+        <v-footer inset app fixed id="theFooter" :height="footerHeight">
             <v-container fluid fill-height pa-0>
                 <v-layout justify-left align-left>
                     <v-flex xs12>
@@ -422,8 +422,6 @@ const rgbToHex = function(rgb) {
 
 function jqueryInit() {
   console.log('jqueryInit')
-  var startPoint = 0
-  var orgHeight = 0
 
   function onDrop(e) {
     let droppedFilesPaths = []
@@ -460,30 +458,6 @@ function jqueryInit() {
   document.addEventListener('drop', function(e) {
     onDrop(e)
   })
-
-  function mousemove(e) {
-    var res = orgHeight + (startPoint - e.pageY)
-    $('#theFooter').height(res)
-    if (e.stopPropagation) e.stopPropagation()
-    if (e.preventDefault) e.preventDefault()
-    e.cancelBubble = true
-    e.returnValue = false
-  }
-
-  function mouseup(e) {
-    var res = orgHeight + (startPoint - e.pageY)
-    $('#theFooter').height(res)
-    $('body,html').off('mousemove', mousemove)
-    $('body,html,#resizer').off('mouseup', mouseup)
-  }
-
-  function mousedown(e) {
-    $('body,html,#resizer').mouseup(mouseup)
-    startPoint = e.pageY
-    orgHeight = $('#theFooter').height()
-    $('body,html').mousemove(mousemove)
-  }
-  $('#resizer').mousedown(mousedown)
 }
 
 import { EventBus } from './components/event-bus'
@@ -579,6 +553,7 @@ export default {
         appStorage.savePreference('streamEnabled', val)
         if (val) {
           console.log('Connecting to Log Stream Bridge...')
+          model.logLines = [] // Clear logs on stream start
           const connect = () => {
             if (!model.streamEnabled) return;
             
@@ -637,6 +612,15 @@ export default {
     },
     terminalCommand: function(val) {
        appStorage.savePreference('terminalCommand', val)
+    },
+    footerHeight: function(val) {
+      appStorage.savePreference('footerHeight', val)
+      EventBus.$emit('footer-resized', val)
+    },
+    active: function(val) {
+      this.$nextTick(() => {
+        EventBus.$emit('footer-resized', this.footerHeight)
+      })
     }
   },
   data: function() {
@@ -675,6 +659,7 @@ export default {
       isCommandRunning: false,
       commandStatus: '',
       wrapLines: appStorage.loadPreference('wrapLines', false),
+      footerHeight: appStorage.loadPreference('footerHeight', 35),
       ws: null,
       position: {
         value: 0,
@@ -805,6 +790,27 @@ export default {
         }
         return;
       }
+
+      // Ctrl + K (Clear Logs)
+      if (event.ctrlKey && event.keyCode == 75) {
+        event.preventDefault()
+        model.logLines = []
+        model.showMessage('Logs cleared')
+        return;
+      }
+
+      // Enter (Add empty line)
+      if (event.keyCode == 13) {
+        const target = event.target || document.activeElement;
+        const tag = target.tagName;
+        const isInput = ['INPUT', 'TEXTAREA'].includes(tag) || target.isContentEditable;
+        
+        if (!isInput) {
+            event.preventDefault()
+            model.logLines.push(' ') // Add a space to ensure it's not a truly empty string if needed
+            return;
+        }
+      }
       
       prevKey = event.keyCode
     })
@@ -837,6 +843,34 @@ export default {
   mounted: function() {
     console.log('app mounted')
     let model = this
+    
+    // Initialize resizer logic with Vue data
+    function mousemove(e) {
+      var res = model.orgHeight + (model.startPoint - e.pageY)
+      if (res < 35) res = 35;
+      model.footerHeight = res
+      if (e.stopPropagation) e.stopPropagation()
+      if (e.preventDefault) e.preventDefault()
+      e.cancelBubble = true
+      e.returnValue = false
+    }
+
+    function mouseup(e) {
+      var res = model.orgHeight + (model.startPoint - e.pageY)
+      if (res < 35) res = 35;
+      model.footerHeight = res
+      $('body,html').off('mousemove', mousemove)
+      $('body,html,#resizer').off('mouseup', mouseup)
+    }
+
+    function mousedown(e) {
+      $('body,html,#resizer').mouseup(mouseup)
+      model.startPoint = e.pageY
+      model.orgHeight = model.footerHeight
+      $('body,html').mousemove(mousemove)
+    }
+    $('#resizer').off('mousedown').mousedown(mousedown)
+
     // Ensure panel state matches UI
     if (model.panel.length < 4) {
       model.panel.push(false)
@@ -1099,7 +1133,7 @@ export default {
     },
     clearSearches: function(s) {
       this.searchs = []
-      $('#theFooter').height(35)
+      this.footerHeight = 35
     },
     removeSearch: function(s) {
       let index = this.searchs.indexOf(s)
@@ -1113,7 +1147,7 @@ export default {
           this.active = (this.searchs.length - 1).toString()
         }
         if (this.searchs.length <= 0) {
-          $('#theFooter').height(35)
+          this.footerHeight = 35
         }
       }, 10)
     },
@@ -1131,8 +1165,8 @@ export default {
       if (exists >= 0) {
         this.active = exists
         this.showMessage('Switching to Existing Search Tab')
-        if ($('#theFooter').height() < 300) {
-          $('#theFooter').height(300)
+        if (this.footerHeight < 300) {
+          this.footerHeight = 300
         }
         return
       }
@@ -1144,8 +1178,8 @@ export default {
       ])
       console.log(this.searchs)
       this.active = this.searchs.length - 1
-      if ($('#theFooter').height() < 300) {
-        $('#theFooter').height(300)
+      if (this.footerHeight < 300) {
+        this.footerHeight = 300
       }
     },
     addExFilter: function(event) {
@@ -1258,6 +1292,7 @@ export default {
         }
         
         if (ipcRenderer) {
+             this.logLines = [] // Clear logs on command start
              this.isCommandRunning = true;
              this.commandStatus = 'Starting...';
              console.log('Sending execute-command IPC');
