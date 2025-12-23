@@ -505,6 +505,21 @@ export default {
     }
   },
   watch: {
+    showFiltered: function(val) {
+      appStorage.savePreference('showFiltered', val)
+    },
+    wrapLines: function(val) {
+      appStorage.savePreference('wrapLines', val)
+    },
+    useFilters: function(val) {
+      appStorage.savePreference('useFilters', val)
+    },
+    useExFilters: function(val) {
+      appStorage.savePreference('useExFilters', val)
+    },
+    useColors: function(val) {
+      appStorage.savePreference('useColors', val)
+    },
     highlights: {
       handler: function(val) {
         let model = this
@@ -553,59 +568,63 @@ export default {
       },
       deep: true
     },
-    streamEnabled: function(val) {
-      let model = this
-      if (val) {
-        console.log('Connecting to Log Stream Bridge...')
-        const connect = () => {
-          if (!model.streamEnabled) return;
-          
-          try {
-              if (model.ws) {
-                model.ws.close()
-              }
-              model.ws = new WebSocket('ws://localhost:9021')
-              
-              model.ws.onopen = function() {
-                  console.log('WebSocket Connected')
-                  model.showMessage('Connected to Log Stream')
-              }
-              
-              model.ws.onmessage = function(event) {
-                  let lines = event.data.split('\n')
-                  lines.forEach(line => {
-                      if (line && line.length > 0)
-                          model.logLines.push(line)
-                  })
-              }
-              
-              model.ws.onclose = function() {
-                  console.log('WebSocket Disconnected')
-                  model.ws = null
-                  if (model.streamEnabled) {
-                       model.showMessage('Stream Disconnected - Retrying...')
-                       // Auto-reconnect after 3 seconds
-                       setTimeout(connect, 3000)
-                  }
-              }
-              
-              model.ws.onerror = function(error) {
-                  console.log('WebSocket Error: ' + error)
-                  // onclose will handle the retry
-              }
-              
-          } catch (e) {
-              console.error(e)
-              if (model.streamEnabled) {
-                setTimeout(connect, 3000)
-              }
+    streamEnabled: {
+      immediate: true,
+      handler: function(val) {
+        let model = this
+        appStorage.savePreference('streamEnabled', val)
+        if (val) {
+          console.log('Connecting to Log Stream Bridge...')
+          const connect = () => {
+            if (!model.streamEnabled) return;
+            
+            try {
+                if (model.ws) {
+                  model.ws.close()
+                }
+                model.ws = new WebSocket('ws://localhost:9021')
+                
+                model.ws.onopen = function() {
+                    console.log('WebSocket Connected')
+                    model.showMessage('Connected to Log Stream')
+                }
+                
+                model.ws.onmessage = function(event) {
+                    let lines = event.data.split('\n')
+                    lines.forEach(line => {
+                        if (line && line.length > 0)
+                            model.logLines.push(line)
+                    })
+                }
+                
+                model.ws.onclose = function() {
+                    console.log('WebSocket Disconnected')
+                    model.ws = null
+                    if (model.streamEnabled) {
+                         model.showMessage('Stream Disconnected - Retrying...')
+                         // Auto-reconnect after 3 seconds
+                         setTimeout(connect, 3000)
+                    }
+                }
+                
+                model.ws.onerror = function(error) {
+                    console.log('WebSocket Error: ' + error)
+                    // onclose will handle the retry
+                }
+                
+            } catch (e) {
+                console.error(e)
+                if (model.streamEnabled) {
+                  setTimeout(connect, 3000)
+                }
+            }
           }
-        }
-        connect()
-      } else {
-        if (model.ws) {
-            model.ws.close()
-            model.ws = null
+          connect()
+        } else {
+          if (model.ws) {
+              model.ws.close()
+              model.ws = null
+          }
         }
       }
     }
@@ -639,9 +658,9 @@ export default {
       snackbarText: '',
       searchDialog: false,
       filesDialog: false,
-      showFiltered: false,
-      streamEnabled: false,
-      wrapLines: false,
+      showFiltered: appStorage.loadPreference('showFiltered', false),
+      streamEnabled: appStorage.loadPreference('streamEnabled', false),
+      wrapLines: appStorage.loadPreference('wrapLines', false),
       ws: null,
       position: {
         value: 0,
@@ -656,11 +675,11 @@ export default {
       notifications: true,
       sound: true,
       widgets: true,
-      useFilters: false,
+      useFilters: appStorage.loadPreference('useFilters', false),
       filters: [],
-      useExFilters: true,
+      useExFilters: appStorage.loadPreference('useExFilters', true),
       exfilters: [],
-      useColors: true,
+      useColors: appStorage.loadPreference('useColors', true),
       dialog: false,
       dialog3: false,
       highlights: [],

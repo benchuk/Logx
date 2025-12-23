@@ -63,13 +63,13 @@ var appStorage = {
     return res
       ? res
       : [
-          {
-            name: 'Default',
-            filters: [{ value: 'Bluetooth' }],
-            excludeFilters: [{ value: 'Exclude1' }],
-            highlights: [{ value: 'Activity' }]
-          }
-        ]
+        {
+          name: 'Default',
+          filters: [{ value: 'Bluetooth' }],
+          excludeFilters: [{ value: 'Exclude1' }],
+          highlights: [{ value: 'Activity' }]
+        }
+      ]
   },
   saveLastUsedPresetName(name) {
     getLocalStorage()['lastUsedPresetName'] = name
@@ -101,6 +101,14 @@ var appStorage = {
   },
   timeParsersSetAndSave(timeParser) {
     localStorage.setItem('timeParsers', JSON.stringify(timeParser))
+  },
+  savePreference(key, value) {
+    getLocalStorage()[key] = value
+    saveWindow()
+  },
+  loadPreference(key, defaultValue) {
+    let res = getLocalStorage()[key]
+    return res !== undefined ? res : defaultValue
   }
 }
 
