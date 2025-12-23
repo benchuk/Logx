@@ -22,6 +22,10 @@ export default {
     useColors: {
       type: Boolean,
       default: true
+    },
+    scrollPosition: {
+      type: Object,
+      default: null
     }
   },
   data() {
@@ -50,6 +54,12 @@ export default {
       handler() {
         this.draw()
       }
+    },
+    scrollPosition: {
+      handler() {
+        this.draw()
+      },
+      deep: true
     }
   },
   mounted() {
@@ -140,6 +150,22 @@ export default {
           }
         }
       })
+    }
+    
+    // Draw Scroll Marker
+    if (this.scrollPosition) {
+      const scroll = this.scrollPosition
+      const x1 = (scroll.startRowId / this.lines.length) * width
+      const x2 = (scroll.endRowId / this.lines.length) * width
+      const w = Math.max(2, x2 - x1)
+      
+      this.ctx.fillStyle = 'rgba(0, 255, 255, 0.3)' // Cyan transparent
+      this.ctx.shadowBlur = 0
+      this.ctx.fillRect(x1, 0, w, height)
+      
+      this.ctx.fillStyle = 'rgba(0, 255, 255, 0.8)' // Cyan solid border
+      this.ctx.fillRect(x1, 0, 2, height) // Left edge
+      this.ctx.fillRect(x1 + w, 0, 2, height) // Right edge
     }
   },
   onMouseMove(e) {

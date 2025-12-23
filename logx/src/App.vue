@@ -138,10 +138,10 @@
                     <v-flex xs12 class="fill-height d-flex flex-column">
                         <!-- Global Timeline -->
                         <div class="timeline-glow ma-2 pt-1 pb-1">
-                            <log-timeline v-if="logLines && logLines.length > 0" :lines="logLines" :highlights="highlights" :useColors="useColors" />
+                            <log-timeline v-if="logLines && logLines.length > 0" :lines="logLines" :highlights="highlights" :useColors="useColors" :scroll-position="scrollPosition" />
                         </div>
                         
-                        <fast-text-view v-if="logLines && logLines.length > 0" :lines="logLines" :position="position" :highlights="highlights" :ident="'main-logger'" :filters="filters" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered" :wrap="wrapLines" class="flex-grow-1"></fast-text-view>
+                        <fast-text-view v-if="logLines && logLines.length > 0" :lines="logLines" :position="position" :highlights="highlights" :ident="'main-logger'" :filters="filters" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered" :wrap="wrapLines" @view-scroll="onLogScroll" class="flex-grow-1"></fast-text-view>
                         <v-layout v-else-if="runInTerminal" column justify-center align-center fill-height style="opacity: 0.5; height: 100%">
                             <template v-if="isCommandRunning">
                                 <v-progress-circular indeterminate size="64" width="7" color="primary"></v-progress-circular>
@@ -524,12 +524,13 @@ export default {
     },
     highlights: {
       handler: function(val) {
+        if (this.isLoadingPreset) return
         let model = this
         model.canSave = true
         // Auto-save to current preset after debounce
         clearTimeout(model.autoSaveHighlightsTimer)
         model.autoSaveHighlightsTimer = setTimeout(function() {
-          if (model.selectedPresetName) {
+          if (model.selectedPresetName && !model.isLoadingPreset) {
             console.log('Auto-saving highlights to preset: ' + model.selectedPresetName)
             model.savePreset(model.selectedPresetName, model.filters, model.exfilters, model.highlights)
             model.canSave = false
@@ -540,12 +541,13 @@ export default {
     },
     filters: {
       handler: function(val) {
+        if (this.isLoadingPreset) return
         let model = this
         model.canSave = true
         // Auto-save to current preset after debounce
         clearTimeout(model.autoSaveFiltersTimer)
         model.autoSaveFiltersTimer = setTimeout(function() {
-          if (model.selectedPresetName) {
+          if (model.selectedPresetName && !model.isLoadingPreset) {
             console.log('Auto-saving filters to preset: ' + model.selectedPresetName)
             model.savePreset(model.selectedPresetName, model.filters, model.exfilters, model.highlights)
             model.canSave = false
@@ -556,12 +558,13 @@ export default {
     },
     exfilters: {
       handler: function(val) {
+        if (this.isLoadingPreset) return
         let model = this
         model.canSave = true
         // Auto-save to current preset after debounce
         clearTimeout(model.autoSaveExfiltersTimer)
         model.autoSaveExfiltersTimer = setTimeout(function() {
-          if (model.selectedPresetName) {
+          if (model.selectedPresetName && !model.isLoadingPreset) {
             console.log('Auto-saving exfilters to preset: ' + model.selectedPresetName)
             model.savePreset(model.selectedPresetName, model.filters, model.exfilters, model.highlights)
             model.canSave = false
@@ -702,6 +705,8 @@ export default {
       runInTerminal: appStorage.loadPreference('runInTerminal', false),
       terminalCommand: appStorage.loadPreference('terminalCommand', ''),
       isCommandRunning: false,
+      isLoadingPreset: false,
+      scrollPosition: null,
       commandStatus: '',
       wrapLines: appStorage.loadPreference('wrapLines', false),
       footerHeight: appStorage.loadPreference('footerHeight', 35),
@@ -1035,24 +1040,57 @@ export default {
     savePreset: function(presetName, filters, excludeFilters, highlights) {
       console.log('savePreset to storage for preset name: ' + presetName)
       appStorage.savePreset(presetName, filters, excludeFilters, highlights)
+      this.filterPresets = appStorage.loadPresets().map(f => f.name)
       this.showMessage('saved')
     },
     loadPreset: function(presetName) {
       console.log('load preset: ' + presetName)
       let model = this
-      model.highlights = []
-      model.filters = []
-      model.exfilters = []
       
-      let highlights = model.highlightsForPresetName(presetName)
+      let presets = appStorage.loadPresets();
+      let preset = presets.find(p => p.name === presetName)
+      
+      if (!preset) {
+        console.log("Preset not found - treating as new/save-as (keeping current state)")
+        return
+      }
+      
+      // Validate structure to catch corrupted presets
+      let isCorrupted = false
+      if (preset.highlights && !Array.isArray(preset.highlights)) isCorrupted = true
+      if (preset.filters && !Array.isArray(preset.filters)) isCorrupted = true
+      if (preset.excludeFilters && !Array.isArray(preset.excludeFilters)) isCorrupted = true
+      
+      if (isCorrupted) {
+          console.error("Corrupted preset detected: " + presetName + ". Deleting it.")
+          appStorage.deletePresetWithName(presetName)
+          // Refresh dropdown list
+          this.filterPresets = appStorage.loadPresets().map(f => f.name)
+          this.showMessage('Deleted corrupted preset: ' + presetName)
+          return
+      }
+      
+      model.isLoadingPreset = true
+      
+      // Use direct assignment with fallbacks
+      model.highlights = []
+      let highlights = preset.highlights || []
+      // ... continue normal loading ...
       if (highlights) {
         highlights.forEach(function(h) {
           // Pass the whole object if it exists (includes color)
           model.AddToHighlights(h)
         })
       }
-      model.filters = model.filtersForPresetName(presetName)
-      model.exfilters = model.excludeFiltersForPresetName(presetName)
+      
+      // Use references directly so mutations update the filtered model correctly 
+      // (and watchers trigger saves which persists them)
+      model.filters = preset.filters || []
+      model.exfilters = preset.excludeFilters || []
+      
+      this.$nextTick(() => {
+        model.isLoadingPreset = false
+      })
       
       setTimeout(() => {
         console.log('canSave -> false')
@@ -1082,9 +1120,21 @@ export default {
       return highlights
     },
     onFilterPresetSelected: function(selectedPresetName) {
-      console.log('New Preset Name: ' + selectedPresetName)
-      this.loadPreset(selectedPresetName)
-      appStorage.saveLastUsedPresetName(selectedPresetName)
+      console.log('onFilterPresetSelected input:', selectedPresetName, 'type:', typeof selectedPresetName)
+      
+      let name = selectedPresetName
+      if (typeof selectedPresetName === 'object' && selectedPresetName !== null) {
+          name = selectedPresetName.text || selectedPresetName.value || selectedPresetName.name || ''
+          console.log('Extracted name from object:', name)
+      }
+      
+      this.selectedPresetName = name
+      console.log('New Preset Name: ' + name)
+      this.loadPreset(name)
+      appStorage.saveLastUsedPresetName(name)
+    },
+    onLogScroll: function(e) {
+      this.scrollPosition = e
     },
     removeFile: function(index) {
       console.log('removeFile')

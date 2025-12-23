@@ -647,6 +647,26 @@ export default {
                     });
                 });
             }, 1);
+            
+            // Calculate global timeline range for marker
+            let startRowId = 0;
+            let endRowId = 0;
+            if (lines.length > 0) {
+                let startIdx = parseInt(model.positionInternal);
+                if (startIdx < 0) startIdx = 0;
+                if (startIdx >= lines.length) startIdx = lines.length - 1;
+                
+                let endIdx = startIdx + model.displayrowscount;
+                if (endIdx >= lines.length) endIdx = lines.length - 1;
+                
+                startRowId = lines[startIdx] ? lines[startIdx].rowid : 0;
+                endRowId = lines[endIdx] ? lines[endIdx].rowid : 0;
+            }
+
+            this.$emit('view-scroll', { 
+                startRowId: startRowId,
+                endRowId: endRowId 
+            });
 
         },
         onParentResize: function () {
