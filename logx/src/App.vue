@@ -503,39 +503,51 @@ export default {
       let model = this
       if (val) {
         console.log('Connecting to Log Stream Bridge...')
-        try {
-            model.ws = new WebSocket('ws://localhost:9021')
-            
-            model.ws.onopen = function() {
-                console.log('WebSocket Connected')
-                model.showMessage('Connected to Log Stream')
-            }
-            
-            model.ws.onmessage = function(event) {
-                let lines = event.data.split('\n')
-                lines.forEach(line => {
-                    if (line && line.length > 0)
-                        model.logLines.push(line)
-                })
-            }
-            
-            model.ws.onclose = function() {
-                console.log('WebSocket Disconnected')
-                if (model.streamEnabled) {
-                     model.showMessage('Stream Disconnected')
-                     model.streamEnabled = false
-                }
-            }
-            
-            model.ws.onerror = function(error) {
-                console.log('WebSocket Error: ' + error)
-            }
-            
-        } catch (e) {
-            console.error(e)
-            model.streamEnabled = false
-            model.showMessage('Connection Failed')
+        const connect = () => {
+          if (!model.streamEnabled) return;
+          
+          try {
+              if (model.ws) {
+                model.ws.close()
+              }
+              model.ws = new WebSocket('ws://localhost:9021')
+              
+              model.ws.onopen = function() {
+                  console.log('WebSocket Connected')
+                  model.showMessage('Connected to Log Stream')
+              }
+              
+              model.ws.onmessage = function(event) {
+                  let lines = event.data.split('\n')
+                  lines.forEach(line => {
+                      if (line && line.length > 0)
+                          model.logLines.push(line)
+                  })
+              }
+              
+              model.ws.onclose = function() {
+                  console.log('WebSocket Disconnected')
+                  model.ws = null
+                  if (model.streamEnabled) {
+                       model.showMessage('Stream Disconnected - Retrying...')
+                       // Auto-reconnect after 3 seconds
+                       setTimeout(connect, 3000)
+                  }
+              }
+              
+              model.ws.onerror = function(error) {
+                  console.log('WebSocket Error: ' + error)
+                  // onclose will handle the retry
+              }
+              
+          } catch (e) {
+              console.error(e)
+              if (model.streamEnabled) {
+                setTimeout(connect, 3000)
+              }
+          }
         }
+        connect()
       } else {
         if (model.ws) {
             model.ws.close()

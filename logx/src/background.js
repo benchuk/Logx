@@ -23,56 +23,74 @@ let tcpServer = null;
 let tcpSockets = [];
 
 function startLogBridge() {
-  // Start WebSocket server for browser clients
-  wss = new WebSocket.Server({ port: WS_PORT });
-  console.log(`WebSocket server listening on port ${WS_PORT}`);
+  try {
+    // Start WebSocket server for browser clients
+    wss = new WebSocket.Server({ port: WS_PORT });
+    console.log(`WebSocket server listening on port ${WS_PORT}`);
 
-  wss.on('connection', ws => {
-    console.log('WebSocket client connected');
-    ws.on('close', () => console.log('WebSocket client disconnected'));
-  });
+    wss.on('connection', ws => {
+      console.log('WebSocket client connected');
+      ws.on('close', () => console.log('WebSocket client disconnected'));
+    });
 
-  // Broadcast to all WebSocket clients and IPC to renderer
-  function broadcastLog(data) {
-    // Send to WebSocket clients
-    wss.clients.forEach(client => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(data);
+    wss.on('error', err => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`WebSocket Port ${WS_PORT} is in use. Bridge likely already running.`);
+      } else {
+        console.error('WebSocket Server error:', err);
       }
     });
-    // Send to Electron renderer via IPC
-    if (win && win.webContents) {
-      win.webContents.send('stream-data', data);
+
+    // Broadcast to all WebSocket clients and IPC to renderer
+    function broadcastLog(data) {
+      if (!wss) return;
+      // Send to WebSocket clients
+      wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(data);
+        }
+      });
+      // Send to Electron renderer via IPC
+      if (win && win.webContents) {
+        win.webContents.send('stream-data', data);
+      }
     }
+
+    // Start TCP server to receive logs from run_server.sh
+    tcpServer = net.createServer(socket => {
+      console.log('Log source connected via TCP');
+      tcpSockets.push(socket);
+
+      socket.on('data', data => {
+        broadcastLog(data.toString());
+      });
+
+      socket.on('end', () => {
+        console.log('Log source disconnected');
+        tcpSockets = tcpSockets.filter(s => s !== socket);
+      });
+
+      socket.on('error', err => {
+        console.log('TCP Socket error:', err.message);
+        tcpSockets = tcpSockets.filter(s => s !== socket);
+      });
+    });
+
+    tcpServer.on('error', err => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`TCP Port ${TCP_PORT} is already in use. Bridge likely already running.`);
+      } else {
+        console.error('TCP Server error:', err);
+      }
+    });
+
+    tcpServer.listen(TCP_PORT, '0.0.0.0', () => {
+      console.log(`TCP Bridge server listening on port ${TCP_PORT}`);
+    });
+
+  } catch (e) {
+    console.error('Failed to start log bridge:', e);
   }
-
-  // Start TCP server to receive logs from run_server.sh
-  tcpServer = net.createServer(socket => {
-    console.log('Log source connected via TCP');
-    tcpSockets.push(socket);
-
-    socket.on('data', data => {
-      broadcastLog(data.toString());
-    });
-
-    socket.on('end', () => {
-      console.log('Log source disconnected');
-      tcpSockets = tcpSockets.filter(s => s !== socket);
-    });
-
-    socket.on('error', err => {
-      console.log('TCP Socket error:', err.message);
-      tcpSockets = tcpSockets.filter(s => s !== socket);
-    });
-  });
-
-  tcpServer.listen(TCP_PORT, '0.0.0.0', () => {
-    console.log(`TCP Bridge server listening on port ${TCP_PORT}`);
-  });
-
-  tcpServer.on('error', err => {
-    console.error('TCP Server error:', err);
-  });
 }
 
 // IPC handlers for manual control (optional, for UI toggle)
