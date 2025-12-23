@@ -2,11 +2,11 @@
 <div id="app">
     <v-app id="inspire" dark>
         <!-- ======= TOOLBAR ================================================= -->
-        <v-toolbar color="black" dark fixed app clipped-right>
+        <v-toolbar class="glass-toolbar" dark fixed app clipped-right>
             <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
-            <v-toolbar-title>log(x)</v-toolbar-title>
+            <v-toolbar-title class="neon-text font-weight-bold">log(x)</v-toolbar-title>
             <v-spacer></v-spacer>
-            <v-text-field ref="findall" @click:append="finall" solo-inverted class="mt-2" id="findall" placeholder="New Search Tab" single-line append-icon="search" v-model="searchterm" color="grey" @keyup.enter="finall"></v-text-field>
+            <v-text-field ref="findall" @click:append="finall" solo-inverted class="glass-search" id="findall" placeholder="Search logs..." single-line append-icon="search" v-model="searchterm" color="cyan" @keyup.enter="finall" hide-details></v-text-field>
             <v-spacer></v-spacer>
             <v-toolbar-items class="hidden-sm-and-down">
                 <v-btn color="blue darken-1" flat @click.native="searchDialog = true">Find multiple</v-btn>
@@ -35,97 +35,111 @@
             </v-toolbar-items>
         </v-toolbar>
         <!-- ======= NAV DRAWER ================================================= -->
-        <v-navigation-drawer fixed v-model="drawer" app>
-            <v-layout justify-center align-center>
-                <v-flex>
-                    <v-switch class="mt-3 pa-0 ml-3" :label="`${showFiltered?'Showing All Lines':'Showing Filtered Lines'}`" v-model="showFiltered" ref="sw"></v-switch>
-                    <v-switch class="mt-0 pa-0 ml-3" :label="`${streamEnabled?'Streaming On':'Streaming Off'}`" v-model="streamEnabled"></v-switch>
-                    <v-switch class="mt-0 pa-0 ml-3" label="Wrap Lines" v-model="wrapLines"></v-switch>
-                    <v-switch class="mt-0 pa-0 ml-3" label="Run in Command Line" v-model="runInTerminal"></v-switch>
-                </v-flex>
+        <v-navigation-drawer class="glass-nav" fixed v-model="drawer" app>
+            <v-layout column class="pa-2">
+                <div class="glass-panel ma-2 pa-2">
+                    <v-switch class="mt-0 pa-0 ml-1" :label="`${showFiltered?'Showing All Lines':'Showing Filtered Lines'}`" v-model="showFiltered" ref="sw"></v-switch>
+                    <v-switch class="mt-0 pa-0 ml-1" :label="`${streamEnabled?'Streaming On':'Streaming Off'}`" v-model="streamEnabled"></v-switch>
+                    <v-switch class="mt-0 pa-0 ml-1" label="Wrap Lines" v-model="wrapLines"></v-switch>
+                    <v-switch class="mt-0 pa-0 ml-1" label="Run in Command Line" v-model="runInTerminal"></v-switch>
+                </div>
             </v-layout>
-            <v-layout v-if="runInTerminal" column class="pa-2 grey darken-3">
-                 <v-textarea
-                    v-model="terminalCommand"
-                    box
-                    label="Command"
-                    rows="3"
-                    auto-grow
-                    class="mb-2"
-                    hide-details
-                ></v-textarea>
-                <v-layout row justify-space-between class="mb-2">
-                    <v-btn color="success" block :disabled="isCommandRunning" @click="executeCommand">Start</v-btn>
-                    <v-btn color="error" block :disabled="!isCommandRunning" @click="stopCommand">Stop</v-btn>
-                </v-layout>
-                <div v-if="commandStatus" class="caption white--text text-xs-center mb-2">{{ commandStatus }}</div>
+            <v-layout v-if="runInTerminal" column class="pa-2">
+                <div class="glass-panel ma-2 pa-3">
+                    <div class="caption grey--text text--lighten-1 mb-2 font-weight-bold uppercase">Terminal Console</div>
+                    <v-textarea
+                        v-model="terminalCommand"
+                        solo
+                        flat
+                        background-color="rgba(255,255,255,0.03)"
+                        label="Command"
+                        rows="3"
+                        auto-grow
+                        class="mb-3 glass-input"
+                        hide-details
+                    ></v-textarea>
+                    <v-layout row justify-space-between class="mb-2">
+                        <v-btn class="mr-1 success" block :disabled="isCommandRunning" @click="executeCommand">Start</v-btn>
+                        <v-btn class="ml-1 error" block :disabled="!isCommandRunning" @click="stopCommand">Stop</v-btn>
+                    </v-layout>
+                    <div v-if="commandStatus" class="caption white--text text-xs-center mt-2">{{ commandStatus }}</div>
+                </div>
             </v-layout>
-            <v-expansion-panel v-model="panel" expand>
-                <v-layout row justify-center align-center class="ml-3">
-                    <v-combobox @input="onFilterPresetSelected" v-model="selectedPresetName" :items="filterPresets" label="Select a filter present or create new"></v-combobox>
-                    <v-btn v-on:click="savePresetClicked" flat icon color="white" :disabled="canSave == false">
-                        <v-icon>save</v-icon>
-                    </v-btn>
-                </v-layout>
-                <!-- ======= FILTERS ================================================= -->
-                <v-expansion-panel-content :value="panel[0]">
-                    <div slot="header">Filters {{filters?'('+filters.length+')':""}}</div>
-                    <v-layout row justify-center align-center>
-                        <v-switch class="mt-3 mb-0 pa-0 ml-3" :label="`${useFilters?'On':'Off'}`" v-model="useFilters"></v-switch>
-                        <v-btn class="mt-0 mb-0 mr-0" v-on:click="addFilter" small dark>Add Filter<v-icon dark class="ml-1">playlist_add</v-icon>
-                        </v-btn>
-                        <v-btn class="mt-0 ml-0" v-on:click="removeFilter(-1)" flat icon color='error'>
-                            <v-icon dark>delete_outline</v-icon>
+            <v-expansion-panel class="transparent" v-model="panel" expand>
+                <div class="glass-panel ma-2 mt-0">
+                    <v-layout row justify-center align-center class="ml-3 mt-1 pr-3">
+                        <v-combobox class="glass-input glass-presets" @input="onFilterPresetSelected" v-model="selectedPresetName" :items="filterPresets" label="Filter Preset" solo outline hide-details></v-combobox>
+                        <v-btn v-on:click="savePresetClicked" flat icon color="white" :disabled="canSave == false" class="ma-0">
+                            <v-icon small>save</v-icon>
                         </v-btn>
                     </v-layout>
+                </div>
 
-                    <v-layout class="ml-3 mr-3" row v-for="(item, index) in filters" :key="index">
-                        <v-text-field class="mt-0 pt-0" ref="filterId" append-icon="color_lens" @click:append="colorFromFilter(index)" append-outer-icon="delete_outline" @click:append-outer="removeFilter(index)" v-model.lazy="item.value"></v-text-field>
-                    </v-layout>
-                </v-expansion-panel-content>
-                <!-- ======= COLORS ================================================= -->
-                <v-expansion-panel-content :value="panel[1]">
-                    <!-- -------------------- -->
-                    <div slot="header">Colors {{highlights?'('+highlights.length+')':""}}</div>
-                    <v-layout row justify-center align-center>
-                        <v-switch class="mt-0 pa-0 ml-3" :label="`${useColors?'On':'Off'}`" v-model="useColors"></v-switch>
-                        <v-btn :disabled="!canAddColor" class="mt-0 mr-0" v-on:click="addColor" small dark>Add Color<v-icon dark class="ml-1">playlist_add</v-icon>
-                        </v-btn>
-                        <v-btn class="mt-0 ml-0" v-on:click="removeColor(-1)" flat icon color='error'>
-                            <v-icon dark>delete_outline</v-icon>
-                        </v-btn>
-                    </v-layout>
-                    <v-layout class="ml-3 mr-3" row v-for="(item, index) in highlights" :key="index" align-center>
-                        <v-text-field autofocus class="mt-0 pt-0 custom-highlight-input" append-icon="call_made" @click:append="filterFromColor(index)" :background-color="item.color" :style="{ '--text-color': getContrastColor(item.color) }" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model="item.value"></v-text-field>
-                        <input type="color" v-model="item.color" @input="updateHighlightColor(index)" style="width: 30px; height: 30px; border: none; background: none; cursor: pointer; margin-bottom: 20px;">
-                    </v-layout>
+                <div class="glass-panel ma-2">
+                    <v-expansion-panel-content :value="panel[0]">
+                        <div slot="header" class="text-uppercase caption font-weight-bold">Filters {{filters?'('+filters.length+')':""}}</div>
+                        <v-layout column class="pa-2">
+                            <v-layout row justify-center align-center class="mb-2">
+                                <v-switch class="mt-0 mb-0 pa-0 ml-1" :label="`${useFilters?'On':'Off'}`" v-model="useFilters" hide-details></v-switch>
+                                <v-spacer></v-spacer>
+                                <v-btn class="success ma-0" v-on:click="addFilter" small dark>Add Filter<v-icon dark small class="ml-1">playlist_add</v-icon></v-btn>
+                                <v-btn v-on:click="removeFilter(-1)" flat icon color='error' class="ma-0"><v-icon small>delete_outline</v-icon></v-btn>
+                            </v-layout>
+                            <v-layout class="px-1" row v-for="(item, index) in filters" :key="index">
+                                <v-text-field class="mt-0 pt-0 glass-input" append-icon="color_lens" @click:append="colorFromFilter(index)" append-outer-icon="delete_outline" @click:append-outer="removeFilter(index)" v-model.lazy="item.value" hide-details solo flat></v-text-field>
+                            </v-layout>
+                        </v-layout>
+                    </v-expansion-panel-content>
+                </div>
 
-                </v-expansion-panel-content>
-                <!-- ======= EX-FILTERS ================================================= -->
-                <v-expansion-panel-content :value="panel[2]">
-                    <div slot="header">Exclude Filters {{exfilters?'('+exfilters.length+')':""}}</div>
-                    <v-layout row justify-center align-center>
-                        <v-switch class="mt-0 pa-0 ml-3" :label="`${useExFilters?'On':'Off'}`" v-model="useExFilters"></v-switch>
-                        <v-btn class="mt-0 mr-0" v-on:click="addExFilter" small dark>Add Ex-Filter<v-icon dark class="ml-1">playlist_add</v-icon>
-                        </v-btn>
-                        <v-btn class="mt-0 ml-0" v-on:click="removeExFilter(-1)" flat icon color='error'>
-                            <v-icon dark>delete_outline</v-icon>
-                        </v-btn>
-                    </v-layout>
-                    <v-layout class="ml-3 mr-3" row v-for="(item, index) in exfilters" :key="index">
-                        <v-text-field class="mt-0 pt-0" append-outer-icon="delete_outline" @click:append-outer="removeExFilter(index)" v-model.lazy="item.value"></v-text-field>
-                    </v-layout>
-                </v-expansion-panel-content>
+                <div class="glass-panel ma-2">
+                    <v-expansion-panel-content :value="panel[1]">
+                        <div slot="header" class="text-uppercase caption font-weight-bold">Colors {{highlights?'('+highlights.length+')':""}}</div>
+                        <v-layout column class="pa-2">
+                            <v-layout row justify-center align-center class="mb-2">
+                                <v-switch class="mt-0 pa-0 ml-1" :label="`${useColors?'On':'Off'}`" v-model="useColors" hide-details></v-switch>
+                                <v-spacer></v-spacer>
+                                <v-btn :disabled="!canAddColor" class="success ma-0" v-on:click="addColor" small dark>Add Color<v-icon dark small class="ml-1">playlist_add</v-icon></v-btn>
+                                <v-btn v-on:click="removeColor(-1)" flat icon color='error' class="ma-0"><v-icon small>delete_outline</v-icon></v-btn>
+                            </v-layout>
+                            <v-layout class="px-1" row v-for="(item, index) in highlights" :key="index" align-center>
+                                <v-text-field autofocus class="mt-0 pt-0 custom-highlight-input glass-input highlight-no-bg" append-icon="call_made" @click:append="filterFromColor(index)" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model="item.value" hide-details solo flat></v-text-field>
+                                <input type="color" v-model="item.color" @input="updateHighlightColor(index)" style="width: 20px; height: 20px; border: none; background: none; cursor: pointer; margin-left: 8px; border-radius: 50%;">
+                            </v-layout>
+                        </v-layout>
+                    </v-expansion-panel-content>
+                </div>
 
+                <div class="glass-panel ma-2">
+                    <v-expansion-panel-content :value="panel[2]">
+                        <div slot="header" class="text-uppercase caption font-weight-bold">Exclude {{exfilters?'('+exfilters.length+')':""}}</div>
+                        <v-layout column class="pa-2">
+                             <v-layout row justify-center align-center class="mb-2">
+                                <v-switch class="mt-0 pa-0 ml-1" :label="`${useExFilters?'On':'Off'}`" v-model="useExFilters" hide-details></v-switch>
+                                <v-spacer></v-spacer>
+                                <v-btn class="success ma-0" v-on:click="addExFilter" small dark>Add Ex<v-icon dark small class="ml-1">playlist_add</v-icon></v-btn>
+                                <v-btn v-on:click="removeExFilter(-1)" flat icon color='error' class="ma-0"><v-icon small>delete_outline</v-icon></v-btn>
+                            </v-layout>
+                            <v-layout class="px-1" row v-for="(item, index) in exfilters" :key="index">
+                                <v-text-field class="mt-0 pt-0 glass-input" append-outer-icon="delete_outline" @click:append-outer="removeExFilter(index)" v-model.lazy="item.value" hide-details solo flat></v-text-field>
+                            </v-layout>
+                        </v-layout>
+                    </v-expansion-panel-content>
+                </div>
             </v-expansion-panel>
             <!-- ======= DRAWER ================================================= -->
         </v-navigation-drawer>
         <!-- ======= Logs Viewer ================================================= -->
-        <v-content>
-            <v-container fluid fill-height pa-2>
-                <v-layout justify-left align-left>
-                    <v-flex xs12>
-                        <fast-text-view v-if="logLines && logLines.length > 0" :lines="logLines" :position="position" :highlights="highlights" :ident="'main-logger'" :filters="filters" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered" :wrap="wrapLines"></fast-text-view>
+        <v-content class="fill-height glass-app-bg" :class="{ 'glass-content-with-footer': searchs && searchs.length > 0 }">
+            <v-container fluid fill-height pa-0 class="transparent">
+                <v-layout column fill-height>
+                    <v-flex xs12 class="fill-height d-flex flex-column">
+                        <!-- Global Timeline -->
+                        <div class="timeline-glow ma-2 pt-1 pb-1">
+                            <log-timeline v-if="logLines && logLines.length > 0" :lines="logLines" :highlights="highlights" :useColors="useColors" />
+                        </div>
+                        
+                        <fast-text-view v-if="logLines && logLines.length > 0" :lines="logLines" :position="position" :highlights="highlights" :ident="'main-logger'" :filters="filters" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered" :wrap="wrapLines" class="flex-grow-1"></fast-text-view>
                         <v-layout v-else-if="runInTerminal" column justify-center align-center fill-height style="opacity: 0.5; height: 100%">
                             <template v-if="isCommandRunning">
                                 <v-progress-circular indeterminate size="64" width="7" color="primary"></v-progress-circular>
@@ -152,44 +166,38 @@
         <!-- ======= Right Nav DRAWER ================================================= -->
         <v-navigation-drawer right temporary v-model="right" fixed></v-navigation-drawer>
         <!-- ======= Footer ================================================= -->
-        <v-footer inset app fixed id="theFooter" :height="footerHeight">
-            <v-container fluid fill-height pa-0>
-                <v-layout justify-left align-left>
-                    <v-flex xs12>
-                        <div id="resizer"></div>
-                        <!-- ======= SEARCHES ================================================= -->
-                        <v-tabs show-arrows dark slider-color="yellow" v-model="active">
-                            <!-- <v-tabs-slider color="yellow"></v-tabs-slider> -->
-                            <v-tooltip top debounce=1000 v-for="(s,index) in searchs" ripple v-bind:key="index">
-                                <template v-slot:activator="{ on } ">
-                                    <v-tab v-on="on">
-                                        <v-btn class="ml-0 pl-0" fab flat small v-on:click="removeSearch(s)">
-                                            <v-icon dark color="grey">close</v-icon>
-                                        </v-btn>{{ getFindTabText(s,true)}}
-                                    </v-tab>
-                                </template>
-                                <span>{{ getFindTabText(s,false)}}</span>
-                            </v-tooltip>
-                            <v-btn v-if="searchs.length>1" @click="clearSearches" flat icon color="error">
-                                <v-icon small>delete_outline</v-icon>
-                            </v-btn>
-                            <v-tabs-items>
-                                <v-tab-item v-for="(s,index) in searchs" v-bind:key="index">
-                                    <v-card flat v-if="s[0].type==='find'">
-                                        <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :highlights="highlights" :useExFilters="false" :useColors="useColors" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'" :wrap="wrapLines"></fast-text-view>
-                                    </v-card>
-                                    <v-card v-else-if="s[0].type==='map'">
-                                        <mapFromText :lines="logLines" :filter="s[0].filter"></mapFromText>
-                                    </v-card>
-                                    <v-card v-else-if="s[0].type==='graph' || s[0].type==='timegraph'">
-                                        <plotFromText :lines="logLines" :filter="s[0].filter" :filterList='filters'></plotFromText>
-                                    </v-card>
-                                </v-tab-item>
-                            </v-tabs-items>
-                        </v-tabs>
-                    </v-flex>
-                </v-layout>
-            </v-container>
+        <v-footer v-if="searchs && searchs.length > 0" inset app fixed id="theFooter" :height="footerHeight" class="glass-footer">
+            <div id="resizer"></div>
+            <!-- ======= SEARCHES ================================================= -->
+            <v-tabs show-arrows dark slider-color="yellow" v-model="active" class="glass-tabs-left">
+                <!-- <v-tabs-slider color="yellow"></v-tabs-slider> -->
+                <v-tooltip top debounce=1000 v-for="(s,index) in searchs" ripple v-bind:key="index">
+                    <template v-slot:activator="{ on } ">
+                        <v-tab v-on="on">
+                            <v-btn class="ml-0 pl-0" fab flat small v-on:click="removeSearch(s)">
+                                <v-icon dark color="grey">close</v-icon>
+                            </v-btn>{{ getFindTabText(s,true)}}
+                        </v-tab>
+                    </template>
+                    <span>{{ getFindTabText(s,false)}}</span>
+                </v-tooltip>
+                <v-btn v-if="searchs.length>1" @click="clearSearches" flat icon color="error">
+                    <v-icon small>delete_outline</v-icon>
+                </v-btn>
+                <v-tabs-items>
+                    <v-tab-item v-for="(s,index) in searchs" v-bind:key="index">
+                        <v-card flat v-if="s[0].type==='find'">
+                            <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :highlights="highlights" :useExFilters="false" :useColors="useColors" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'" :wrap="wrapLines"></fast-text-view>
+                        </v-card>
+                        <v-card v-else-if="s[0].type==='map'">
+                            <mapFromText :lines="logLines" :filter="s[0].filter"></mapFromText>
+                        </v-card>
+                        <v-card v-else-if="s[0].type==='graph' || s[0].type==='timegraph'">
+                            <plotFromText :lines="logLines" :filter="s[0].filter" :filterList='filters'></plotFromText>
+                        </v-card>
+                    </v-tab-item>
+                </v-tabs-items>
+            </v-tabs>
         </v-footer>
 
         <!-- <v-dialog v-model="dialog3" scrollable max-width="80%" max-height="80%">
@@ -209,8 +217,8 @@
       </v-dialog>-->
 
         <v-dialog v-model="dialog" fullscreen hide-overlay transition="dialog-bottom-transition" scrollable>
-            <v-card tile>
-                <v-toolbar card dark color="primary">
+            <v-card class="glass-panel" tile>
+                <v-toolbar card dark class="glass-toolbar">
                     <v-btn icon dark @click.native="dialog = false">
                         <v-icon>close</v-icon>
                     </v-btn>
@@ -288,8 +296,8 @@
         </v-dialog>
         <!-- ======= FIND MULTI DIALOG ================================================= -->
         <v-dialog v-model="searchDialog" max-width="500px">
-            <v-card>
-                <v-card-title class="pb-0">
+            <v-card class="glass-panel">
+                <v-card-title class="pb-0 neon-text">
                     <span class="headline">Find multiple</span>
                 </v-card-title>
                 <v-card-text class="pa-0">
@@ -345,6 +353,8 @@ import appStorage from './components/appStorage'
 import mapFromText from './components/mapFromText'
 import plotFromText from './components/plotFromText'
 import jsTextFilterDialog from './components/jsTextFilterDialog'
+import LogTimeline from './components/LogTimeline'
+import './assets/glass-theme.css'
 import JQuery from 'jquery'
 let $ = JQuery
 
@@ -481,7 +491,8 @@ export default {
     FastTextView,
     mapFromText,
     plotFromText,
-    jsTextFilterDialog
+    jsTextFilterDialog,
+    LogTimeline
   },
   computed: {
     canAddColor() {
@@ -710,7 +721,7 @@ export default {
       startPoint: -1,
       theView: undefined,
       drawer: true,
-      panel: [true, true, false, false],
+      panel: [true, true, true, true],
       searchReasultsContent: [],
       searchterm: '',
       searchs: [],

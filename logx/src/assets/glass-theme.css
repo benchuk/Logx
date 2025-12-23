@@ -1,0 +1,400 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --bg-dark: #0d0e12;
+    --glass-bg: rgba(18, 19, 26, 0.85);
+    --glass-accent: rgba(255, 255, 255, 0.03);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+    --glass-blur: blur(20px);
+    --neon-blue: #00e5ff;
+    --neon-green: #00ff88;
+    --neon-purple: #9d00ff;
+    --neon-red: #ff3d00;
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --glass-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.8);
+    --glass-shadow-glow: 0 0 20px rgba(0, 229, 255, 0.1);
+}
+
+/* Background Depth / Mesh Gradient */
+.glass-app-bg {
+    background: radial-gradient(circle at 50% -20%, rgba(0, 229, 255, 0.05), transparent 60%),
+        radial-gradient(circle at 0% 100%, rgba(157, 0, 255, 0.05), transparent 40%),
+        var(--bg-dark) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-app-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.02;
+    pointer-events: none;
+}
+
+.bg-dark {
+    background-color: var(--bg-dark) !important;
+}
+
+.flex-grow-1 {
+    flex-grow: 1 !important;
+}
+
+.d-flex {
+    display: flex !important;
+}
+
+.flex-column {
+    flex-direction: column !important;
+}
+
+body {
+    background-color: var(--bg-dark) !important;
+    font-family: 'Inter', sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+}
+
+#app,
+.v-application,
+.v-content,
+.v-content__wrap {
+    background: var(--bg-dark) !important;
+}
+
+#app {
+    background-color: var(--bg-dark) !important;
+}
+
+/* Glassmorphism Containers */
+.glass-panel {
+    background: var(--glass-bg) !important;
+    backdrop-filter: var(--glass-blur) !important;
+    -webkit-backdrop-filter: var(--glass-blur) !important;
+    border: var(--glass-border) !important;
+    box-shadow: var(--glass-shadow);
+    border-radius: 12px !important;
+    width: calc(100% - 16px) !important;
+    margin: 8px !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.glass-panel:hover {
+    box-shadow: 0 15px 45px -5px rgba(0, 0, 0, 0.9), var(--glass-shadow-glow);
+}
+
+.glass-toolbar {
+    background: rgba(13, 14, 18, 0.85) !important;
+    backdrop-filter: var(--glass-blur) !important;
+    border-bottom: var(--glass-border) !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+.glass-nav {
+    background: rgba(13, 14, 18, 0.9) !important;
+    backdrop-filter: var(--glass-blur) !important;
+    border-right: var(--glass-border) !important;
+}
+
+/* Toolbar Search Bar Refinement */
+.glass-search.v-text-field--solo-inverted .v-input__control__inner {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 8px !important;
+    max-width: 600px;
+    margin: 0 auto;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.glass-search.v-text-field--solo-inverted:hover .v-input__control__inner {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.glass-search.v-text-field--solo-inverted.v-input--is-focused .v-input__control__inner {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: var(--neon-blue) !important;
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.2) !important;
+}
+
+.glass-toolbar .v-input__append-inner .v-icon {
+    color: var(--neon-blue) !important;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+.glass-search.v-input--is-focused .v-input__append-inner .v-icon {
+    opacity: 1;
+}
+
+/* Glass Footer Search Tabs */
+.glass-footer {
+    background: rgba(18, 19, 26, 0.95) !important;
+    backdrop-filter: var(--glass-blur) !important;
+    border-top: var(--glass-border) !important;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+.glass-footer .v-tabs {
+    background: transparent !important;
+}
+
+.glass-footer .v-tabs__bar {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.glass-tabs-left {
+    margin-left: 0 !important;
+    margin-right: auto !important;
+    text-align: left !important;
+    width: 100% !important;
+    display: block !important;
+}
+
+.glass-tabs-left .v-tabs__bar {
+    justify-content: flex-start !important;
+    text-align: left !important;
+    background: transparent !important;
+}
+
+.glass-tabs-left .v-tabs__container {
+    justify-content: flex-start !important;
+}
+
+.glass-tabs-left .v-tabs__wrapper {
+    overflow: visible !important;
+    justify-content: flex-start !important;
+}
+
+.glass-tabs-left .v-tab {
+    margin-left: 0 !important;
+}
+
+/* Fix for auto-scroll arrow hiding behind footer */
+.v-content__wrap {
+    padding-bottom: 0 !important;
+    /* Vuetify default might be overridden */
+}
+
+.glass-content-with-footer {
+    padding-bottom: 35px !important;
+    /* Base offset for footer */
+}
+
+#resizer {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: none !important;
+    height: 4px !important;
+    margin: 6px 30% !important;
+    border-radius: 10px !important;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    cursor: row-resize;
+    position: relative;
+    z-index: 100;
+}
+
+#resizer:hover {
+    background: var(--neon-blue) !important;
+    box-shadow: 0 0 10px var(--neon-blue);
+}
+
+/* Presets Dropdown Polish */
+.glass-presets.v-text-field--outline .v-input__slot {
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.glass-presets.v-text-field--outline.v-input--is-focused .v-input__slot {
+    border-color: var(--neon-blue) !important;
+}
+
+/* Highlights Sidebar Refinement */
+.highlight-no-bg .v-input__control__inner {
+    background: transparent !important;
+    border: none !important;
+}
+
+.highlight-no-bg input {
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+}
+
+.timeline-glow {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(0, 229, 255, 0.15) !important;
+    border-radius: 12px;
+    box-shadow: 0 0 30px rgba(0, 229, 255, 0.05);
+}
+
+/* Vuetify Element Overrides */
+.v-navigation-drawer {
+    background: transparent !important;
+}
+
+.v-expansion-panel {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.v-expansion-panel__header {
+    color: var(--text-secondary) !important;
+    font-weight: 600 !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.75rem;
+}
+
+.v-expansion-panel__container {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Premium Buttons */
+.v-btn {
+    border-radius: 10px !important;
+    letter-spacing: 1px;
+    font-weight: 600;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.v-btn.success {
+    background: linear-gradient(135deg, #00c853, #00e676) !important;
+    box-shadow: 0 4px 15px rgba(0, 200, 83, 0.3) !important;
+}
+
+.v-btn.success:hover {
+    box-shadow: 0 0 25px rgba(0, 200, 83, 0.5) !important;
+    transform: translateY(-1px);
+}
+
+.v-btn.error {
+    background: linear-gradient(135deg, #d50000, #ff1744) !important;
+    box-shadow: 0 4px 15px rgba(213, 0, 0, 0.3) !important;
+}
+
+.v-btn--disabled {
+    opacity: 0.3 !important;
+    filter: grayscale(1);
+}
+
+/* Switches with Glow */
+.v-input--switch .v-input--selection-controls__ripple--active {
+    filter: drop-shadow(0 0 8px var(--neon-blue));
+}
+
+.v-input--switch.v-input--is-label-active .v-input--selection-controls__ripple {
+    color: var(--neon-blue) !important;
+}
+
+.v-input--switch .v-input--selection-controls__thumb {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+/* Premium Glass Inputs - No More Grey Rectangles */
+.glass-input.v-text-field--solo .v-input__control__inner,
+.glass-input.v-text-field--solo-inverted .v-input__control__inner,
+.glass-input.v-text-field--outline .v-input__slot {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 10px !important;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.02) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.glass-input.v-input--is-focused .v-input__control__inner,
+.glass-input.v-input--is-focused .v-input__slot {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: var(--neon-blue) !important;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+.glass-input:hover .v-input__control__inner,
+.glass-input:hover .v-input__slot {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.custom-highlight-input input,
+.glass-input input {
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.5px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.glass-panel {
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* Sidebar Specifics */
+.v-navigation-drawer .v-list {
+    background: transparent !important;
+}
+
+.v-navigation-drawer .v-layout {
+    align-items: flex-start !important;
+}
+
+.v-navigation-drawer .glass-panel {
+    width: calc(100% - 16px) !important;
+    margin: 8px !important;
+    display: flex;
+    flex-direction: column;
+}
+
+.v-divider {
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Monospace for Logs */
+.fast-text-view,
+.logs-view,
+code,
+pre,
+.line-content {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.85rem !important;
+}
+
+/* Layout Polishing */
+.ma-3,
+.pa-3 {
+    border-radius: 12px;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
