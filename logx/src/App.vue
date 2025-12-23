@@ -78,8 +78,9 @@
                             <v-icon dark>delete_outline</v-icon>
                         </v-btn>
                     </v-layout>
-                    <v-layout class="ml-3 mr-3" row v-for="(item, index) in highlights" :key="index">
-                        <v-text-field autofocus class="mt-0 pt-0" append-icon="call_made" @click:append="filterFromColor(index)" :background-color="stylesCache[index+1]" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model="item.value"></v-text-field>
+                    <v-layout class="ml-3 mr-3" row v-for="(item, index) in highlights" :key="index" align-center>
+                        <v-text-field autofocus class="mt-0 pt-0" append-icon="call_made" @click:append="filterFromColor(index)" append-outer-icon="delete_outline" @click:append-outer="removeColor(index)" v-model="item.value"></v-text-field>
+                        <input type="color" v-model="item.color" @input="updateHighlightColor(index)" style="width: 30px; height: 30px; border: none; background: none; cursor: pointer; margin-bottom: 20px;">
                     </v-layout>
 
                 </v-expansion-panel-content>
@@ -356,15 +357,22 @@ var filesPaths = appStorage.loadLastFileList()
 loadFilesOnServer(filesPaths)
 
 function random_rgba() {
-  return (
-    'rgb(' +
-    Math.floor(Math.random() * 256) +
-    ',' +
-    Math.floor(Math.random() * 256) +
-    ',' +
-    Math.floor(Math.random() * 256) +
-    ')'
-  )
+  const letters = '0123456789ABCDEF'
+  let color = '#'
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)]
+  }
+  return color
+}
+
+function rgbToHex(rgb) {
+  if (!rgb || !rgb.startsWith('rgb')) return rgb
+  const parts = rgb.match(/\d+/g)
+  if (!parts) return rgb
+  const r = parseInt(parts[0])
+  const g = parseInt(parts[1])
+  const b = parseInt(parts[2])
+  return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)
 }
 let calls = 1
 let arr = [10, 20, 50, 100, 155]
@@ -446,6 +454,35 @@ function jqueryInit() {
     $('body,html').mousemove(mousemove)
   }
   $('#resizer').mousedown(mousedown)
+}
+
+function getContrastColor(hexcolor) {
+  if (!hexcolor) return 'white'
+  // If rgba string, parse it
+  if (hexcolor.startsWith('rgb')) {
+    const parts = hexcolor.match(/\d+/g)
+    if (parts) {
+      const r = parseInt(parts[0])
+      const g = parseInt(parts[1])
+      const b = parseInt(parts[2])
+      const yiq = (r * 299 + g * 587 + b * 114) / 1000
+      return yiq >= 128 ? 'black' : 'white'
+    }
+  }
+  // If hex string
+  if (hexcolor.slice(0, 1) === '#') {
+    hexcolor = hexcolor.slice(1)
+  }
+  if (hexcolor.length === 3) {
+    hexcolor = hexcolor.split('').map(function (hex) {
+      return hex + hex
+    }).join('')
+  }
+  var r = parseInt(hexcolor.substr(0, 2), 16)
+  var g = parseInt(hexcolor.substr(2, 2), 16)
+  var b = parseInt(hexcolor.substr(4, 2), 16)
+  var yiq = (r * 299 + g * 587 + b * 114) / 1000
+  return yiq >= 128 ? 'black' : 'white'
 }
 
 import { EventBus } from './components/event-bus'
@@ -827,6 +864,19 @@ export default {
       }
       model.filters = model.filtersForPresetName(presetName)
       model.exfilters = model.excludeFiltersForPresetName(presetName)
+      
+      // Re-apply styles for highlights
+      model.highlights.forEach((h, index) => {
+        if (!h.color && model.stylesCache[index + 1]) {
+           h.color = rgbToHex(model.stylesCache[index+1])
+        } else if (!h.color) {
+           h.color = random_rgba()
+        } else {
+           h.color = rgbToHex(h.color)
+        }
+        model.addStyle(index + 1, h.color, true)
+      })
+
       setTimeout(() => {
         console.log('canSave -> false')
         model.canSave = false
@@ -972,11 +1022,20 @@ export default {
       if (!this.canAddColor) {
         this.removeColor(model.highlights.length - 1)
       }
-      model.addStyle(model.highlights.length + 1)
+      model.addStyle(model.highlights.length + 1, text.color)
       model.highlights.push({
-        value: '' + text
+        value: '' + text,
+        color: text.color || model.stylesCache[model.highlights.length + 1] || random_rgba(model.highlights.length + 1)
       })
       this.panel[1] = true
+    },
+    updateHighlightColor: function(index) {
+      const id = index + 1
+      const color = this.highlights[index].color
+      this.stylesCache[id] = color
+      this.addStyle(id, color, true)
+      // Force refresh of the view
+      EventBus.$emit('jumpto', this.position)
     },
     getColor: function(index) {
       return this.stylesCache[index]
@@ -1087,16 +1146,24 @@ export default {
       e.cancelBubble = true
       e.returnValue = false
     },
-    addStyle: function(id) {
-      if (this.stylesCache[id]) {
+    addStyle: function(id, color, force) {
+      if (this.stylesCache[id] && !force && !color) {
         return
       }
-      let backColor = random_rgba(id)
+      let backColor = color || this.stylesCache[id] || random_rgba(id)
       this.stylesCache[id] = backColor
-      //let color = random_rgba();
-      var style = document.createElement('style')
-      style.type = 'text/css'
-      style.innerHTML = `.highlight${id} {
+      let textColor = getContrastColor(backColor)
+      
+      const styleId = `highlight-style-${id}`
+      let styleElement = document.getElementById(styleId)
+      if (!styleElement) {
+        styleElement = document.createElement('style')
+        styleElement.id = styleId
+        styleElement.type = 'text/css'
+        document.getElementsByTagName('head')[0].appendChild(styleElement)
+      }
+      
+      styleElement.innerHTML = `.highlight${id} {
           background-color: ${backColor};
           -moz-border-radius: 3px;
           /* FF1+ */
@@ -1110,9 +1177,8 @@ export default {
           /* Saf3.0+, Chrome */
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
           /* Opera 10.5+, IE 9.0 */
-          color: white;
+          color: ${textColor} !important;
         }`
-      document.getElementsByTagName('head')[0].appendChild(style)
     }
   },
   props: {
