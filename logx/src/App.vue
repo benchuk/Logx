@@ -105,7 +105,16 @@
             <v-container fluid fill-height pa-2>
                 <v-layout justify-left align-left>
                     <v-flex xs12>
-                        <fast-text-view  :lines="logLines" :position="position" :highlights="highlights" :ident="'main-logger'" :filters="filters" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered"></fast-text-view>
+                        <fast-text-view v-if="logLines && logLines.length > 0" :lines="logLines" :position="position" :highlights="highlights" :ident="'main-logger'" :filters="filters" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered"></fast-text-view>
+                        <v-layout v-else-if="!streamEnabled" column justify-center align-center fill-height style="opacity: 0.5; height: 100%">
+                            <v-icon size="120">cloud_off</v-icon>
+                            <div class="headline">Streaming is Off</div>
+                            <div class="subheading">Drop log files here or press Cmd+V to paste from clipboard</div>
+                        </v-layout>
+                        <v-layout v-else column justify-center align-center fill-height style="opacity: 0.5; height: 100%">
+                            <v-progress-circular indeterminate size="64" width="7" color="primary"></v-progress-circular>
+                            <div class="headline mt-3">Waiting for Stream...</div>
+                        </v-layout>
                     </v-flex>
                 </v-layout>
             </v-container>
@@ -378,19 +387,26 @@ function jqueryInit() {
   var orgHeight = 0
 
   function onDrop(e) {
-    filesPaths = []
+    let droppedFilesPaths = []
     e.preventDefault()
     e.stopPropagation()
     var dt = e.dataTransfer || (e.originalEvent && e.originalEvent.dataTransfer)
-    var files = e.target.files || (dt && dt.files)
-    for (var i in files) {
-      var p = e.dataTransfer.files[i].path
+    var files = dt ? dt.files : []
+    
+    for (let i = 0; i < files.length; i++) {
+      var p = files[i].path
       if (p != undefined) {
-        filesPaths.push(p)
+        droppedFilesPaths.push(p)
       }
     }
-    appStorage.saveFileListForWindow(filesPaths)
-    loadFilesOnServer(filesPaths)
+    
+    if (droppedFilesPaths.length > 0) {
+      console.log('Files dropped:', droppedFilesPaths)
+      appStorage.saveFileListForWindow(droppedFilesPaths)
+      loadFilesOnServer(droppedFilesPaths)
+      // Vue instance is not easily accessible here without a reference, 
+      // but the ipcRenderer listener in 'created' will handle the update.
+    }
   }
 
   $('html').on('dragover', function(event) {
@@ -713,6 +729,21 @@ export default {
       }
       prevKey = event.keyCode
     })
+
+    // Register global paste listener
+    window.addEventListener('paste', (e) => {
+        // Don't intercept if we're in an input/textarea
+        if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+        
+        const text = e.clipboardData.getData('text');
+        if (text) {
+            console.log('Global paste detected, loading logs...');
+            model.logLines = text.split('\n');
+            appStorage.saveFileListForWindow(null);
+            model.filesList = [];
+            model.showMessage('Pasted logs from clipboard');
+        }
+    });
 
     //hack for save button state
     setTimeout(() => {
