@@ -264,6 +264,7 @@ export default {
                     }
                     model.filtersInternal = val;
                     model.updateLinesModel(true);
+                    model.setupSlider();
                     model.refreshView();
                     $('#logx-progress' + model.factory.myInitId).height(0).css("visibility", "hidden").css("margin", "0px");
                 }, 100);
@@ -391,6 +392,12 @@ export default {
                 }
 
                 model.useFiltersInternal = model.useFiltersInternal && model.useFilters;
+                
+                // DEBUG logging
+                console.log("DEBUG - filtersInternal:", model.filtersInternal);
+                console.log("DEBUG - useFilters prop:", model.useFilters);
+                console.log("DEBUG - useFiltersInternal:", model.useFiltersInternal);
+                console.log("DEBUG - lines count:", model.lines ? model.lines.length : 0);
 
                 model.factory.setOriginalModel(model.lines);
                 model.factory.setModel([]);
@@ -401,6 +408,9 @@ export default {
                 var didPositionInit = !shouldInitIndex;
                 var theFilters = model.filtersInternal ? model.filtersInternal.unique() : [];
                 var theExFilters = model.exfiltersInternal ? model.exfiltersInternal.unique() : [];
+                
+                console.log("DEBUG - theFilters after unique():", theFilters);
+                
                 let LINES = model.lines;
                 let LINES_LEN = LINES.length;
                 var line = "";
