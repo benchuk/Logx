@@ -35,7 +35,9 @@
             </v-toolbar-items>
         </v-toolbar>
         <!-- ======= NAV DRAWER ================================================= -->
-        <v-navigation-drawer class="glass-nav" fixed v-model="drawer" app>
+        <v-navigation-drawer class="glass-nav" fixed v-model="drawer" app :style="{ zIndex: 5 }">
+            <!-- Overlay to block footer animations -->
+            <div class="sidebar-overlay"></div>
             <v-layout column class="pa-2">
                 <div class="glass-panel ma-2 pa-2">
                     <v-switch class="mt-0 pa-0 ml-1" :label="`${showFiltered?'Showing All Lines':'Showing Filtered Lines'}`" v-model="showFiltered" ref="sw"></v-switch>
@@ -166,9 +168,9 @@
         <!-- ======= Right Nav DRAWER ================================================= -->
         <v-navigation-drawer right temporary v-model="right" fixed></v-navigation-drawer>
         <!-- ======= Footer ================================================= -->
-        <v-footer v-if="searchs && searchs.length > 0" app fixed id="theFooter" :height="footerHeight" class="glass-footer" style="left: 0; z-index: 3;">
+        <v-footer v-if="searchs && searchs.length > 0" app fixed id="theFooter" :height="footerHeight" class="glass-footer" :style="{ left: drawer ? '300px' : '0', zIndex: 3 }">
             <div id="resizer"></div>
-            <div :style="{ paddingLeft: drawer ? '380px' : '0', width: '100%', textAlign: 'left' }">
+            <div style="width: 100%; text-align: left;">
                 <!-- ======= SEARCHES ================================================= -->
                 <v-tabs show-arrows dark slider-color="yellow" v-model="active" style="width: auto; display: inline-block;">
                     <v-tooltip top debounce=1000 v-for="(s,index) in searchs" ripple v-bind:key="index">
