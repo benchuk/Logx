@@ -114,7 +114,7 @@ body,
     background: rgba(13, 14, 18, 0.9) !important;
     backdrop-filter: var(--glass-blur) !important;
     border-right: var(--glass-border) !important;
-    z-index: 5 !important;
+    z-index: 900 !important;
     height: 100vh !important;
     position: fixed !important;
     top: 0 !important;
@@ -171,9 +171,18 @@ body,
     border-top: var(--glass-border) !important;
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5) !important;
     justify-content: flex-start !important;
-    z-index: 3 !important;
-    /* Lower than sidebar (usually 5-6) so footer goes under */
+    z-index: 800 !important;
+    /* Lower than sidebar (900) so footer goes under */
     overflow: hidden !important;
+}
+
+/* Optimization for resize performance */
+.glass-footer.resizing-active {
+    backdrop-filter: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+    /* Solid background avoids alpha blending costs */
+    background: #12131a !important;
 }
 
 .glass-footer .v-tabs {
@@ -187,6 +196,8 @@ body,
     border-bottom: none !important;
     /* Cleaned up */
     overflow: hidden !important;
+    flex-shrink: 0 !important;
+    flex: 0 0 auto !important;
 }
 
 .glass-footer .v-tabs__wrapper {
@@ -195,6 +206,31 @@ body,
 
 .glass-footer .v-tabs__container {
     overflow: hidden !important;
+}
+
+/* Make tabs fill height */
+.glass-footer .v-tabs {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.glass-footer .v-tabs__items {
+    flex: 1 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+}
+
+.glass-footer .v-tabs__items .v-window__container {
+    height: 100% !important;
+}
+
+.glass-footer .v-tabs__items .v-window-item {
+    height: 100% !important;
+}
+
+.glass-footer .v-tabs__items .v-card {
+    height: 100% !important;
+    overflow-y: auto !important;
 }
 
 .glass-tabs-left {
@@ -249,7 +285,7 @@ body,
 #resizer {
     background: rgba(255, 255, 255, 0.05) !important;
     border: none !important;
-    height: 4px !important;
+    height: 8px !important;
     width: 100% !important;
     /* Full width */
     margin: 0 !important;
@@ -264,6 +300,7 @@ body,
     left: 0;
     z-index: 101;
     /* Above footer content */
+    pointer-events: auto !important;
 }
 
 #resizer:hover {

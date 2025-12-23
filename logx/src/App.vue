@@ -35,7 +35,7 @@
             </v-toolbar-items>
         </v-toolbar>
         <!-- ======= NAV DRAWER ================================================= -->
-        <v-navigation-drawer class="glass-nav" fixed v-model="drawer" app :style="{ zIndex: 5 }">
+        <v-navigation-drawer class="glass-nav" fixed v-model="drawer" app :style="{ zIndex: 900 }">
             <!-- Overlay to block footer animations -->
             <div class="sidebar-overlay"></div>
             <v-layout column class="pa-2">
@@ -168,11 +168,11 @@
         <!-- ======= Right Nav DRAWER ================================================= -->
         <v-navigation-drawer right temporary v-model="right" fixed></v-navigation-drawer>
         <!-- ======= Footer ================================================= -->
-        <v-footer v-if="searchs && searchs.length > 0" app fixed id="theFooter" :height="footerHeight" class="glass-footer" :style="{ left: drawer ? '300px' : '0', zIndex: 3 }">
+        <v-footer v-if="searchs && searchs.length > 0" fixed id="theFooter" :height="footerHeight" class="glass-footer" :style="{ position: 'fixed', left: drawer ? '300px' : '0', width: drawer ? 'calc(100% - 300px)' : '100%', zIndex: 850 }">
             <div id="resizer"></div>
-            <div style="width: 100%; text-align: left;">
+            <div :style="{ width: '100%', textAlign: 'left', height: (footerHeight - 8) + 'px', display: 'flex', flexDirection: 'column' }">
                 <!-- ======= SEARCHES ================================================= -->
-                <v-tabs show-arrows dark slider-color="yellow" v-model="active" style="width: auto; display: inline-block;">
+                <v-tabs show-arrows dark slider-color="yellow" v-model="active" :style="{ width: 'auto', display: 'flex', flexDirection: 'column', height: '100%' }">
                     <v-tooltip top debounce=1000 v-for="(s,index) in searchs" ripple v-bind:key="index">
                         <template v-slot:activator="{ on } ">
                             <v-tab v-on="on" class="glass-tab">
@@ -658,6 +658,14 @@ export default {
       this.$nextTick(() => {
         EventBus.$emit('footer-resized', this.footerHeight)
       })
+    },
+    searchs: function(val) {
+      // Initialize resizer when footer becomes visible
+      if (val && val.length > 0) {
+        this.$nextTick(() => {
+          this.initializeResizer()
+        })
+      }
     }
   },
   data: function() {
@@ -881,32 +889,12 @@ export default {
     console.log('app mounted')
     let model = this
     
-    // Initialize resizer logic with Vue data
-    function mousemove(e) {
-      var res = model.orgHeight + (model.startPoint - e.pageY)
-      if (res < 35) res = 35;
-      model.footerHeight = res
-      if (e.stopPropagation) e.stopPropagation()
-      if (e.preventDefault) e.preventDefault()
-      e.cancelBubble = true
-      e.returnValue = false
-    }
-
-    function mouseup(e) {
-      var res = model.orgHeight + (model.startPoint - e.pageY)
-      if (res < 35) res = 35;
-      model.footerHeight = res
-      $('body,html').off('mousemove', mousemove)
-      $('body,html,#resizer').off('mouseup', mouseup)
-    }
-
-    function mousedown(e) {
-      $('body,html,#resizer').mouseup(mouseup)
-      model.startPoint = e.pageY
-      model.orgHeight = model.footerHeight
-      $('body,html').mousemove(mousemove)
-    }
-    $('#resizer').off('mousedown').mousedown(mousedown)
+    // Initialize resizer if footer is already visible
+    this.$nextTick(() => {
+      if (this.searchs && this.searchs.length > 0) {
+        this.initializeResizer()
+      }
+    })
 
     // Ensure panel state matches UI
     if (model.panel.length < 4) {
@@ -927,6 +915,81 @@ export default {
     })
   },
   methods: {
+    initializeResizer: function() {
+      let model = this
+      console.log('Initializing resizer')
+      
+      // Clean up any existing bindings
+      $('#resizer').off('mousedown')
+      $('body,html').off('mousemove').off('mouseup')
+      
+      // Cache the footer element
+      const $footer = $('#theFooter')
+      let animationFrameId = null
+      let currentHeight = 0
+      
+      function mousemove(e) {
+        var res = model.orgHeight + (model.startPoint - e.pageY)
+        if (res < 35) res = 35;
+        
+        // Max height should not exceed window height minus toolbar (64px) and some margin
+        const maxHeight = window.innerHeight - 100
+        if (res > maxHeight) res = maxHeight
+        
+        currentHeight = res
+        
+        // Use requestAnimationFrame for smooth updates
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId)
+        }
+        
+        animationFrameId = requestAnimationFrame(() => {
+          $footer[0].style.height = currentHeight + 'px'
+        })
+        
+        if (e.stopPropagation) e.stopPropagation()
+        if (e.preventDefault) e.preventDefault()
+        e.cancelBubble = true
+        e.returnValue = false
+      }
+
+      function mouseup(e) {
+        // Cancel any pending animation frame
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId)
+          animationFrameId = null
+        }
+        
+        // Remove optimization class
+        $footer.removeClass('resizing-active')
+        
+        var res = model.orgHeight + (model.startPoint - e.pageY)
+        if (res < 35) res = 35;
+        
+        // Max height should not exceed window height minus toolbar (64px) and some margin
+        const maxHeight = window.innerHeight - 100
+        if (res > maxHeight) res = maxHeight
+        
+        // Now update the Vue data which triggers reactivity
+        model.footerHeight = res
+        
+        $('body,html').off('mousemove', mousemove)
+        $('body,html,#resizer').off('mouseup', mouseup)
+      }
+
+      function mousedown(e) {
+        // Add class to disable expensive CSS effects during drag
+        $footer.addClass('resizing-active')
+        
+        $('body,html,#resizer').mouseup(mouseup)
+        model.startPoint = e.pageY
+        model.orgHeight = model.footerHeight
+        $('body,html').mousemove(mousemove)
+      }
+      
+      $('#resizer').mousedown(mousedown)
+      console.log('Resizer initialized')
+    },
     saveAndCloseFiltersEditor: function() {
       let dataToSave = []
       for (let filter of this.jsTextFilters) {
