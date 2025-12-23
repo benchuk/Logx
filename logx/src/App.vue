@@ -126,14 +126,24 @@
                 <v-layout justify-left align-left>
                     <v-flex xs12>
                         <fast-text-view v-if="logLines && logLines.length > 0" :lines="logLines" :position="position" :highlights="highlights" :ident="'main-logger'" :filters="filters" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered" :wrap="wrapLines"></fast-text-view>
-                        <v-layout v-else-if="!streamEnabled" column justify-center align-center fill-height style="opacity: 0.5; height: 100%">
+                        <v-layout v-else-if="runInTerminal" column justify-center align-center fill-height style="opacity: 0.5; height: 100%">
+                            <template v-if="isCommandRunning">
+                                <v-progress-circular indeterminate size="64" width="7" color="primary"></v-progress-circular>
+                                <div class="headline mt-3">Waiting for Command Output...</div>
+                            </template>
+                            <template v-else>
+                                <v-icon size="120">laptop</v-icon>
+                                <div class="headline">Command line mode waiting to start</div>
+                            </template>
+                        </v-layout>
+                        <v-layout v-else-if="streamEnabled" column justify-center align-center fill-height style="opacity: 0.5; height: 100%">
+                            <v-progress-circular indeterminate size="64" width="7" color="primary"></v-progress-circular>
+                            <div class="headline mt-3">Waiting for Stream...</div>
+                        </v-layout>
+                        <v-layout v-else column justify-center align-center fill-height style="opacity: 0.5; height: 100%">
                             <v-icon size="120">cloud_off</v-icon>
                             <div class="headline">Streaming is Off</div>
                             <div class="subheading">Drop log files here or press Cmd+V to paste from clipboard</div>
-                        </v-layout>
-                        <v-layout v-else-if="streamEnabled || (runInTerminal && isCommandRunning)" column justify-center align-center fill-height style="opacity: 0.5; height: 100%">
-                            <v-progress-circular indeterminate size="64" width="7" color="primary"></v-progress-circular>
-                            <div class="headline mt-3">{{ streamEnabled ? 'Waiting for Stream...' : 'Waiting for Command Output...' }}</div>
                         </v-layout>
                     </v-flex>
                 </v-layout>
@@ -613,6 +623,10 @@ export default {
     runInTerminal: function(val) {
       if (val && this.streamEnabled) {
           this.streamEnabled = false
+      }
+      if (val) {
+          this.logLines = []
+          this.isCommandRunning = false
       }
       appStorage.savePreference('runInTerminal', val)
     },
