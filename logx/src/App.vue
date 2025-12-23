@@ -6,7 +6,7 @@
             <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
             <v-toolbar-title>log(x)</v-toolbar-title>
             <v-spacer></v-spacer>
-            <v-text-field @click:append="finall" solo-inverted class="mt-2" id="findall" placeholder="New Search Tab" single-line append-icon="search" v-model="searchterm" color="grey" @keyup.enter="finall"></v-text-field>
+            <v-text-field ref="findall" @click:append="finall" solo-inverted class="mt-2" id="findall" placeholder="New Search Tab" single-line append-icon="search" v-model="searchterm" color="grey" @keyup.enter="finall"></v-text-field>
             <v-spacer></v-spacer>
             <v-toolbar-items class="hidden-sm-and-down">
                 <v-btn color="blue darken-1" flat @click.native="searchDialog = true">Find multiple</v-btn>
@@ -41,7 +41,24 @@
                     <v-switch class="mt-3 pa-0 ml-3" :label="`${showFiltered?'Showing All Lines':'Showing Filtered Lines'}`" v-model="showFiltered" ref="sw"></v-switch>
                     <v-switch class="mt-0 pa-0 ml-3" :label="`${streamEnabled?'Streaming On':'Streaming Off'}`" v-model="streamEnabled"></v-switch>
                     <v-switch class="mt-0 pa-0 ml-3" label="Wrap Lines" v-model="wrapLines"></v-switch>
+                    <v-switch class="mt-0 pa-0 ml-3" label="Run in Command Line" v-model="runInTerminal"></v-switch>
                 </v-flex>
+            </v-layout>
+            <v-layout v-if="runInTerminal" column class="pa-2 grey darken-3">
+                 <v-textarea
+                    v-model="terminalCommand"
+                    box
+                    label="Command"
+                    rows="3"
+                    auto-grow
+                    class="mb-2"
+                    hide-details
+                ></v-textarea>
+                <v-layout row justify-space-between class="mb-2">
+                    <v-btn color="success" block :disabled="isCommandRunning" @click="executeCommand">Start</v-btn>
+                    <v-btn color="error" block :disabled="!isCommandRunning" @click="stopCommand">Stop</v-btn>
+                </v-layout>
+                <div v-if="commandStatus" class="caption white--text text-xs-center mb-2">{{ commandStatus }}</div>
             </v-layout>
             <v-expansion-panel v-model="panel" expand>
                 <v-layout row justify-center align-center class="ml-3">
@@ -99,6 +116,7 @@
                         <v-text-field class="mt-0 pt-0" append-outer-icon="delete_outline" @click:append-outer="removeExFilter(index)" v-model.lazy="item.value"></v-text-field>
                     </v-layout>
                 </v-expansion-panel-content>
+
             </v-expansion-panel>
             <!-- ======= DRAWER ================================================= -->
         </v-navigation-drawer>
@@ -322,18 +340,16 @@ let $ = JQuery
 
 // Conditionally import Electron modules (only available in Electron, not browser)
 let ipcRenderer = null
-const isElectron = typeof window !== 'undefined' && 
-  ((window.process && window.process.versions && window.process.versions.electron) ||
-   (typeof require !== 'undefined'))
-
-if (isElectron) {
-  try {
-    const electronRequire = typeof require !== 'undefined' ? require : window.require
-    const electron = electronRequire('electron')
+try {
+  if (typeof window !== 'undefined' && window.require) {
+    const electron = window.require('electron')
     ipcRenderer = electron.ipcRenderer
-  } catch (e) {
-    console.warn('Electron ipcRenderer not available:', e)
+  } else if (typeof require !== 'undefined') {
+    const electron = require('electron')
+    ipcRenderer = electron.ipcRenderer
   }
+} catch (e) {
+  console.warn('Electron ipcRenderer not available:', e)
 }
 
 function loadFilesOnServer(filesPaths) {
@@ -470,9 +486,11 @@ function jqueryInit() {
   $('#resizer').mousedown(mousedown)
 }
 
-
 import { EventBus } from './components/event-bus'
 import FastTextView from './components/FastTextView'
+
+
+
 export default {
   name: 'logxmain-page',
   components: {
@@ -613,6 +631,12 @@ export default {
           }
         }
       }
+    },
+    runInTerminal: function(val) {
+      appStorage.savePreference('runInTerminal', val)
+    },
+    terminalCommand: function(val) {
+       appStorage.savePreference('terminalCommand', val)
     }
   },
   data: function() {
@@ -646,6 +670,10 @@ export default {
       filesDialog: false,
       showFiltered: appStorage.loadPreference('showFiltered', false),
       streamEnabled: appStorage.loadPreference('streamEnabled', false),
+      runInTerminal: appStorage.loadPreference('runInTerminal', false),
+      terminalCommand: appStorage.loadPreference('terminalCommand', ''),
+      isCommandRunning: false,
+      commandStatus: '',
       wrapLines: appStorage.loadPreference('wrapLines', false),
       ws: null,
       position: {
@@ -674,7 +702,7 @@ export default {
       startPoint: -1,
       theView: undefined,
       drawer: true,
-      panel: [true, true, false],
+      panel: [true, true, false, false],
       searchReasultsContent: [],
       searchterm: '',
       searchs: [],
@@ -738,6 +766,12 @@ export default {
           
           // Auto-scroll if at bottom? For now just push data.
       })
+
+      ipcRenderer.on('command-stopped', (event, code) => {
+          console.log('Command stopped with code:', code);
+          model.isCommandRunning = false;
+          model.commandStatus = `Stopped (Code: ${code})`;
+      })
     }
 
     console.log('register text selection event')
@@ -766,8 +800,9 @@ export default {
         event.preventDefault()
         prevKey = -1
         model.searchterm = ''
-        $('#findall').focus()
-        $('#findall').val('')
+        if (model.$refs.findall) {
+           model.$refs.findall.focus()
+        }
         return;
       }
       
@@ -802,6 +837,10 @@ export default {
   mounted: function() {
     console.log('app mounted')
     let model = this
+    // Ensure panel state matches UI
+    if (model.panel.length < 4) {
+      model.panel.push(false)
+    }
     // model.logLines = [] // Removed: was clearing logs loaded on startup or early paste
     //console.log(model);
     // for (var i = 0; i <= 200; i++) {
@@ -1079,8 +1118,10 @@ export default {
       }, 10)
     },
     finall: function() {
+      console.log('finall search called, term:', this.searchterm);
       let searchterm = this.searchterm.toLowerCase().trim()
       if (searchterm.length == 0) {
+        console.log('empty search term, skipping');
         return
       }
       this.searchterm = ''
@@ -1089,7 +1130,10 @@ export default {
       )
       if (exists >= 0) {
         this.active = exists
-        this.showMessage('Search is Already Defined')
+        this.showMessage('Switching to Existing Search Tab')
+        if ($('#theFooter').height() < 300) {
+          $('#theFooter').height(300)
+        }
         return
       }
       this.searchs.push([
@@ -1106,6 +1150,7 @@ export default {
     },
     addExFilter: function(event) {
       console.log('addExFilter')
+      this.useExFilters = true
       this.exfilters.unshift({
         value: ''
       })
@@ -1120,10 +1165,15 @@ export default {
     },
     addFilter: function(event) {
       console.log('addFilter')
+      this.useFilters = true
       this.filters.unshift({
         value: ''
       })
-      this.$refs.filterId[0].focus()
+      this.$nextTick(() => {
+        if (this.$refs.filterId && this.$refs.filterId[0]) {
+             this.$refs.filterId[0].focus()
+        }
+      })
     },
     removeFilter: function(index) {
       console.log('removeFilter')
@@ -1199,7 +1249,31 @@ export default {
         }`
     },
     getContrastColor: getContrastColor,
-    rgbToHex: rgbToHex
+    rgbToHex: rgbToHex,
+    executeCommand: function() {
+        console.log('executeCommand called', this.terminalCommand);
+        if (!this.terminalCommand) {
+            this.commandStatus = 'Please enter a command';
+            return;
+        }
+        
+        if (ipcRenderer) {
+             this.isCommandRunning = true;
+             this.commandStatus = 'Starting...';
+             console.log('Sending execute-command IPC');
+             ipcRenderer.send('execute-command', this.terminalCommand);
+        } else {
+            console.error('ipcRenderer not available');
+            this.commandStatus = 'Error: Electron IPC not available';
+        }
+    },
+    stopCommand: function() {
+        console.log('stopCommand called');
+        if (ipcRenderer) {
+            this.commandStatus = 'Stopping...';
+            ipcRenderer.send('stop-command');
+        }
+    }
   },
   props: {
     source: String

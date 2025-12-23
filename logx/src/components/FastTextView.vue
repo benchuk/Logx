@@ -6,7 +6,7 @@
     <div v-bind:id="'slider-vertical-'+ factory.myInitId" style="position: absolute; right: 4px;"></div>
     <v-progress-linear v-bind:id="'logx-progress' + factory.myInitId" :indeterminate="true" style="height:2px"></v-progress-linear>
     <div v-bind:id="'fast-text-view-' + factory.myInitId" :class="['fast-text-view-class', { 'wrap-lines': wrap }]">
-        <div align=left id='logs-container' class='logrow'>
+        <div align=left v-bind:id="'logs-container-' + factory.myInitId" class='logrow'>
             <div class='rownumber'>[0]</div>no data default
 
         </div>
@@ -257,6 +257,7 @@ export default {
         'filters': {
             handler: function (val) {
                 let model = this;
+                console.log("FastTextView: filters prop changed", JSON.stringify(val));
                 $('#logx-progress' + model.factory.myInitId).height(2).css("visibility", "visible").css("margin", "4px");;
                 clearTimeout(model.filtersHandler);
                 model.filtersHandler = setTimeout(function () {
@@ -397,7 +398,8 @@ export default {
                 model.useFiltersInternal = model.useFiltersInternal && model.useFilters;
                 
                 // DEBUG logging
-                console.log("DEBUG - filtersInternal:", model.filtersInternal);
+                console.log("DEBUG - updateLinesModel running");
+                console.log("DEBUG - filtersInternal:", JSON.stringify(model.filtersInternal));
                 console.log("DEBUG - useFilters prop:", model.useFilters);
                 console.log("DEBUG - useFiltersInternal:", model.useFiltersInternal);
                 console.log("DEBUG - lines count:", model.lines ? model.lines.length : 0);
@@ -546,10 +548,10 @@ export default {
             while (POSITION >= 0 && POSITION < len && counter > 0) {
                 var line = lines[POSITION];
                 if (line !== undefined) {
-                    var skipOrNotId = "rowdata";
+                    var skipOrNotId = "rowdata-" + this.factory.myInitId;
                     if (this.showFilteredInternal) {
                         if (this.useFiltersInternal && line.skip) {
-                            skipOrNotId = "skipline";
+                            skipOrNotId = "skipline-" + this.factory.myInitId;
                         }
                     }
                     let lineContentEscaped = line.line.replace(/[\u00A0-\u9999<>\&]/gim, function (i) {
@@ -616,7 +618,7 @@ export default {
             console.log("matchHeight")
             let reqHeight = this.currentHeight;
 
-            let rowElement = document.getElementById('rowdata');
+            let rowElement = document.getElementById('rowdata-' + this.factory.myInitId);
             var v;
             var rowHeight = 21; //default
             if (rowElement) {
@@ -839,6 +841,17 @@ export default {
         this.$nextTick(function () {
             init(model.factory);
             model.ready = true;
+            
+            // Critical: Force initial layout and filter application
+            setTimeout(() => {
+                model.onParentResize();
+                if (model.useFiltersInternal) {
+                    console.log("Initial updateLinesModel for filters");
+                    model.updateLinesModel(true);
+                }
+                model.refreshView();
+            }, 100);
+            
             console.log("register double click to highlight color a word");
             $('#fast-text-view-' + model.factory.myInitId).dblclick(function () {
                 var seltxt = getSelText();
@@ -1008,8 +1021,8 @@ function init(factory) {
     vertical-align: top;
 }
 
-.fast-text-view-class.wrap-lines [id='rowdata'], 
-.fast-text-view-class.wrap-lines [id='skipline'] {
+.fast-text-view-class.wrap-lines [id^='rowdata-'], 
+.fast-text-view-class.wrap-lines [id^='skipline-'] {
     display: inline;
     white-space: pre-wrap;
     word-break: break-all;
@@ -1046,13 +1059,13 @@ function init(factory) {
     color: gray;
 }
 
-#rowdata {
+[id^='rowdata-'] {
     display: inline-block;
     display: inline-block;
     color: greenyellow;
 }
 
-#skipline {
+[id^='skipline-'] {
     display: inline-block;
     display: inline-block;
     color: grey;

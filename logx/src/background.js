@@ -2,6 +2,7 @@
 'use strict'
 
 import { app, protocol, BrowserWindow, ipcMain, Menu } from 'electron'
+import { spawn } from 'child_process'
 import {
   createProtocol,
   installVueDevtools
@@ -100,6 +101,92 @@ ipcMain.on('start-stream', () => {
 
 ipcMain.on('stop-stream', () => {
   console.log('stop-stream IPC received (bridge keeps running)');
+});
+
+// --- Terminal Command Execution ---
+let commandProcess = null;
+
+ipcMain.on('execute-command', (event, command) => {
+  if (commandProcess) {
+    try {
+      process.kill(-commandProcess.pid); // Kill process group
+    } catch (e) {
+      try {
+        commandProcess.kill();
+      } catch (e2) {
+        console.error('Failed to kill existing process', e2);
+      }
+    }
+    commandProcess = null;
+  }
+
+  console.log(`Executing command: ${command}`);
+  if (!win || !win.webContents) return;
+
+  win.webContents.send('stream-data', `\n--- STARTING COMMAND: ${command} ---\n`);
+
+  try {
+    // shell: true allows simplified command strings like "ping google.com | grep time"
+    // detach: true allows killing the process group later
+    commandProcess = spawn(command, {
+      shell: true,
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+
+    commandProcess.stdout.on('data', (data) => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('stream-data', data.toString());
+      }
+    });
+
+    commandProcess.stderr.on('data', (data) => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('stream-data', data.toString());
+      }
+    });
+
+    commandProcess.on('close', (code) => {
+      console.log(`Command processed exited with code ${code}`);
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('stream-data', `\n--- COMMAND EXITED WITH CODE ${code} ---\n`);
+        win.webContents.send('command-stopped', code); // Notify UI
+      }
+      commandProcess = null;
+    });
+
+    commandProcess.on('error', (err) => {
+      console.error('Command spawn error:', err);
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('stream-data', `\n! ERROR STARTING COMMAND: ${err.message}\n`);
+        win.webContents.send('command-stopped', -1);
+      }
+      commandProcess = null;
+    });
+
+  } catch (e) {
+    console.error('Exception executing command:', e);
+    win.webContents.send('stream-data', `\n! EXCEPTION: ${e.message}\n`);
+    win.webContents.send('command-stopped', -1);
+  }
+});
+
+ipcMain.on('stop-command', () => {
+  if (commandProcess) {
+    console.log('Stopping command process...');
+    try {
+      // Negative PID kills the process group (requires detached: true)
+      process.kill(-commandProcess.pid);
+    } catch (e) {
+      console.error('Failed to kill process group, trying simple kill', e);
+      try {
+        commandProcess.kill();
+      } catch (e2) {
+        console.error('Failed to simple kill', e2);
+      }
+    }
+    commandProcess = null;
+  }
 });
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
