@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="/resources/demos/style.css"> -->
     <div v-bind:id="'slider-vertical-'+ factory.myInitId" style="position: absolute; right: 4px;"></div>
     <v-progress-linear v-bind:id="'logx-progress' + factory.myInitId" :indeterminate="true" style="height:2px"></v-progress-linear>
-    <div v-bind:id="'fast-text-view-' + factory.myInitId" class="fast-text-view-class">
+    <div v-bind:id="'fast-text-view-' + factory.myInitId" :class="['fast-text-view-class', { 'wrap-lines': wrap }]">
         <div align=left id='logs-container' class='logrow'>
             <div class='rownumber'>[0]</div>no data default
 
@@ -52,7 +52,7 @@ Array.prototype.unique = function () {
 var exfiltersHandler;
 export default {
     name: "fast-text-view",
-    props: ['lines', 'position', 'height', 'highlights', 'filters', 'exfilters', 'ident', 'parentid', 'useFilters', 'useExFilters', 'useColors', 'showFiltered'],
+    props: ['lines', 'position', 'height', 'highlights', 'filters', 'exfilters', 'ident', 'parentid', 'useFilters', 'useExFilters', 'useColors', 'showFiltered', 'wrap'],
     computed: {
         showScrollToTop: function() {
             console.log('ssssss')
@@ -69,6 +69,9 @@ export default {
         }
     },
     watch: {
+        wrap(val) {
+            this.refreshView();
+        },
         showFiltered(val, oldval) {
             let model = this;
             //console.log(" :  ^^^^ showFiltered watch: ", val);
@@ -981,7 +984,7 @@ function init(factory) {
 
 <style>
 .fast-text-view-class {
-    overflow-x: hidden;
+    overflow-x: auto;
     overflow-y: hidden;
     width: 100%;
     height: 100%;
@@ -991,6 +994,33 @@ function init(factory) {
     font-size: 14px;
     white-space: nowrap;
     background-color: black;
+}
+
+.fast-text-view-class.wrap-lines {
+    overflow-x: hidden;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.fast-text-view-class.wrap-lines .rowIndex {
+    vertical-align: top;
+}
+
+.fast-text-view-class.wrap-lines [id='rowdata'], 
+.fast-text-view-class.wrap-lines [id='skipline'] {
+    display: inline;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.fast-text-view-class::-webkit-scrollbar {
+    height: 8px;
+    background-color: #343436;
+}
+
+.fast-text-view-class::-webkit-scrollbar-thumb {
+    background: gray;
+    border-radius: 4px;
 }
 
 .unselectable {

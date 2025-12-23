@@ -40,6 +40,7 @@
                 <v-flex>
                     <v-switch class="mt-3 pa-0 ml-3" :label="`${showFiltered?'Showing All Lines':'Showing Filtered Lines'}`" v-model="showFiltered" ref="sw"></v-switch>
                     <v-switch class="mt-0 pa-0 ml-3" :label="`${streamEnabled?'Streaming On':'Streaming Off'}`" v-model="streamEnabled"></v-switch>
+                    <v-switch class="mt-0 pa-0 ml-3" label="Wrap Lines" v-model="wrapLines"></v-switch>
                 </v-flex>
             </v-layout>
             <v-expansion-panel v-model="panel" expand>
@@ -105,7 +106,7 @@
             <v-container fluid fill-height pa-2>
                 <v-layout justify-left align-left>
                     <v-flex xs12>
-                        <fast-text-view v-if="logLines && logLines.length > 0" :lines="logLines" :position="position" :highlights="highlights" :ident="'main-logger'" :filters="filters" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered"></fast-text-view>
+                        <fast-text-view v-if="logLines && logLines.length > 0" :lines="logLines" :position="position" :highlights="highlights" :ident="'main-logger'" :filters="filters" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered" :wrap="wrapLines"></fast-text-view>
                         <v-layout v-else-if="!streamEnabled" column justify-center align-center fill-height style="opacity: 0.5; height: 100%">
                             <v-icon size="120">cloud_off</v-icon>
                             <div class="headline">Streaming is Off</div>
@@ -146,7 +147,7 @@
                             <v-tabs-items>
                                 <v-tab-item v-for="(s,index) in searchs" v-bind:key="index">
                                     <v-card flat v-if="s[0].type==='find'">
-                                        <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :highlights="highlights" :useExFilters="false" :useColors="useColors" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'"></fast-text-view>
+                                        <fast-text-view class="ma-1" :showFiltered="false" :lines="logLines" :highlights="highlights" :useExFilters="false" :useColors="useColors" useFilters="true" :filters="s" :ident="'s-tab'" :parentid="'theFooter'" :wrap="wrapLines"></fast-text-view>
                                     </v-card>
                                     <v-card v-else-if="s[0].type==='map'">
                                         <mapFromText :lines="logLines" :filter="s[0].filter"></mapFromText>
@@ -603,6 +604,7 @@ export default {
       filesDialog: false,
       showFiltered: false,
       streamEnabled: false,
+      wrapLines: false,
       ws: null,
       position: {
         value: 0,
@@ -679,13 +681,8 @@ export default {
         appStorage.saveFileListForWindow(null)
         let lines = arg.split('\n')
         model.logLines = lines
-        model.filesList = appStorage.loadLastFileList()
-      })
-      ipcRenderer.on('paste-data-reply', (event, arg) => {
-        appStorage.saveFileListForWindow(null)
-        let lines = arg.split('\n')
-        model.logLines = lines
-        model.filesList = appStorage.loadLastFileList()
+        model.filesList = []
+        model.showMessage('Pasted logs from clipboard')
       })
       
       console.log('register stream data event')
