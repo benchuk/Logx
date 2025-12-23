@@ -51,10 +51,13 @@ function startLogBridge() {
           client.send(data);
         }
       });
-      // Send to Electron renderer via IPC
+      // Send to Electron renderer via IPC - REMOVED to prevent duplication/leaks. 
+      // Frontend uses WebSocket.
+      /*
       if (win && win.webContents) {
         win.webContents.send('stream-data', data);
       }
+      */
     }
 
     // Start TCP server to receive logs from run_server.sh
@@ -123,7 +126,7 @@ ipcMain.on('execute-command', (event, command) => {
   console.log(`Executing command: ${command}`);
   if (!win || !win.webContents) return;
 
-  win.webContents.send('stream-data', `\n--- STARTING COMMAND: ${command} ---\n`);
+  win.webContents.send('command-output', `\n--- STARTING COMMAND: ${command} ---\n`);
 
   try {
     // shell: true allows simplified command strings like "ping google.com | grep time"
@@ -136,20 +139,20 @@ ipcMain.on('execute-command', (event, command) => {
 
     commandProcess.stdout.on('data', (data) => {
       if (win && !win.isDestroyed()) {
-        win.webContents.send('stream-data', data.toString());
+        win.webContents.send('command-output', data.toString());
       }
     });
 
     commandProcess.stderr.on('data', (data) => {
       if (win && !win.isDestroyed()) {
-        win.webContents.send('stream-data', data.toString());
+        win.webContents.send('command-output', data.toString());
       }
     });
 
     commandProcess.on('close', (code) => {
       console.log(`Command processed exited with code ${code}`);
       if (win && !win.isDestroyed()) {
-        win.webContents.send('stream-data', `\n--- COMMAND EXITED WITH CODE ${code} ---\n`);
+        win.webContents.send('command-output', `\n--- COMMAND EXITED WITH CODE ${code} ---\n`);
         win.webContents.send('command-stopped', code); // Notify UI
       }
       commandProcess = null;
@@ -158,7 +161,7 @@ ipcMain.on('execute-command', (event, command) => {
     commandProcess.on('error', (err) => {
       console.error('Command spawn error:', err);
       if (win && !win.isDestroyed()) {
-        win.webContents.send('stream-data', `\n! ERROR STARTING COMMAND: ${err.message}\n`);
+        win.webContents.send('command-output', `\n! ERROR STARTING COMMAND: ${err.message}\n`);
         win.webContents.send('command-stopped', -1);
       }
       commandProcess = null;
@@ -166,7 +169,7 @@ ipcMain.on('execute-command', (event, command) => {
 
   } catch (e) {
     console.error('Exception executing command:', e);
-    win.webContents.send('stream-data', `\n! EXCEPTION: ${e.message}\n`);
+    win.webContents.send('command-output', `\n! EXCEPTION: ${e.message}\n`);
     win.webContents.send('command-stopped', -1);
   }
 });

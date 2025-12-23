@@ -131,9 +131,9 @@
                             <div class="headline">Streaming is Off</div>
                             <div class="subheading">Drop log files here or press Cmd+V to paste from clipboard</div>
                         </v-layout>
-                        <v-layout v-else column justify-center align-center fill-height style="opacity: 0.5; height: 100%">
+                        <v-layout v-else-if="streamEnabled || (runInTerminal && isCommandRunning)" column justify-center align-center fill-height style="opacity: 0.5; height: 100%">
                             <v-progress-circular indeterminate size="64" width="7" color="primary"></v-progress-circular>
-                            <div class="headline mt-3">Waiting for Stream...</div>
+                            <div class="headline mt-3">{{ streamEnabled ? 'Waiting for Stream...' : 'Waiting for Command Output...' }}</div>
                         </v-layout>
                     </v-flex>
                 </v-layout>
@@ -550,6 +550,9 @@ export default {
       immediate: true,
       handler: function(val) {
         let model = this
+        if (val && model.runInTerminal) {
+            model.runInTerminal = false
+        }
         appStorage.savePreference('streamEnabled', val)
         if (val) {
           console.log('Connecting to Log Stream Bridge...')
@@ -608,6 +611,9 @@ export default {
       }
     },
     runInTerminal: function(val) {
+      if (val && this.streamEnabled) {
+          this.streamEnabled = false
+      }
       appStorage.savePreference('runInTerminal', val)
     },
     terminalCommand: function(val) {
@@ -740,16 +746,16 @@ export default {
         model.showMessage('Pasted logs from clipboard')
       })
       
-      console.log('register stream data event')
-      ipcRenderer.on('stream-data', (event, arg) => {
+      console.log('register command output event')
+      ipcRenderer.on('command-output', (event, arg) => {
           let lines = arg.split('\n')
-          // Filter out empty lines if necessary, or just push
+          // Only push command output if enabled
+          if (!model.runInTerminal) return;
+          
           lines.forEach(line => {
              if(line && line.length > 0)
                 model.logLines.push(line)
           })
-          
-          // Auto-scroll if at bottom? For now just push data.
       })
 
       ipcRenderer.on('command-stopped', (event, code) => {

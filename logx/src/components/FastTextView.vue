@@ -163,7 +163,11 @@ export default {
             // So we track previous length ourselves
             const currentLen = val.length;
             const prevLen = model.prevLineCount || 0;
-            const isAppend = prevLen > 0 && currentLen > prevLen;
+            
+            // Only treat as 'append' if data was mutated (same ref) AND length increased. 
+            // If ref changed (paste/load), force full reload.
+            const isReferencePreserved = val === oldval;
+            const isAppend = isReferencePreserved && prevLen > 0 && currentLen > prevLen;
             
             // Update tracked length
             model.prevLineCount = currentLen;
