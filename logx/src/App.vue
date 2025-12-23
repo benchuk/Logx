@@ -455,6 +455,15 @@ export default {
       handler: function(val) {
         let model = this
         model.canSave = true
+        // Auto-save to current preset after debounce
+        clearTimeout(model.autoSaveHighlightsTimer)
+        model.autoSaveHighlightsTimer = setTimeout(function() {
+          if (model.selectedPresetName) {
+            console.log('Auto-saving highlights to preset: ' + model.selectedPresetName)
+            model.savePreset(model.selectedPresetName, model.filters, model.exfilters, model.highlights)
+            model.canSave = false
+          }
+        }, 500)
       },
       deep: true
     },
@@ -462,6 +471,15 @@ export default {
       handler: function(val) {
         let model = this
         model.canSave = true
+        // Auto-save to current preset after debounce
+        clearTimeout(model.autoSaveFiltersTimer)
+        model.autoSaveFiltersTimer = setTimeout(function() {
+          if (model.selectedPresetName) {
+            console.log('Auto-saving filters to preset: ' + model.selectedPresetName)
+            model.savePreset(model.selectedPresetName, model.filters, model.exfilters, model.highlights)
+            model.canSave = false
+          }
+        }, 500)
       },
       deep: true
     },
@@ -469,6 +487,15 @@ export default {
       handler: function(val) {
         let model = this
         model.canSave = true
+        // Auto-save to current preset after debounce
+        clearTimeout(model.autoSaveExfiltersTimer)
+        model.autoSaveExfiltersTimer = setTimeout(function() {
+          if (model.selectedPresetName) {
+            console.log('Auto-saving exfilters to preset: ' + model.selectedPresetName)
+            model.savePreset(model.selectedPresetName, model.filters, model.exfilters, model.highlights)
+            model.canSave = false
+          }
+        }, 500)
       },
       deep: true
     },
