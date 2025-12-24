@@ -1,6 +1,6 @@
 <template>
   <div class="log-timeline-container" ref="container">
-    <canvas ref="canvas" @mousemove="onMouseMove" @mouseleave="hoverPos = null"></canvas>
+    <canvas ref="canvas" @mousedown="onMouseDown" @mousemove="onMouseMove" @mouseleave="hoverPos = null"></canvas>
     <div v-if="hoverPos" class="timeline-tooltip" :style="{ left: hoverPos.x + 'px' }">
       {{ hoverPos.text }}
     </div>
@@ -33,7 +33,8 @@ export default {
       hoverPos: null,
       ctx: null,
       dpr: window.devicePixelRatio || 1,
-      timestampIndices: [] // Stores { time, index }
+      timestampIndices: [], // Stores { time, index }
+      isDragging: false
     }
   },
   watch: {
@@ -168,20 +169,49 @@ export default {
       this.ctx.fillRect(x1 + w, 0, 2, height) // Right edge
     }
   },
-  onMouseMove(e) {
-      if (!this.lines.length) return
+    onMouseMove(e) {
+      if (!this.lines.length || !this.$refs.canvas) return
       const rect = this.$refs.canvas.getBoundingClientRect()
       const x = e.clientX - rect.left
-      const percent = x / rect.width
+      const percent = Math.max(0, Math.min(1, x / rect.width))
       const index = Math.floor(percent * this.lines.length)
       
       if (index >= 0 && index < this.lines.length) {
         this.hoverPos = {
-          x: e.clientX - rect.left,
+          x: x,
           index: index,
           text: `Line ${index + 1}`
         }
       }
+    },
+    onMouseDown(e) {
+      e.preventDefault() // Prevent text selection
+      this.isDragging = true
+      this.handleSeek(e)
+      
+      this._onMouseMove = this.onWindowMouseMove.bind(this)
+      this._onMouseUp = this.onWindowMouseUp.bind(this)
+      
+      window.addEventListener('mousemove', this._onMouseMove)
+      window.addEventListener('mouseup', this._onMouseUp)
+    },
+    onWindowMouseMove(e) {
+      if (this.isDragging) {
+        this.handleSeek(e)
+      }
+    },
+    onWindowMouseUp(e) {
+      this.isDragging = false
+      window.removeEventListener('mousemove', this._onMouseMove)
+      window.removeEventListener('mouseup', this._onMouseUp)
+    },
+    handleSeek(e) {
+      if (!this.lines.length || !this.$refs.canvas) return
+      const rect = this.$refs.canvas.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const percent = Math.max(0, Math.min(1, x / rect.width))
+      const index = Math.floor(percent * this.lines.length)
+      this.$emit('seek', index)
     }
   }
 }
@@ -194,6 +224,7 @@ export default {
   position: relative;
   margin: 8px 0;
   cursor: crosshair;
+  user-select: none;
 }
 
 canvas {

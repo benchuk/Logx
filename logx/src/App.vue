@@ -155,7 +155,7 @@
                     <v-flex xs12 class="fill-height d-flex flex-column">
                         <!-- Global Timeline -->
                         <div class="timeline-glow ma-2 pt-1 pb-1">
-                            <log-timeline v-if="logLines && logLines.length > 0" :lines="logLines" :highlights="highlights" :useColors="useColors" :scroll-position="scrollPosition" />
+                            <log-timeline v-if="logLines && logLines.length > 0" :lines="logLines" :highlights="highlights" :useColors="useColors" :scroll-position="scrollPosition" @seek="onTimelineSeek" />
                         </div>
                         
                         <fast-text-view v-if="logLines && logLines.length > 0" :lines="logLines" :position="position" :highlights="highlights" :ident="'main-logger'" :filters="filters" :exfilters="exfilters" :useExFilters="useExFilters" :useFilters="useFilters" :useColors="useColors" :showFiltered="showFiltered" :wrap="wrapLines" @view-scroll="onLogScroll" class="flex-grow-1"></fast-text-view>
@@ -1092,6 +1092,14 @@ export default {
     },
     onPresetNamingCancel: function() {
       this.presetNamingDialog = false;
+    },
+    onTimelineSeek(index) {
+      this.position = {
+        value: index,
+        source: 'timeline',
+        sync: true
+      }
+      EventBus.$emit('jumpto', this.position)
     },
     loadPreset: function(presetName) {
       console.log('load preset: ' + presetName)
