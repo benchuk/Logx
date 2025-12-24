@@ -74,14 +74,11 @@ export default {
         },
         showFiltered(val, oldval) {
             let model = this;
-            //console.log(" :  ^^^^ showFiltered watch: ", val);
             if (this.showFilteredInternal == val) {
-                console.log("ignore show filter logic");
                 return;
             }
 
             this.showFilteredInternal = val;
-            //console.log("this.positionInternal", this.positionInternal);
             if (model.useFiltersInternal) {
                 this.handlePosition(val);
             }
@@ -90,10 +87,7 @@ export default {
         },
         position(val, oldval) {
             let model = this;
-            //console.log('------ position changed');
-            //console.log('position for src id ' + val.source + " my id: " + model.factory.myInitId);
             if (val.source == this.factory.myInitId) {
-                console.log('skip self generated event');
                 return;
             }
 
@@ -131,10 +125,8 @@ export default {
             if (targetIndex !== -1) {
                 if (!val.sync) {
                     setTimeout(() => {
-                        console.log("anim 1 for src id: " + this.factory.myInitId);
                         $("#" + parsedRowId).fadeOut("slow", function () {
                             $("#" + parsedRowId).fadeIn("slow", function () {
-                                // Animation complete   
                             });
                         });
                     }, 0);
@@ -146,12 +138,10 @@ export default {
         lines(val, oldval) {
             let model = this;
             if (!model.ready) {
-                console.error("update lines model before ready")
                 return;
             }
 
             if (val === undefined || val.length <= 0) {
-                console.error("invalid data lines ????");
                 model.factory.setModel(["no data 3"]);
                 model.factory.setModelFiltered(["no data 3"]);
                 model.factory.setOriginalModel(["no data 3"]);
@@ -160,20 +150,15 @@ export default {
             }
 
             // Vue 2 gotcha: When array is mutated, oldval and val are the same reference
-            // So we track previous length ourselves
             const currentLen = val.length;
             const prevLen = model.prevLineCount || 0;
             
-            // Only treat as 'append' if data was mutated (same ref) AND length increased. 
-            // If ref changed (paste/load), force full reload.
             const isReferencePreserved = val === oldval;
             const isAppend = isReferencePreserved && prevLen > 0 && currentLen > prevLen;
             
-            // Update tracked length
             model.prevLineCount = currentLen;
             
             if (isAppend && model.autoScroll) {
-                // STREAMING + AUTO-SCROLL: Throttle updates to prevent jumping
                 if (model.streamUpdateTimer) {
                     clearTimeout(model.streamUpdateTimer);
                 }
@@ -185,7 +170,6 @@ export default {
                     model.refreshView();
                 }, 50);
             } else if (isAppend && !model.autoScroll) {
-                // STREAMING + PAUSED: Keep current position
                 if (model.streamUpdateTimer) {
                     clearTimeout(model.streamUpdateTimer);
                 }
@@ -199,7 +183,6 @@ export default {
                     model.refreshView();
                 }, 100);
             } else {
-                // FULL RELOAD: Reset position and setup slider from scratch
                 model.updateLinesModel(false);
                 model.positionInternal = 0;
                 model.setupSlider();
@@ -209,14 +192,9 @@ export default {
         },
         'useFilters': {
             handler: function (val) {
-                if (!this.ready) {
-                    console.error("skip... useFilters - model not ready");
-                    return;
-                }
+                if (!this.ready) return;
                 let model = this;
-                //console.log(model.ident + " : -------- useFilters watch: " + val);
                 model.useFiltersInternal = val;
-                //should not handle position transition between models if we are on NONE-FILTERD model - in such a case this is only coloring issue
                 if (!this.showFilteredInternal) {
                     model.handlePosition(!val)
                 }
@@ -227,81 +205,59 @@ export default {
         },
         'useExFilters': {
             handler: function (val) {
-                if (!this.ready) {
-                    console.error("skip... useExFilters - model not ready");
-                    return;
-                }
+                if (!this.ready) return;
                 let model = this;
-                //console.log(model.ident + " : -------- exfiltersInternal watch: " + val);
                 model.exfiltersInternal = val ? model.exfilters : [];
-                //model.updateLinesModel(true);
                 model.refreshView();
             },
             deep: true
         },
         'useColors': {
             handler: function (val) {
-                if (!this.ready) {
-                    console.error("skip... useColors - model not ready");
-                    return;
-                }
+                if (!this.ready) return;
                 let model = this;
-                //console.log(model.ident + " : -------- useColors watch: " + val);
                 model.highlightsInternal = val ? model.highlights : [];
-                //model.updateLinesModel(true);
                 model.refreshView();
             },
             deep: true
         },
         'highlights': {
             handler: function (val) {
-                if (!this.ready) {
-                    console.error("skip... highlights - model not ready");
-                    return;
-                }
+                if (!this.ready) return;
                 let model = this;
-                //console.log(model.ident + " : -------- highlights watch: " + val);
+                console.log(model.ident + " : highlights prop watch: ", val);
                 model.highlightsInternal = val ? val : [];
-                model.refreshView();
-            },
-            deep: true
-        },
-        'exfilters': {
-            handler: function (val) {
-                let model = this;
-                clearTimeout(exfiltersHandler);
-                exfiltersHandler = setTimeout(function () {
-                    //console.log(model.ident + " : !!!!!!!!!!!!!!!!!!!! ex--filters watch: " + val);
-                    if (val && val[val.length - 1] && (val[val.length - 1].value == undefined || val[val.length - 1].value.length <= 0)) {
-                        console.error("skip... ex filter");
-                        return;
-                    }
-                    model.exfiltersInternal = val;
-                    model.updateLinesModel(true);
+                if (model.useColorsInternal) {
                     model.refreshView();
-                }, 500);
-
+                }
             },
             deep: true
         },
         'filters': {
             handler: function (val) {
+                if (!this.ready) return;
                 let model = this;
-                console.log("FastTextView: filters prop changed", JSON.stringify(val));
-                $('#logx-progress' + model.factory.myInitId).height(2).css("visibility", "visible").css("margin", "4px");;
-                clearTimeout(model.filtersHandler);
-                model.filtersHandler = setTimeout(function () {
-                    //console.log(model.ident + " : !!!!!!!!!!!!!!!!!!!! filters watch: " + val);
-                    if (val && val[val.length - 1] && (val[val.length - 1].value == undefined || val[val.length - 1].value.length <= 0)) {
-                        console.error("skip... filter");
-                        return;
-                    }
-                    model.filtersInternal = val;
+                console.log(model.ident + " : filters prop watch: ", val);
+                model.filtersInternal = val ? val : [];
+                if (model.useFiltersInternal) {
                     model.updateLinesModel(true);
                     model.setupSlider();
                     model.refreshView();
-                    $('#logx-progress' + model.factory.myInitId).height(0).css("visibility", "hidden").css("margin", "0px");
-                }, 100);
+                }
+            },
+            deep: true
+        },
+        'exfilters': {
+            handler: function (val) {
+                if (!this.ready) return;
+                let model = this;
+                console.log(model.ident + " : exfilters prop watch: ", val);
+                model.exfiltersInternal = val ? val : [];
+                if (model.useExFiltersInternal) {
+                    model.updateLinesModel(true);
+                    model.setupSlider();
+                    model.refreshView();
+                }
             },
             deep: true
         }
@@ -455,30 +411,29 @@ export default {
                     var skipLine = false;
                     if (model.useExFiltersInternal) {
                         for (var exf of theExFilters) {
-
-                            if (line.toLowerCase().includes(exf.value.toLowerCase())) {
-                                skipLine = true; //this line is excluded - move to next line
-                            }
-                        }
-
-                        if (skipLine) {
-                            m.push({
-                                'line': line,
-                                "rowid": counter,
-                                'skip': true
-                            });
-                            continue;
+                        if (exf && exf.value && line.toLowerCase().includes(exf.value.toLowerCase())) {
+                            skipLine = true; //this line is excluded - move to next line
                         }
                     }
 
-                    var addToView = false;
-
-                    for (var f of theFilters) {
-                        if (line.toLowerCase().includes(f.value.toLowerCase())) {
-                            addToView = true;
-                            break;
-                        }
+                    if (skipLine) {
+                        m.push({
+                            'line': line,
+                            "rowid": counter,
+                            'skip': true
+                        });
+                        continue;
                     }
+                }
+
+                var addToView = false;
+
+                for (var f of theFilters) {
+                    if (f && f.value && line.toLowerCase().includes(f.value.toLowerCase())) {
+                        addToView = true;
+                        break;
+                    }
+                }
 
                     if (addToView) //add line only once if any of the filters apply
                     {

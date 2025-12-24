@@ -70,7 +70,18 @@
             <v-expansion-panel class="transparent" v-model="panel" expand>
                 <div class="glass-panel ma-2 mt-0">
                     <v-layout row justify-center align-center class="ml-3 mt-1 pr-3">
-                        <v-combobox class="glass-input glass-presets" @input="onFilterPresetSelected" v-model="selectedPresetName" :items="filterPresets" label="Filter Preset" solo outline hide-details></v-combobox>
+                        <v-combobox class="glass-input glass-presets" @input="onFilterPresetSelected" v-model="selectedPresetName" :items="filterPresets" label="Filter Preset" solo outline hide-details>
+                            <template slot="item" slot-scope="data">
+                                <v-list-tile-content>
+                                    <v-list-tile-title>{{ data.item }}</v-list-tile-title>
+                                </v-list-tile-content>
+                                <v-list-tile-action v-if="data.item !== 'Default'">
+                                    <v-btn icon small @click.stop="onDeletePresetInline(data.item)" class="ma-0">
+                                        <v-icon color="error" small>delete</v-icon>
+                                    </v-btn>
+                                </v-list-tile-action>
+                            </template>
+                        </v-combobox>
                         <v-btn v-on:click="savePresetClicked" flat icon color="white" :disabled="canSave == false" class="ma-0">
                             <v-icon small>save</v-icon>
                         </v-btn>
@@ -776,7 +787,9 @@ export default {
     console.log('register load files replay event')
     if (ipcRenderer) {
       ipcRenderer.on('load-files-reply', (event, arg) => {
+        console.log('--- load-files-reply received ---')
         let lines = arg.split('\n')
+        console.log('Lines count:', lines.length)
         model.logLines = lines
         model.filesList = appStorage.loadLastFileList()
       })
@@ -1038,7 +1051,12 @@ export default {
       )
     },
     savePreset: function(presetName, filters, excludeFilters, highlights) {
-      console.log('savePreset to storage for preset name: ' + presetName)
+      console.log('--- savePreset ---');
+      console.log('Name:', presetName);
+      console.log('Filters:', JSON.stringify(filters));
+      console.log('ExFilters:', JSON.stringify(excludeFilters));
+      console.log('Highlights:', JSON.stringify(highlights));
+      
       appStorage.savePreset(presetName, filters, excludeFilters, highlights)
       this.filterPresets = appStorage.loadPresets().map(f => f.name)
       this.showMessage('saved')
@@ -1052,6 +1070,7 @@ export default {
       
       if (!preset) {
         console.log("Preset not found - treating as new/save-as (keeping current state)")
+        model.canSave = true
         return
       }
       
@@ -1072,8 +1091,17 @@ export default {
       
       model.isLoadingPreset = true
       
-      // Use direct assignment with fallbacks
+      console.log('--- Loading Preset Data ---');
+      console.log('Filters:', JSON.stringify(preset.filters));
+      console.log('ExFilters:', JSON.stringify(preset.excludeFilters));
+      console.log('Highlights:', JSON.stringify(preset.highlights));
+      
+      // Clear all existing state first to avoid collisions
       model.highlights = []
+      model.filters = []
+      model.exfilters = []
+      model.canSave = false
+      
       let highlights = preset.highlights || []
       // ... continue normal loading ...
       if (highlights) {
@@ -1083,19 +1111,54 @@ export default {
         })
       }
       
-      // Use references directly so mutations update the filtered model correctly 
-      // (and watchers trigger saves which persists them)
-      model.filters = preset.filters || []
-      model.exfilters = preset.excludeFilters || []
+      let filters = preset.filters || []
+      if (filters) {
+        filters.forEach(function(f) {
+          model.AddToFilters(f)
+        })
+      }
       
-      this.$nextTick(() => {
-        model.isLoadingPreset = false
-      })
+      let exfilters = preset.excludeFilters || []
+      if (exfilters) {
+        exfilters.forEach(function(f) {
+          model.AddToExFilters(f)
+        })
+      }
       
       setTimeout(() => {
-        console.log('canSave -> false')
-        model.canSave = false
-      }, 0)
+        model.isLoadingPreset = false
+        console.log("Preset loading complete")
+      }, 500)
+    },
+    onDeletePreset: function() {
+      if (!this.selectedPresetName || this.selectedPresetName === 'Default') return;
+      
+      console.log('Deleting preset: ' + this.selectedPresetName);
+      appStorage.deletePresetWithName(this.selectedPresetName);
+      
+      // Refresh list
+      this.filterPresets = appStorage.loadPresets().map(f => f.name);
+      this.showMessage('Deleted preset: ' + this.selectedPresetName);
+      
+      // Reset to default
+      this.selectedPresetName = 'Default';
+      this.loadPreset('Default');
+    },
+    onDeletePresetInline: function(presetName) {
+      if (!presetName || presetName === 'Default') return;
+      
+      console.log('Inline deleting preset: ' + presetName);
+      appStorage.deletePresetWithName(presetName);
+      
+      // Refresh list
+      this.filterPresets = appStorage.loadPresets().map(f => f.name);
+      this.showMessage('Deleted preset: ' + presetName);
+      
+      // If we deleted the currently selected one, reset to default
+      if (this.selectedPresetName === presetName) {
+        this.selectedPresetName = 'Default';
+        this.loadPreset('Default');
+      }
     },
     filtersForPresetName: function(presetName) {
       console.log('filtersForPresetName')
@@ -1130,6 +1193,8 @@ export default {
       
       this.selectedPresetName = name
       console.log('New Preset Name: ' + name)
+      
+      // Force change detection and update canSave status
       this.loadPreset(name)
       appStorage.saveLastUsedPresetName(name)
     },
@@ -1242,10 +1307,12 @@ export default {
       if (val) {
         let lowertext = val.toLowerCase()
         let exists = model.highlights.findIndex(
-           s => s.value.toLowerCase() === lowertext
+           s => s && s.value && s.value.toLowerCase() === lowertext
         )
         if (exists >= 0) {
-           this.showMessage('Highlight is Already Defined')
+           if (!model.isLoadingPreset) {
+             this.showMessage('Highlight is Already Defined')
+           }
            return
         }
       }
@@ -1269,6 +1336,36 @@ export default {
       
       // Force refresh of the view
       EventBus.$emit('jumpto', this.position)
+    },
+    AddToFilters: function(text) {
+      console.log('AddToFilters', text)
+      let model = this
+      const val = typeof text === 'string' ? text : text.value || ''
+      if (val) {
+        let lowertext = val.toLowerCase()
+        let exists = model.filters.findIndex(s => s && s.value && s.value.toLowerCase() === lowertext)
+        if (exists >= 0) {
+          if (!model.isLoadingPreset) this.showMessage('Filter is Already Defined')
+          return
+        }
+      }
+      model.filters.unshift({ value: val })
+      this.panel[0] = true
+    },
+    AddToExFilters: function(text) {
+      console.log('AddToExFilters', text)
+      let model = this
+      const val = typeof text === 'string' ? text : text.value || ''
+      if (val) {
+        let lowertext = val.toLowerCase()
+        let exists = model.exfilters.findIndex(s => s && s.value && s.value.toLowerCase() === lowertext)
+        if (exists >= 0) {
+          if (!model.isLoadingPreset) this.showMessage('Ex-Filter is Already Defined')
+          return
+        }
+      }
+      model.exfilters.unshift({ value: val })
+      this.panel[2] = true
     },
     updateHighlightColor: function(index) {
       const id = index + 1
