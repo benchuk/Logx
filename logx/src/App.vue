@@ -70,7 +70,7 @@
             <v-expansion-panel class="transparent" v-model="panel" expand>
                 <div class="glass-panel ma-2 mt-0">
                     <v-layout row justify-center align-center class="ml-3 mt-1 pr-3">
-                        <v-combobox class="glass-input glass-presets" @input="onFilterPresetSelected" v-model="selectedPresetName" :items="filterPresets" label="Filter Preset" solo outline hide-details>
+                        <v-select class="glass-input glass-presets" @change="onFilterPresetSelected" v-model="selectedPresetName" :items="filterPresets" label="Filter Preset" solo outline hide-details>
                             <template slot="item" slot-scope="data">
                                 <v-list-tile-content>
                                     <v-list-tile-title>{{ data.item }}</v-list-tile-title>
@@ -81,9 +81,15 @@
                                     </v-btn>
                                 </v-list-tile-action>
                             </template>
-                        </v-combobox>
-                        <v-btn v-on:click="savePresetClicked" flat icon color="white" :disabled="canSave == false" class="ma-0">
+                        </v-select>
+                        <v-btn v-on:click="savePresetClicked" flat icon color="white" :disabled="canSave == false" class="ma-0" title="Save Changes">
                             <v-icon small>save</v-icon>
+                        </v-btn>
+                        <v-btn v-on:click="saveAsPreset" flat icon color="white" class="ma-0" title="Save As New Preset">
+                            <v-icon small>library_add</v-icon>
+                        </v-btn>
+                        <v-btn v-if="selectedPresetName !== 'Default'" v-on:click="renamePreset" flat icon color="white" class="ma-0" title="Rename Preset">
+                            <v-icon small>edit</v-icon>
                         </v-btn>
                     </v-layout>
                 </div>
@@ -357,6 +363,19 @@
         </v-snackbar>
         <!-- ======= TOAST ================================================= -->
         <jsTextFilterDialog :visible="jsTextFilterDialog" :jsTextFilters="jsTextFilters" :types="jsTextTypes" @close="saveAndCloseFiltersEditor" />
+        <v-dialog v-model="presetNamingDialog" max-width="400px">
+            <v-card class="glass-panel">
+                <v-card-title class="headline white--text">{{ presetNamingMode === 'saveAs' ? 'Save As New Preset' : 'Rename Preset' }}</v-card-title>
+                <v-card-text>
+                    <v-text-field v-model="presetNamingValue" label="Preset Name" solo dark dense class="glass-input" @keyup.enter="onPresetNamingConfirm"></v-text-field>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn color="white" flat @click="onPresetNamingCancel">Cancel</v-btn>
+                    <v-btn color="greenyellow" flat @click="onPresetNamingConfirm">Confirm</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
        
     </v-app>
 </div>
@@ -536,51 +555,21 @@ export default {
     highlights: {
       handler: function(val) {
         if (this.isLoadingPreset) return
-        let model = this
-        model.canSave = true
-        // Auto-save to current preset after debounce
-        clearTimeout(model.autoSaveHighlightsTimer)
-        model.autoSaveHighlightsTimer = setTimeout(function() {
-          if (model.selectedPresetName && !model.isLoadingPreset) {
-            console.log('Auto-saving highlights to preset: ' + model.selectedPresetName)
-            model.savePreset(model.selectedPresetName, model.filters, model.exfilters, model.highlights)
-            model.canSave = false
-          }
-        }, 500)
+        this.canSave = true
       },
       deep: true
     },
     filters: {
       handler: function(val) {
         if (this.isLoadingPreset) return
-        let model = this
-        model.canSave = true
-        // Auto-save to current preset after debounce
-        clearTimeout(model.autoSaveFiltersTimer)
-        model.autoSaveFiltersTimer = setTimeout(function() {
-          if (model.selectedPresetName && !model.isLoadingPreset) {
-            console.log('Auto-saving filters to preset: ' + model.selectedPresetName)
-            model.savePreset(model.selectedPresetName, model.filters, model.exfilters, model.highlights)
-            model.canSave = false
-          }
-        }, 500)
+        this.canSave = true
       },
       deep: true
     },
     exfilters: {
       handler: function(val) {
         if (this.isLoadingPreset) return
-        let model = this
-        model.canSave = true
-        // Auto-save to current preset after debounce
-        clearTimeout(model.autoSaveExfiltersTimer)
-        model.autoSaveExfiltersTimer = setTimeout(function() {
-          if (model.selectedPresetName && !model.isLoadingPreset) {
-            console.log('Auto-saving exfilters to preset: ' + model.selectedPresetName)
-            model.savePreset(model.selectedPresetName, model.filters, model.exfilters, model.highlights)
-            model.canSave = false
-          }
-        }, 500)
+        this.canSave = true
       },
       deep: true
     },
@@ -717,6 +706,9 @@ export default {
       terminalCommand: appStorage.loadPreference('terminalCommand', ''),
       isCommandRunning: false,
       isLoadingPreset: false,
+      presetNamingDialog: false,
+      presetNamingValue: '',
+      presetNamingMode: '', // 'saveAs' or 'rename'
       scrollPosition: null,
       commandStatus: '',
       wrapLines: appStorage.loadPreference('wrapLines', false),
@@ -1057,9 +1049,49 @@ export default {
       console.log('ExFilters:', JSON.stringify(excludeFilters));
       console.log('Highlights:', JSON.stringify(highlights));
       
-      appStorage.savePreset(presetName, filters, excludeFilters, highlights)
+      appStorage.savePreset(presetName, JSON.parse(JSON.stringify(filters)), JSON.parse(JSON.stringify(excludeFilters)), JSON.parse(JSON.stringify(highlights)))
       this.filterPresets = appStorage.loadPresets().map(f => f.name)
       this.showMessage('saved')
+    },
+    saveAsPreset: function() {
+      this.presetNamingMode = 'saveAs';
+      this.presetNamingValue = '';
+      this.presetNamingDialog = true;
+    },
+    renamePreset: function() {
+      if (this.selectedPresetName === 'Default') return;
+      this.presetNamingMode = 'rename';
+      this.presetNamingValue = this.selectedPresetName;
+      this.presetNamingDialog = true;
+    },
+    onPresetNamingConfirm: function() {
+      let newName = this.presetNamingValue;
+      if (!newName || newName.trim() === "") {
+          this.presetNamingDialog = false;
+          return;
+      }
+      
+      if (this.presetNamingMode === 'saveAs') {
+          this.selectedPresetName = newName;
+          this.savePreset(newName, this.filters, this.exfilters, this.highlights);
+          appStorage.saveLastUsedPresetName(newName);
+      } else if (this.presetNamingMode === 'rename') {
+          let oldName = this.selectedPresetName;
+          if (newName === oldName) {
+              this.presetNamingDialog = false;
+              return;
+          }
+          this.savePreset(newName, this.filters, this.exfilters, this.highlights);
+          appStorage.deletePresetWithName(oldName);
+          this.selectedPresetName = newName;
+          appStorage.saveLastUsedPresetName(newName);
+          this.filterPresets = appStorage.loadPresets().map(f => f.name);
+      }
+      
+      this.presetNamingDialog = false;
+    },
+    onPresetNamingCancel: function() {
+      this.presetNamingDialog = false;
     },
     loadPreset: function(presetName) {
       console.log('load preset: ' + presetName)
@@ -1090,45 +1122,48 @@ export default {
       }
       
       model.isLoadingPreset = true
+      model.canSave = false // Synchronous reset for immediate feedback
       
-      console.log('--- Loading Preset Data ---');
-      console.log('Filters:', JSON.stringify(preset.filters));
-      console.log('ExFilters:', JSON.stringify(preset.excludeFilters));
-      console.log('Highlights:', JSON.stringify(preset.highlights));
+      console.log('--- Bulk Loading Preset Raw Data: ' + presetName + ' ---');
+      console.log(preset);
       
-      // Clear all existing state first to avoid collisions
-      model.highlights = []
-      model.filters = []
-      model.exfilters = []
-      model.canSave = false
+      // DEEP COPY to break references and trigger clean reactivity
+      const presetCopy = JSON.parse(JSON.stringify(preset));
       
-      let highlights = preset.highlights || []
-      // ... continue normal loading ...
-      if (highlights) {
-        highlights.forEach(function(h) {
-          // Pass the whole object if it exists (includes color)
-          model.AddToHighlights(h)
+      console.log('--- Applying Deep Copied Data ---');
+      model.highlights = presetCopy.highlights || []
+      model.filters = presetCopy.filters || []
+      model.exfilters = presetCopy.excludeFilters || []
+      
+      console.log('Final Model Highlights:', JSON.stringify(model.highlights));
+      console.log('Final Model Filters:', JSON.stringify(model.filters));
+      console.log('Final Model ExFilters:', JSON.stringify(model.exfilters));
+
+      // Manually refresh highlight styles
+      if (model.highlights.length > 0) {
+        model.highlights.forEach((h, index) => {
+          const id = index + 1
+          model.addStyle(id, h.color, true)
         })
       }
       
-      let filters = preset.filters || []
-      if (filters) {
-        filters.forEach(function(f) {
-          model.AddToFilters(f)
-        })
-      }
+      // Force refresh of the view and update UI panels
+      this.panel = [
+        model.filters.length > 0,
+        model.highlights.length > 0,
+        model.exfilters.length > 0,
+        false
+      ]
       
-      let exfilters = preset.excludeFilters || []
-      if (exfilters) {
-        exfilters.forEach(function(f) {
-          model.AddToExFilters(f)
-        })
-      }
-      
-      setTimeout(() => {
-        model.isLoadingPreset = false
-        console.log("Preset loading complete")
-      }, 500)
+      this.$nextTick(() => {
+        // Ensure canSave is false after loading
+        setTimeout(() => {
+          model.canSave = false
+          model.isLoadingPreset = false
+          console.log("Bulk loading complete, all data applied to model and forced reactive check")
+        }, 300)
+        EventBus.$emit('jumpto', this.position)
+      })
     },
     onDeletePreset: function() {
       if (!this.selectedPresetName || this.selectedPresetName === 'Default') return;
@@ -1185,16 +1220,25 @@ export default {
     onFilterPresetSelected: function(selectedPresetName) {
       console.log('onFilterPresetSelected input:', selectedPresetName, 'type:', typeof selectedPresetName)
       
+      if (!selectedPresetName) {
+        console.log('Empty preset selection, ignoring')
+        return
+      }
+
       let name = selectedPresetName
       if (typeof selectedPresetName === 'object' && selectedPresetName !== null) {
           name = selectedPresetName.text || selectedPresetName.value || selectedPresetName.name || ''
           console.log('Extracted name from object:', name)
       }
       
+      if (!name) {
+          console.log('Could not extract name from selection, ignoring')
+          return
+      }
+
       this.selectedPresetName = name
-      console.log('New Preset Name: ' + name)
+      console.log('Confirmed new Preset Name: ' + name)
       
-      // Force change detection and update canSave status
       this.loadPreset(name)
       appStorage.saveLastUsedPresetName(name)
     },
