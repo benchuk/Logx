@@ -34,7 +34,8 @@ export default {
       ctx: null,
       dpr: window.devicePixelRatio || 1,
       timestampIndices: [], // Stores { time, index }
-      isDragging: false
+      isDragging: false,
+      resizeObserver: null
     }
   },
   watch: {
@@ -65,12 +66,24 @@ export default {
   },
   mounted() {
     this.ctx = this.$refs.canvas.getContext('2d')
+    
+    // Use ResizeObserver to detect container size changes (e.g. sidebar toggle)
+    if (window.ResizeObserver) {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.onResize()
+      })
+      this.resizeObserver.observe(this.$refs.container)
+    }
+
     window.addEventListener('resize', this.onResize)
     this.onResize()
     this.processLines()
     this.draw()
   },
   beforeDestroy() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect()
+    }
     window.removeEventListener('resize', this.onResize)
   },
   methods: {
@@ -225,6 +238,7 @@ export default {
   margin: 8px 0;
   cursor: crosshair;
   user-select: none;
+  box-sizing: border-box;
 }
 
 canvas {

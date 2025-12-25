@@ -1,5 +1,5 @@
 <template>
-<div class="fast-text-view-wrapper" style="position: relative; height: 100%; width: 100%; overflow: hidden;">
+<div class="fast-text-view-wrapper" style="position: relative; height: 100%; width: 100%; max-width: 100%; min-width: 0; overflow: hidden;">
     
     <!-- <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="/resources/demos/style.css"> -->
@@ -286,7 +286,8 @@ export default {
             prevHeight: -1,
             autoScroll: true,
             streamUpdateTimer: null,
-            prevLineCount: 0
+            prevLineCount: 0,
+            mainFooterHeight: 0
         }),
     methods: {
         
@@ -630,7 +631,18 @@ export default {
 
             var parentH = 0;
             if (!model.parentid) {
-                parentH = document.documentElement.clientHeight - 64;
+                // Determine top offset dynamically
+                let topOffset = 64; // Default toolbar height
+                if (model.$el) {
+                    const rect = model.$el.getBoundingClientRect();
+                    if (rect.top > 0) {
+                        topOffset = rect.top;
+                    }
+                }
+                
+                // If main logger, subtract dynamic top offset AND dynamic footer height
+                // Also subtract a small buffer (e.g., 5px) to prevent borderline overflow
+                parentH = document.documentElement.clientHeight - topOffset - (model.mainFooterHeight || 0) - 5;
             } else {
                 let parentEl = $('#' + model.parentid);
                 if (parentEl.length > 0) {
@@ -930,7 +942,7 @@ export default {
 
         this.onFooterResizedEvent = (newHeight) => {
             console.log("FastTextView received footer-resized event for ID:", model.factory.myInitId, "Height:", newHeight);
-            model.currentHeight = newHeight;
+            model.mainFooterHeight = newHeight;
             model.onParentResize();
         };
         EventBus.$on('footer-resized', this.onFooterResizedEvent);
@@ -1118,6 +1130,7 @@ function init(factory) {
     overflow-x: auto;
     overflow-y: hidden;
     width: 100%;
+    max-width: 100%;
     height: 100%;
     max-height: 100%;
     margin: 0;

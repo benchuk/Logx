@@ -149,10 +149,10 @@
             <!-- ======= DRAWER ================================================= -->
         </v-navigation-drawer>
         <!-- ======= Logs Viewer ================================================= -->
-        <v-content class="fill-height glass-app-bg" :class="{ 'glass-content-with-footer': searchs && searchs.length > 0 }">
-            <v-container fluid fill-height pa-0 class="transparent">
-                <v-layout column fill-height>
-                    <v-flex xs12 class="fill-height d-flex flex-column">
+        <v-content class="fill-height glass-app-bg" :class="{ 'glass-content-with-footer': searchs && searchs.length > 0 }" style="max-width: 100%; overflow: hidden;">
+            <v-container fluid fill-height pa-0 class="transparent" style="max-width: 100%;">
+                <v-layout column fill-height style="max-width: 100%;">
+                    <v-flex xs12 class="fill-height d-flex flex-column" style="min-width: 0; overflow: hidden;">
                         <!-- Global Timeline -->
                         <div class="timeline-glow ma-2 pt-1 pb-1">
                             <log-timeline v-if="logLines && logLines.length > 0" :lines="logLines" :highlights="highlights" :useColors="useColors" :scroll-position="scrollPosition" @seek="onTimelineSeek" />
@@ -185,7 +185,7 @@
         <!-- ======= Right Nav DRAWER ================================================= -->
         <v-navigation-drawer right temporary v-model="right" fixed></v-navigation-drawer>
         <!-- ======= Footer ================================================= -->
-        <v-footer v-if="searchs && searchs.length > 0" fixed id="theFooter" :height="footerHeight" class="glass-footer" :style="{ position: 'fixed', left: drawer ? '300px' : '0', width: drawer ? 'calc(100% - 300px)' : '100%', zIndex: 850 }">
+        <v-footer v-if="searchs && searchs.length > 0" app fixed id="theFooter" :height="footerHeight" class="glass-footer" :style="{ position: 'fixed', left: drawer ? '300px' : '0', width: drawer ? 'calc(100% - 300px)' : '100%', zIndex: 850 }">
             <div id="resizer"></div>
             <div :style="{ width: '100%', textAlign: 'left', height: (footerHeight - 8) + 'px', display: 'flex', flexDirection: 'column' }">
                 <!-- ======= SEARCHES ================================================= -->
@@ -667,7 +667,11 @@ export default {
       if (val && val.length > 0) {
         this.$nextTick(() => {
           this.initializeResizer()
+          EventBus.$emit('footer-resized', this.footerHeight)
         })
+      } else {
+        // Footer hidden
+        EventBus.$emit('footer-resized', 0)
       }
     }
   },
