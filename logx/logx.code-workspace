@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"workbench.colorTheme": "linha.net (dark)",
+		"python.languageServer": "None"
+	}
+}

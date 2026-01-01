@@ -68,8 +68,8 @@
                 </div>
             </v-layout>
             <v-expansion-panel class="transparent" v-model="panel" expand>
-                <div class="glass-panel ma-2 mt-0">
-                    <v-layout row justify-center align-center class="ml-3 mt-1 pr-3">
+                <div class="glass-panel ma-2 pa-2">
+                    <v-layout row justify-center align-center>
                         <v-select class="glass-input glass-presets" @change="onFilterPresetSelected" v-model="selectedPresetName" :items="filterPresets" label="Filter Preset" solo outline hide-details>
                             <template slot="item" slot-scope="data">
                                 <v-list-tile-content>
@@ -139,8 +139,8 @@
                                 <v-btn class="success ma-0" v-on:click="addExFilter" small dark>Add Ex<v-icon dark small class="ml-1">playlist_add</v-icon></v-btn>
                                 <v-btn v-on:click="removeExFilter(-1)" flat icon color='error' class="ma-0"><v-icon small>delete_outline</v-icon></v-btn>
                             </v-layout>
-                            <v-layout class="px-1" row v-for="(item, index) in exfilters" :key="index">
-                                <v-text-field class="mt-0 pt-0 glass-input" append-outer-icon="delete_outline" @click:append-outer="removeExFilter(index)" v-model.lazy="item.value" hide-details solo flat></v-text-field>
+                            <v-layout class="px-1 mb-2" row v-for="(item, index) in exfilters" :key="index">
+                                <v-text-field class="mt-0 pt-0 glass-input-rounded" append-outer-icon="delete_outline" @click:append-outer="removeExFilter(index)" v-model.lazy="item.value" hide-details solo flat></v-text-field>
                             </v-layout>
                         </v-layout>
                     </v-expansion-panel-content>
@@ -744,7 +744,7 @@ export default {
       startPoint: -1,
       theView: undefined,
       drawer: true,
-      panel: [true, true, true, true],
+      panel: [true, true, false, true],
       searchReasultsContent: [],
       searchterm: '',
       searchs: [],
