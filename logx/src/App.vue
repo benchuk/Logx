@@ -10,6 +10,7 @@
             <v-spacer></v-spacer>
             <v-toolbar-items class="hidden-sm-and-down">
                 <v-btn color="blue darken-1" flat @click.native="searchDialog = true">Find multiple</v-btn>
+                <v-btn color="blue darken-1" flat @click="clearLogs">Clear Logs</v-btn>
                 <v-menu offset-y v-if="jsTextFilters && jsTextFilters.length>0">
                     <template v-slot:activator="{ on }">
                         <v-btn fab flat small color="primary" dark v-on="on">
@@ -49,6 +50,23 @@
             <v-layout v-if="runInTerminal" column class="pa-2">
                 <div class="glass-panel ma-2 pa-3">
                     <div class="caption grey--text text--lighten-1 mb-2 font-weight-bold uppercase">Terminal Console</div>
+                    <v-layout row justify-space-between align-center class="mb-2">
+                        <v-select class="glass-input glass-presets" @change="onTerminalPresetSelected" v-model="selectedTerminalPresetName" :items="terminalPresets" label="Command Preset" solo outline hide-details>
+                             <template slot="item" slot-scope="data">
+                                <v-list-tile-content>
+                                    <v-list-tile-title>{{ data.item }}</v-list-tile-title>
+                                </v-list-tile-content>
+                                <v-list-tile-action>
+                                    <v-btn icon small @click.stop="onDeleteTerminalPreset(data.item)" class="ma-0">
+                                        <v-icon color="error" small>delete</v-icon>
+                                    </v-btn>
+                                </v-list-tile-action>
+                            </template>
+                        </v-select>
+                        <v-btn icon flat color="white" @click="saveTerminalPresetClicked" title="Save Command">
+                            <v-icon>save</v-icon>
+                        </v-btn>
+                     </v-layout>
                     <v-textarea
                         v-model="terminalCommand"
                         solo
@@ -373,6 +391,20 @@
                     <v-spacer></v-spacer>
                     <v-btn color="white" flat @click="onPresetNamingCancel">Cancel</v-btn>
                     <v-btn color="greenyellow" flat @click="onPresetNamingConfirm">Confirm</v-btn>
+                </v-card-actions>
+            </v-card>
+            </v-card>
+        </v-dialog>
+        <v-dialog v-model="terminalPresetNamingDialog" max-width="400px">
+            <v-card class="glass-panel">
+                <v-card-title class="headline white--text">Save Command Preset</v-card-title>
+                <v-card-text>
+                    <v-text-field v-model="terminalPresetNamingValue" label="Preset Name" solo dark dense class="glass-input" @keyup.enter="onTerminalPresetNamingConfirm"></v-text-field>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn color="white" flat @click="terminalPresetNamingDialog = false">Cancel</v-btn>
+                    <v-btn color="greenyellow" flat @click="onTerminalPresetNamingConfirm">Confirm</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -768,7 +800,11 @@ export default {
           desc: 'function(line){ // should return {lat:lt,lon:ln} or null',
           icon: 'place'
         }
-      ]
+      ],
+      terminalPresets: [],
+      selectedTerminalPresetName: '',
+      terminalPresetNamingDialog: false,
+      terminalPresetNamingValue: ''
     }
   },
   created() {
@@ -779,6 +815,8 @@ export default {
     model.filterPresets = appStorage.loadPresets().map(f => f.name)
     model.selectedPresetName = appStorage.getLastPresetsName()
     model.loadPreset(model.selectedPresetName)
+
+    model.loadTerminalPresets()
 
     console.log('register load files replay event')
     if (ipcRenderer) {
@@ -929,6 +967,47 @@ export default {
     })
   },
   methods: {
+    clearLogs() {
+        this.logLines = []
+        this.showMessage('Logs cleared')
+    },
+    loadTerminalPresets() {
+        let presets = appStorage.loadTerminalPresets()
+        this.terminalPresets = presets.map(p => p.name)
+        this.selectedTerminalPresetName = appStorage.getLastTerminalPresetName()
+    },
+    onTerminalPresetSelected(val) {
+        if (!val) return
+        appStorage.saveLastUsedTerminalPresetName(val)
+        let presets = appStorage.loadTerminalPresets()
+        let preset = presets.find(p => p.name === val)
+        if (preset) {
+            this.terminalCommand = preset.command
+        }
+    },
+    saveTerminalPresetClicked() {
+        this.terminalPresetNamingValue = ''
+        this.terminalPresetNamingDialog = true
+    },
+    onTerminalPresetNamingConfirm() {
+        if (!this.terminalPresetNamingValue) return
+        appStorage.saveTerminalPreset(this.terminalPresetNamingValue, this.terminalCommand)
+        this.loadTerminalPresets()
+        this.selectedTerminalPresetName = this.terminalPresetNamingValue
+        appStorage.saveLastUsedTerminalPresetName(this.terminalPresetNamingValue)
+        this.terminalPresetNamingDialog = false
+    },
+    onDeleteTerminalPreset(name) {
+        if (confirm('Are you sure you want to delete this preset?')) {
+            appStorage.deleteTerminalPresetWithName(name)
+            this.loadTerminalPresets()
+            if (this.selectedTerminalPresetName === name) {
+                this.selectedTerminalPresetName = ''
+                this.terminalCommand = ''
+                appStorage.saveLastUsedTerminalPresetName('')
+            }
+        }
+    },
     initializeResizer: function() {
       let model = this
       console.log('Initializing resizer')

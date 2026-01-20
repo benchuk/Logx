@@ -43,6 +43,13 @@ var appStorage = {
     )
     saveWindow()
   },
+  deleteTerminalPresetWithName(presetName) {
+    var currentPresets = this.loadTerminalPresets()
+    getLocalStorage()['terminalPresets'] = currentPresets.filter(
+      p => p.name !== presetName
+    )
+    saveWindow()
+  },
   savePreset(name, filters, excludeFilters, highlights) {
     console.log('savePreset')
     console.log('filters', filters)
@@ -58,6 +65,15 @@ var appStorage = {
     getLocalStorage()['presets'] = currentPresets
     saveWindow()
   },
+  saveTerminalPreset(name, command) {
+    var currentPresets = this.loadTerminalPresets()
+    pushToArray(currentPresets, {
+      name: name,
+      command: command
+    })
+    getLocalStorage()['terminalPresets'] = currentPresets
+    saveWindow()
+  },
   loadPresets() {
     let res = getLocalStorage()['presets']
     return res
@@ -71,13 +87,25 @@ var appStorage = {
         }
       ]
   },
+  loadTerminalPresets() {
+    let res = getLocalStorage()['terminalPresets']
+    return res ? res : []
+  },
   saveLastUsedPresetName(name) {
     getLocalStorage()['lastUsedPresetName'] = name
     saveWindow()
   },
+  saveLastUsedTerminalPresetName(name) {
+     getLocalStorage()['lastUsedTerminalPresetName'] = name
+     saveWindow()
+  },
   getLastPresetsName() {
     let res = getLocalStorage()['lastUsedPresetName']
     return res ? res : 'Default'
+  },
+  getLastTerminalPresetName() {
+    let res = getLocalStorage()['lastUsedTerminalPresetName']
+    return res ? res : ''
   },
   saveFileListForWindow(fileListData) {
     getLocalStorage()['fileList'] = fileListData

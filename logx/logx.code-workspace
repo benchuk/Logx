@@ -5,7 +5,7 @@
 		}
 	],
 	"settings": {
-		"workbench.colorTheme": "linha.net (dark)",
+		"workbench.colorTheme": "Default Dark Modern",
 		"python.languageServer": "None"
 	}
 }
