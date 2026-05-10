@@ -2,7 +2,7 @@
 'use strict'
 
 import { app, protocol, BrowserWindow, ipcMain, Menu } from 'electron'
-import { spawn } from 'child_process'
+import { spawn, execSync } from 'child_process'
 import {
   createProtocol,
   installVueDevtools
@@ -14,6 +14,28 @@ import app_menu from './components/appMenu'
 import net from 'net'
 import WebSocket from 'ws'
 file_handler(ipcMain)
+
+// Fix PATH to inherit from user's shell (macOS/Linux)
+function fixPath() {
+  if (process.platform === 'win32') return;
+  try {
+    const shell = process.env.SHELL || '/bin/zsh';
+    // Run shell as login shell to get full PATH including .zshrc/.bash_profile
+    const shellPath = execSync(`${shell} -ilc "echo $PATH"`, { 
+      encoding: 'utf8',
+      timeout: 3000 // 3s timeout to prevent hang
+    }).trim();
+    
+    if (shellPath && shellPath.includes('/')) {
+      process.env.PATH = shellPath;
+      console.log('Inherited PATH from shell:', shellPath);
+    }
+  } catch (err) {
+    console.error('Failed to inherit PATH from shell:', err.message);
+  }
+}
+fixPath();
+
 
 // --- Log Stream Bridge (TCP -> WebSocket + IPC) ---
 const TCP_PORT = 9020;
@@ -129,30 +151,12 @@ ipcMain.on('execute-command', (event, command) => {
   win.webContents.send('command-output', `\n--- STARTING COMMAND: ${command} ---\n`);
 
   try {
-    // Prepare environment with common paths where gcloud might be installed
-    const env = { ...process.env };
-    const homeDir = process.env.HOME || process.env.USERPROFILE;
-    const gcloudPaths = [
-      `${homeDir}/google-cloud-sdk/bin`,
-      '/usr/local/bin',
-      '/opt/homebrew/bin'
-    ];
-    
-    // Prepend paths to PATH if they aren't already there
-    gcloudPaths.forEach(p => {
-      if (env.PATH && !env.PATH.includes(p)) {
-        env.PATH = `${p}:${env.PATH}`;
-      } else if (!env.PATH) {
-        env.PATH = p;
-      }
-    });
-
     // shell: true allows simplified command strings like "ping google.com | grep time"
     // detach: true allows killing the process group later
     commandProcess = spawn(command, {
       shell: true,
       detached: true,
-      env: env,
+      env: process.env,
       stdio: ['ignore', 'pipe', 'pipe']
     });
 
