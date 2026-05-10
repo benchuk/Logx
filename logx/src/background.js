@@ -129,11 +129,30 @@ ipcMain.on('execute-command', (event, command) => {
   win.webContents.send('command-output', `\n--- STARTING COMMAND: ${command} ---\n`);
 
   try {
+    // Prepare environment with common paths where gcloud might be installed
+    const env = { ...process.env };
+    const homeDir = process.env.HOME || process.env.USERPROFILE;
+    const gcloudPaths = [
+      `${homeDir}/google-cloud-sdk/bin`,
+      '/usr/local/bin',
+      '/opt/homebrew/bin'
+    ];
+    
+    // Prepend paths to PATH if they aren't already there
+    gcloudPaths.forEach(p => {
+      if (env.PATH && !env.PATH.includes(p)) {
+        env.PATH = `${p}:${env.PATH}`;
+      } else if (!env.PATH) {
+        env.PATH = p;
+      }
+    });
+
     // shell: true allows simplified command strings like "ping google.com | grep time"
     // detach: true allows killing the process group later
     commandProcess = spawn(command, {
       shell: true,
       detached: true,
+      env: env,
       stdio: ['ignore', 'pipe', 'pipe']
     });
 
