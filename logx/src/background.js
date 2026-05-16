@@ -18,20 +18,57 @@ file_handler(ipcMain)
 // Fix PATH to inherit from user's shell (macOS/Linux)
 function fixPath() {
   if (process.platform === 'win32') return;
+  
+  // Ensure SHELL is set
+  if (!process.env.SHELL) {
+    process.env.SHELL = (process.platform === 'darwin' ? '/bin/zsh' : '/bin/sh');
+  }
+
   try {
-    const shell = process.env.SHELL || '/bin/zsh';
-    // Run shell as login shell to get full PATH including .zshrc/.bash_profile
-    const shellPath = execSync(`${shell} -ilc "echo $PATH"`, { 
-      encoding: 'utf8',
-      timeout: 3000 // 3s timeout to prevent hang
-    }).trim();
+    const shell = process.env.SHELL;
+    console.log(`Attempting to fix PATH using shell: ${shell}`);
     
-    if (shellPath && shellPath.includes('/')) {
-      process.env.PATH = shellPath;
-      console.log('Inherited PATH from shell:', shellPath);
+    // Run shell as login shell to get full environment
+    const output = execSync(`${shell} -ilc "env"`, {
+      encoding: 'utf8',
+      timeout: 5000 
+    });
+    
+    const env = {};
+    output.split('\n').forEach(line => {
+      const index = line.indexOf('=');
+      if (index > -1) {
+        const key = line.substring(0, index);
+        const value = line.substring(index + 1);
+        env[key] = value;
+      }
+    });
+
+    if (env.PATH) {
+      process.env.PATH = env.PATH;
+      console.log('Successfully inherited PATH:', env.PATH);
     }
+    
+    // Also inherit other useful vars if they exist
+    ['GOPATH', 'NVM_DIR', 'NODE_PATH'].forEach(key => {
+      if (env[key]) process.env[key] = env[key];
+    });
+
   } catch (err) {
-    console.error('Failed to inherit PATH from shell:', err.message);
+    console.error('Failed to inherit environment from shell:', err.message);
+    // Ultimate fallback for common macOS locations
+    const home = process.env.HOME || `/Users/${process.env.USER}`;
+    const fallbacks = [
+      '/opt/homebrew/bin',
+      '/usr/local/bin',
+      `${home}/google-cloud-sdk/bin`,
+      `${home}/.local/bin`
+    ];
+    fallbacks.forEach(p => {
+      if (process.env.PATH && !process.env.PATH.includes(p)) {
+        process.env.PATH = `${p}:${process.env.PATH}`;
+      }
+    });
   }
 }
 fixPath();
@@ -151,10 +188,9 @@ ipcMain.on('execute-command', (event, command) => {
   win.webContents.send('command-output', `\n--- STARTING COMMAND: ${command} ---\n`);
 
   try {
-    // shell: true allows simplified command strings like "ping google.com | grep time"
-    // detach: true allows killing the process group later
-    commandProcess = spawn(command, {
-      shell: true,
+    const shell = process.platform === 'darwin' ? '/bin/zsh' : (process.env.SHELL || '/bin/sh');
+
+    commandProcess = spawn(shell, ['-ilc', command], {
       detached: true,
       env: process.env,
       stdio: ['ignore', 'pipe', 'pipe']

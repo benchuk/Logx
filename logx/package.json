@@ -1,7 +1,8 @@
 {
   "name": "logx",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "private": true,
+  "repository": "https://github.com/benchuk/Logx",
   "scripts": {
     "serve": "NODE_OPTIONS=--openssl-legacy-provider vue-cli-service serve",
     "build": "NODE_OPTIONS=--openssl-legacy-provider vue-cli-service build",
